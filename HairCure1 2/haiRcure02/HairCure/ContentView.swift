@@ -1,0 +1,301 @@
+//
+//import SwiftUI
+//
+//// MARK: - Navigation Routes
+//enum AppRoute: Hashable {
+//    case auth
+//    case assessment
+//    case hairAnalysis
+//    case planResults
+//    case mainApp
+//}
+//// MARK: - Main Content Container
+//struct ContentView: View {
+//    @State private var route: AppRoute = .auth
+//    @State private var selectedTab = 0
+//
+//    var body: some View {
+//        Group {
+//            switch route {
+//            case .auth:
+//                AuthLandingView {
+//                    withAnimation(.easeInOut(duration: 0.3)) { route = .assessment }
+//                }
+//            case .assessment:
+//                AssessmentView {
+//                    withAnimation(.easeInOut(duration: 0.3)) { route = .hairAnalysis }
+//                }
+//                .transition(.opacity)
+//            case .hairAnalysis:
+//                HairAnalysisView {
+//                    withAnimation(.easeInOut(duration: 0.3)) { route = .planResults }
+//                }
+//                .transition(.opacity)
+//            case .planResults:
+//                PlanResultsView {
+//                    withAnimation(.easeInOut(duration: 0.3)) { route = .mainApp }
+//                }
+//                .transition(.opacity)
+//            case .mainApp:
+//                
+//                TabView(selection: $selectedTab) {
+//                    HomeView(selectedTab: $selectedTab)
+//                        .tabItem { Label("Home", systemImage: "house.fill") }
+//                        .tag(0)
+//
+//                    WellnessView()
+//                        .tabItem { Label("Wellness", systemImage: "heart.fill") }
+//                        .tag(1)
+//
+//                    HairInsightsView()
+//                        .tabItem { Label("Hair Insights", systemImage: "lightbulb.fill") }
+//                        .tag(2)
+//
+//                    ProfileView()
+//                        .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+//                        .tag(3)
+//                }
+//                .accentColor(Color.hcBrown)
+//                .transition(.opacity)
+//            }
+//        }
+//    }
+//}
+//
+//
+//#Preview {
+//    ContentView()
+//}
+import SwiftUI
+
+enum AppRoute: Hashable {
+    case auth
+    case assessment
+    case hairAnalysis
+    case planResults
+    case mainApp
+}
+
+struct ContentView: View {
+    @Environment(AuthViewModel.self) var authVM
+    @Environment(AppDataStore.self) var store
+    @State private var route: AppRoute = .auth
+    @State private var selectedTab = 0
+    /// Becomes true once the post-login route (mainApp / assessment) has been resolved.
+    /// Keeps the splash screen visible until we know where to send a returning user.
+    @State private var isRouteResolved: Bool = false
+
+    var body: some View {
+        Group {
+            if authVM.isLoading || (authVM.isLoggedIn && !isRouteResolved) {
+                // Splash / loading screen — also shown while we resolve the route
+                // for a returning logged-in user, to prevent AuthLandingView from flashing.
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.5)
+                        Text("Loading...")
+                            .foregroundColor(.white)
+                            .font(.subheadline)
+                    }
+                }
+            } else if !authVM.isLoggedIn && !authVM.isGuestMode {
+                AuthLandingView {
+                    // After login — reset stale state then create user in store with real ID
+                    store.resetForLogout()
+                    store.createUser(
+                        name: authVM.userName ?? "User",
+                        email: authVM.userEmail ?? "",
+                        authProvider: .google,
+                        supabaseId: authVM.currentUserId
+                    )
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        // Returning user with a completed scan → skip assessment
+                        if store.latestScanReport != nil {
+                            route = .mainApp
+                        } else {
+                            route = .assessment
+                        }
+                    }
+                }
+            } else {
+                // Already logged in — go straight to app
+                switch route {
+                case .auth:
+                    AuthLandingView {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            route = .assessment
+                        }
+                    }
+                case .assessment:
+                    AssessmentView(onComplete: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            route = .hairAnalysis
+                        }
+                    }, onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            route = .auth
+                        }
+                    })
+                    .transition(.opacity)
+                case .hairAnalysis:
+                    HairAnalysisView {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            route = .planResults
+                        }
+                    }
+                    .transition(.opacity)
+                case .planResults:
+                    PlanResultsView {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 0   // Always land on Home tab
+                            route = .mainApp
+                        }
+                    }
+                    .transition(.opacity)
+                case .mainApp:
+                    TabView(selection: $selectedTab) {
+                        HomeView(selectedTab: $selectedTab)
+                            .tabItem { Label("Home", systemImage: "house.fill") }
+                            .tag(0)
+                        WellnessView()
+                            .tabItem { Label("Wellness", systemImage: "heart.fill") }
+                            .tag(1)
+                        HairInsightsView()
+                            .tabItem { Label("Hair Insights", systemImage: "lightbulb.fill") }
+                            .tag(2)
+                        ProfileView()
+                            .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+                            .tag(3)
+                    }
+                    .accentColor(Color.hcBrown)
+                    .transition(.opacity)
+                }
+            }
+        }
+//        .onAppear {
+//            // If already logged in resume from main app
+//            if authVM.isLoggedIn {
+//                route = .mainApp
+//            }
+//        }
+//        .onAppear {
+//            if authVM.isLoggedIn {
+//                Task {
+//                    let hasAssessment = await BackendService.shared.fetchAssessment(
+//                        userId: store.currentUserId
+//                    )
+//                    await MainActor.run {
+//                        route = hasAssessment ? .mainApp : .assessment
+//                    }
+//                }
+//            }
+//        }
+        .onAppear {
+            if authVM.isLoggedIn {
+                Task {
+                    print("🔍 Checking assessment for userId: \(store.currentUserId)")
+                    let hasAssessment = await BackendService.shared.fetchAssessment(
+                        userId: store.currentUserId
+                    )
+                    print("✅ Has assessment: \(hasAssessment)")
+                    await MainActor.run {
+                        route = hasAssessment ? .mainApp : .assessment
+                    }
+                }
+            }
+        }
+       
+//        .onChange(of: authVM.isLoading) { _, isLoading in
+//            guard !isLoading else { return }
+//            if authVM.isLoggedIn {
+//                // Restore user into store from saved session
+//                store.createUser(
+//                    name: authVM.userName ?? "User",
+//                    email: authVM.userEmail ?? "",
+//                    authProvider: .google,
+//                    supabaseId: authVM.currentUserId
+//                )
+//                Task {
+//                    // Use authVM UUID directly — not store.currentUserId
+//                    guard let userIdString = authVM.currentUserId,
+//                          let userId = UUID(uuidString: userIdString) else { return }
+//                    
+//                    print("🔍 store.currentUserId: \(store.currentUserId)")
+//                    print("🔍 authVM.currentUserId: \(userIdString)")
+//                    
+//                    let hasAssessment = await BackendService.shared.fetchAssessment(
+//                        userId: userId
+//                    )
+//                    print("✅ Has assessment: \(hasAssessment)")
+//                    await MainActor.run {
+//                        route = hasAssessment ? .mainApp : .assessment
+//                    }
+//                }
+//            }
+//        
+//        }
+        .onChange(of: authVM.isLoading) { _, isLoading in
+            guard !isLoading else { return }
+            if authVM.isLoggedIn {
+                // Reset any stale data from a previous session BEFORE setting up the new user
+                store.resetForLogout()
+                store.createUser(
+                    name: authVM.userName ?? "User",
+                    email: authVM.userEmail ?? "",
+                    authProvider: .google,
+                    supabaseId: authVM.currentUserId
+                )
+
+                // Keep loading screen visible until we know where to send the user.
+                // NOTE: loadScanReports() runs AFTER createUser() has finished setting
+                // currentUserId — sequential, not parallel, to avoid the race condition.
+                Task {
+                    guard let userIdString = authVM.currentUserId,
+                          let userId = UUID(uuidString: userIdString) else {
+                        await MainActor.run {
+                            route = .mainApp
+                            isRouteResolved = true
+                        }
+                        return
+                    }
+
+                    print("🔍 store.currentUserId: \(store.currentUserId)")
+                    print("🔍 authVM.currentUserId: \(userIdString)")
+
+                    // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
+                    await store.loadScanReports()
+                    // Run scalpScans + profile/nutrition restore in parallel (both need currentUserId)
+                    async let scalpTask: () = store.loadScalpScans()
+                    async let userDataTask: () = store.loadUserData()
+                    await (scalpTask, userDataTask)
+
+                    // Step 2: Load favourites and check assessment in parallel (no userId dependency on store)
+                    async let favTask: () = store.hairInsightsStore.loadFavourites(userId: userId)
+                    async let assessmentTask = BackendService.shared.fetchAssessment(userId: userId)
+                    let (_, hasAssessment) = await (favTask, assessmentTask)
+                    print("✅ Has assessment: \(hasAssessment)")
+
+                    let hairType = store.latestScanReport?.hairType
+                    await store.hairInsightsStore.loadContent(hairType: hairType)
+
+                    await MainActor.run {
+                        // Navigate directly to the right place — no flash
+                        route = hasAssessment ? .mainApp : .assessment
+                        isRouteResolved = true
+                    }
+                }
+            } else {
+                // Not logged in — show AuthLandingView immediately
+                isRouteResolved = true
+            }
+        }
+            }
+    }
+
+
+#Preview {
+    ContentView()
+}
