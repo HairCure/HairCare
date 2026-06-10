@@ -773,7 +773,7 @@ struct MindEasePlayerView: View {
 
     private func setupPlayer() {
         guard let url = URL(string: content.mediaURL) else {
-            print("❌ [Player] Invalid URL: \(content.mediaURL)")
+            print("[Player] Invalid URL: \(content.mediaURL)")
             loadError = true
             return
         }
@@ -787,7 +787,7 @@ struct MindEasePlayerView: View {
             )
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            print("⚠️ [Player] AVAudioSession setup failed: \(error)")
+            print("[Player] AVAudioSession setup failed: \(error)")
         }
         // ───────────────────────────────────────────────────────────────────
 
@@ -834,7 +834,7 @@ struct MindEasePlayerView: View {
             queue: .main
         ) { notification in
             if let err = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error {
-                print("❌ [Player] Playback failed: \(err)")
+                print("[Player] Playback failed: \(err)")
             }
             loadError = true
         }

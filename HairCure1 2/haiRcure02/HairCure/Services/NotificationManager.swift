@@ -31,9 +31,9 @@ final class NotificationManager {
     func requestPermission() async {
         do {
             let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
-            print(granted ? "✅ Notifications authorized" : "⚠️ Notifications denied")
+            print(granted ? "Notifications authorized" : "Notifications denied")
         } catch {
-            print("❌ Notification permission error: \(error)")
+            print("Notification permission error: \(error)")
         }
     }
 
@@ -76,10 +76,10 @@ final class NotificationManager {
         let endHour   = 22
 
         let messages = [
-            "Time to hydrate! 💧 Drink a glass of water.",
-            "Stay hydrated! 💧 Your hair needs water too.",
-            "Water break! 💧 Keep sipping to reach your goal.",
-            "Hydration check! 💧 Have you had water recently?"
+            "Time to hydrate! Drink a glass of water.",
+            "Stay hydrated! Your hair needs water too.",
+            "Water break! Keep sipping to reach your goal.",
+            "Hydration check! Have you had water recently?"
         ]
 
         var index = 0
@@ -112,7 +112,7 @@ final class NotificationManager {
     /// Schedules meal reminders at specific times like ["08:00", "13:00", "20:00"].
     private func scheduleMealReminders(times: [String]) {
         let mealNames = ["Breakfast", "Lunch", "Dinner"]
-        let mealIcons = ["☀️", "🍽️", "🌙"]
+        let mealIcons = ["sun.max.fill", "fork.knife", "moon.fill"]
 
         for (i, timeString) in times.enumerated() {
             let parts = timeString.split(separator: ":").compactMap { Int($0) }
@@ -123,7 +123,7 @@ final class NotificationManager {
             dateComponents.minute = parts[1]
 
             let name = i < mealNames.count ? mealNames[i] : "Meal"
-            let icon = i < mealIcons.count ? mealIcons[i] : "🍽️"
+            let icon = i < mealIcons.count ? mealIcons[i] : "fork.knife"
 
             let content = UNMutableNotificationContent()
             content.title = "\(name) Time \(icon)"
@@ -157,7 +157,7 @@ final class NotificationManager {
         dateComponents.minute = reminderMinute
 
         let content = UNMutableNotificationContent()
-        content.title = "Bedtime Soon 🌙"
+        content.title = "Bedtime Soon"
         content.body = "Wind down — your bedtime is in \(minutesBefore) minutes. Good sleep helps hair health!"
         content.sound = .default
 
@@ -189,7 +189,7 @@ final class NotificationManager {
         dateComponents.minute = parts[1]
 
         let content = UNMutableNotificationContent()
-        content.title = "Weekly Scalp Scan 📸"
+        content.title = "Weekly Scalp Scan"
         content.body = "Time for your weekly scan! Track your hair progress and stay consistent."
         content.sound = .default
 

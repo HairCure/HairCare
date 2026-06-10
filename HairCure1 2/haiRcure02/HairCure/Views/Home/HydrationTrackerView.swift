@@ -150,8 +150,8 @@ struct HydrationTrackerView: View {
                 let totalToday = todayML + amount
                 let remaining  = max(0, targetML - totalToday)
                 let msg = totalToday >= targetML
-                ? "💧 Daily water goal reached! Great job."
-                : "💧 +\(Int(amount)) ml logged. \(Int(remaining)) ml remaining today."
+                ? "Daily water goal reached! Great job."
+                : "\(Int(amount)) ml logged. \(Int(remaining)) ml remaining today."
                 await MainActor.run {
                     withAnimation { banner = msg }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
