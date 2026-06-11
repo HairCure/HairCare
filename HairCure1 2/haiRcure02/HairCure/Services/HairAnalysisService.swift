@@ -2,7 +2,7 @@ import UIKit
 
 class HairAnalysisService {
     
-    // 🔑 OpenRouter API key
+    // OpenRouter API key
     private let apiKey = ""
     private let apiURL = "https://openrouter.ai/api/v1/chat/completions"
     
@@ -125,7 +125,7 @@ class HairAnalysisService {
         
         // DEBUG
         let rawString = String(data: data, encoding: .utf8) ?? "nil"
-        print("🔍 RAW RESPONSE: \(rawString)")
+        print("RAW RESPONSE: \(rawString)")
         
         // Parse OpenAI-compatible response
         guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -137,7 +137,7 @@ class HairAnalysisService {
                 userInfo: [NSLocalizedDescriptionKey: "Could not parse OpenRouter response"])
         }
         
-        print("📝 AI TEXT: \(text)")
+        print("AI TEXT: \(text)")
         
         // Clean response
         let cleaned = text
@@ -145,7 +145,7 @@ class HairAnalysisService {
             .replacingOccurrences(of: "```", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
-        print("✅ CLEANED: \(cleaned)")
+        print("CLEANED: \(cleaned)")
         
         guard let jsonData = cleaned.data(using: .utf8) else {
             throw NSError(domain: "HairAnalysis", code: 2,
@@ -156,8 +156,8 @@ class HairAnalysisService {
             let result = try JSONDecoder().decode(HairAnalysisResult.self, from: jsonData)
             return result
         } catch {
-            print("❌ DECODE ERROR: \(error)")
-            print("❌ FAILED JSON: \(cleaned)")
+            print("DECODE ERROR: \(error)")
+            print("FAILED JSON: \(cleaned)")
             throw NSError(domain: "HairAnalysis", code: 3,
                 userInfo: [NSLocalizedDescriptionKey: "Could not decode result: \(error.localizedDescription)"])
         }

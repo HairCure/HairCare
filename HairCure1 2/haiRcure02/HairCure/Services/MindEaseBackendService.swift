@@ -26,7 +26,7 @@ final class MindEaseBackendService {
     func fetchCategoriesAndContents() async throws -> ([MindEaseCategory], [MindEaseCategoryContent]) {
 
         // ── STEP 1: Raw fetch — categories ──────────────────
-        print("🔵 [MindEase] Fetching mindease_categories...")
+        print("[MindEase] Fetching mindease_categories...")
         let catResponse = try await db
             .from("mindease_categories")
             .select()
@@ -35,36 +35,36 @@ final class MindEaseBackendService {
             .execute()
 
         let catRawString = String(data: catResponse.data, encoding: .utf8) ?? "nil"
-        print("🔵 [MindEase] categories raw JSON:\n\(catRawString)")
+        print("[MindEase] categories raw JSON:\n\(catRawString)")
 
         guard let catRows = try JSONSerialization.jsonObject(with: catResponse.data) as? [[String: Any]] else {
-            print("❌ [MindEase] categories: could not cast JSON to [[String:Any]]")
+            print("[MindEase] categories: could not cast JSON to [[String:Any]]")
             return ([], [])
         }
-        print("🔵 [MindEase] categories row count: \(catRows.count)")
+        print("[MindEase] categories row count: \(catRows.count)")
 
         let categories: [MindEaseCategory] = catRows.compactMap { row in
             print("   CAT ROW keys: \(row.keys.sorted())")
             print("   CAT ROW values: \(row)")
 
             guard let idStr = row["id"] as? String else {
-                print("   ⚠️ missing 'id'"); return nil
+                print("missing 'id'"); return nil
             }
             guard let id = UUID(uuidString: idStr) else {
-                print("   ⚠️ invalid UUID: \(idStr)"); return nil
+                print("invalid UUID: \(idStr)"); return nil
             }
             guard let title = row["title"] as? String else {
-                print("   ⚠️ missing 'title'"); return nil
+                print("missing 'title'"); return nil
             }
             guard let desc = row["description"] as? String else {
-                print("   ⚠️ missing 'description'"); return nil
+                print("missing 'description'"); return nil
             }
             guard let icon = row["card_icon_name"] as? String else {
-                print("   ⚠️ missing 'card_icon_name'"); return nil
+                print("missing 'card_icon_name'"); return nil
             }
 
             let cardImageUrl = row["card_image_url"] as? String ?? ""
-            print("   ✅ CAT '\(title)' cardImageUrl='\(cardImageUrl)'")
+            print("CAT '\(title)' cardImageUrl='\(cardImageUrl)'")
 
             return MindEaseCategory(
                 id:                  id,
@@ -74,10 +74,10 @@ final class MindEaseBackendService {
                 cardIconName:        icon
             )
         }
-        print("🔵 [MindEase] Parsed \(categories.count) categories")
+        print("[MindEase] Parsed \(categories.count) categories")
 
         // ── STEP 2: Raw fetch — contents ────────────────────
-        print("🔵 [MindEase] Fetching mindease_contents...")
+        print("[MindEase] Fetching mindease_contents...")
         let contentResponse = try await db
             .from("mindease_contents")
             .select()
@@ -86,41 +86,41 @@ final class MindEaseBackendService {
             .execute()
 
         let contentRawString = String(data: contentResponse.data, encoding: .utf8) ?? "nil"
-        print("🔵 [MindEase] contents raw JSON:\n\(contentRawString)")
+        print("[MindEase] contents raw JSON:\n\(contentRawString)")
 
         guard let contentRows = try JSONSerialization.jsonObject(with: contentResponse.data) as? [[String: Any]] else {
-            print("❌ [MindEase] contents: could not cast JSON to [[String:Any]]")
+            print("[MindEase] contents: could not cast JSON to [[String:Any]]")
             return (categories, [])
         }
-        print("🔵 [MindEase] contents row count: \(contentRows.count)")
+        print("[MindEase] contents row count: \(contentRows.count)")
 
         let contents: [MindEaseCategoryContent] = contentRows.compactMap { row in
             print("   CONTENT ROW keys: \(row.keys.sorted())")
 
             guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr) else {
-                print("   ⚠️ missing/invalid 'id'"); return nil
+                print("missing/invalid 'id'"); return nil
             }
             guard let catIdStr = row["category_id"] as? String, let catId = UUID(uuidString: catIdStr) else {
-                print("   ⚠️ missing/invalid 'category_id'"); return nil
+                print("missing/invalid 'category_id'"); return nil
             }
             guard let title = row["title"] as? String else {
-                print("   ⚠️ missing 'title'"); return nil
+                print("missing 'title'"); return nil
             }
             guard let mediaURL = row["media_url"] as? String else {
-                print("   ⚠️ missing 'media_url' in '\(title)'"); return nil
+                print("missing 'media_url' in '\(title)'"); return nil
             }
             guard let typeRaw = row["media_type"] as? String else {
-                print("   ⚠️ missing 'media_type' in '\(title)'"); return nil
+                print("missing 'media_type' in '\(title)'"); return nil
             }
             guard let mediaType = MediaType(rawValue: typeRaw) else {
-                print("   ⚠️ unknown media_type '\(typeRaw)' in '\(title)'"); return nil
+                print("unknown media_type '\(typeRaw)' in '\(title)'"); return nil
             }
 
             let thumbnailUrl = row["thumbnail_url"] as? String
-            print("   ✅ CONTENT '\(title)' mediaType=\(typeRaw) thumbnailUrl='\(thumbnailUrl ?? "nil")'")
+            print("CONTENT '\(title)' mediaType=\(typeRaw) thumbnailUrl='\(thumbnailUrl ?? "nil")'")
 
             if let t = thumbnailUrl, URL(string: t) == nil {
-                print("   ⚠️ thumbnail_url is NOT a valid URL: '\(t)'")
+                print("thumbnail_url is NOT a valid URL: '\(t)'")
             }
 
             return MindEaseCategoryContent(
@@ -136,7 +136,7 @@ final class MindEaseBackendService {
                 thumbnailUrl:    thumbnailUrl
             )
         }
-        print("✅ [MindEase] Parsed \(contents.count) contents")
+        print("[MindEase] Parsed \(contents.count) contents")
         return (categories, contents)
     }
 
@@ -173,7 +173,7 @@ final class MindEaseBackendService {
                 )
             }
         } catch {
-            print("❌ Fetch MindEase sessions error: \(error)")
+            print("Fetch MindEase sessions error: \(error)")
             return []
         }
     }
@@ -183,7 +183,7 @@ final class MindEaseBackendService {
     func saveSession(_ session: MindfulSession) async {
         // ── Guard: verify content exists in Supabase before writing the FK ──
         let contentIdStr = session.contentId.uuidString
-        print("🔵 [MindEase] saveSession — checking content_id exists: \(contentIdStr)")
+        print("[MindEase] saveSession — checking content_id exists: \(contentIdStr)")
         do {
             let check = try await db
                 .from("mindease_contents")
@@ -192,12 +192,12 @@ final class MindEaseBackendService {
                 .execute()
             let rows = (try? JSONSerialization.jsonObject(with: check.data) as? [[String: Any]]) ?? []
             guard !rows.isEmpty else {
-                print("❌ Save MindEase session aborted — content_id \(contentIdStr) not found in mindease_contents. "
+                print("Save MindEase session aborted — content_id \(contentIdStr) not found in mindease_contents. "
                     + "The session was recorded locally but cannot be persisted until the content is seeded in Supabase.")
                 return
             }
         } catch {
-            print("⚠️ [MindEase] content_id existence check failed (\(error)) — attempting save anyway")
+            print("[MindEase] content_id existence check failed (\(error)) — attempting save anyway")
         }
 
         do {
@@ -211,9 +211,9 @@ final class MindEaseBackendService {
                 "end_time":            .string(isoFull.string(from: session.endTime))
             ]
             try await db.from("mindful_sessions").upsert(data).execute()
-            print("✅ MindEase session saved: \(session.id)")
+            print("MindEase session saved: \(session.id)")
         } catch {
-            print("❌ Save MindEase session error: \(error)")
+            print("Save MindEase session error: \(error)")
         }
     }
 
@@ -234,7 +234,7 @@ final class MindEaseBackendService {
             ]
             try await db.from("todays_plans").upsert(data).execute()
         } catch {
-            print("❌ Save MindEase plan error: \(error)")
+            print("Save MindEase plan error: \(error)")
         }
     }
 }

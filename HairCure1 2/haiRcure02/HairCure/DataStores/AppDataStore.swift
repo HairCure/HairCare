@@ -576,7 +576,7 @@ class AppDataStore {
             assessment: assessment
         )
         
-        print("✅ AI result applied: \(result)")
+        print("AI result applied: \(result)")
     }
     
     
@@ -594,7 +594,7 @@ class AppDataStore {
             self.scanReports = (reports + localOnly)
                 .sorted { $0.createdAt > $1.createdAt }
         }
-        print("✅ Loaded \(reports.count) scan reports from backend")
+        print("Loaded \(reports.count) scan reports from backend")
     }
 
     /// Fetches the current user's scalp scans from Supabase and merges them
@@ -608,7 +608,7 @@ class AppDataStore {
             let localOnly = self.scalpScans.filter { !remoteIds.contains($0.id) }
             self.scalpScans = scans + localOnly
         }
-        print("✅ Loaded \(scans.count) scalp scans from backend")
+        print("Loaded \(scans.count) scalp scans from backend")
     }
 
     /// Restores the user's physical profile (height, weight, DOB), nutrition profile
@@ -663,7 +663,7 @@ class AppDataStore {
                 mindEaseStore.addAll(userId: userId, userPlans: self.userPlans)
             }
         }
-        print("✅ User data restored from backend")
+        print("User data restored from backend")
     }
 
     

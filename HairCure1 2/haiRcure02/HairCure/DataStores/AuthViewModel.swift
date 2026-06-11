@@ -1,11 +1,3 @@
-//
-//  AuthViewModel.swift
-//  haiRcure02
-//
-//  Created by Chetan Kandpal on 23/04/26.
-//
-
-
 import Foundation
 import Observation
 import Supabase

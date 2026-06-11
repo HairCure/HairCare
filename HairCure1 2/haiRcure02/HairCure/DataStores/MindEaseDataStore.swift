@@ -56,7 +56,7 @@ final class MindEaseDataStore {
                 }
             }
         } catch {
-            print("❌ MindEase backend load failed: \(error)")
+            print("MindEase backend load failed: \(error)")
             await MainActor.run {
                 isLoadingContent = false
                 loadError        = "Could not load content. Please check your connection and try again."

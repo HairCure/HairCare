@@ -57,7 +57,7 @@ class HealthKitManager {
     
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("❌ HealthKit not available on this device")
+            print("HealthKit not available on this device")
             return
         }
 
@@ -67,7 +67,7 @@ class HealthKitManager {
         do {
             try await store.requestAuthorization(toShare: writeTypes, read: readTypes)
             isAuthorized = true
-            print("✅ HealthKit authorization requested")
+            print("HealthKit authorization requested")
 
             // Fetch data immediately
             await fetchAll()
@@ -77,7 +77,7 @@ class HealthKitManager {
             startObservingSleep()
             enableBackgroundDelivery()
         } catch {
-            print("❌ HealthKit authorization error: \(error)")
+            print("HealthKit authorization error: \(error)")
         }
     }
 
@@ -120,7 +120,7 @@ class HealthKitManager {
 
         let totalML = await fetchCumulativeSum(type: waterType, predicate: predicate, unit: .literUnit(with: .milli))
         self.todaysWaterML = totalML
-        print("💧 Today's water: \(Int(totalML)) ml")
+        print("Today's water: \(Int(totalML)) ml")
     }
 
     // MARK: - Fetch Weekly Water
@@ -165,7 +165,7 @@ class HealthKitManager {
             return WaterEntry(id: qty.uuid, amountML: ml, loggedAt: qty.startDate, hkSample: qty)
         }
         self.todaysWaterSamples = entries.sorted { $0.loggedAt > $1.loggedAt }
-        print("💧 Fetched \(entries.count) water entries for today")
+        print("Fetched \(entries.count) water entries for today")
     }
 
     // MARK: - Log Water to HealthKit
@@ -190,11 +190,11 @@ class HealthKitManager {
 
         do {
             try await store.save(sample)
-            print("💧 Logged \(Int(amountML)) ml to HealthKit")
+            print("Logged \(Int(amountML)) ml to HealthKit")
             // Refresh immediately so UI reflects the save before the observer fires
             await fetchWaterData()
         } catch {
-            print("❌ Water log error: \(error)")
+            print("Water log error: \(error)")
             throw HydrationError.saveFailed(error)
         }
     }
@@ -222,10 +222,10 @@ class HealthKitManager {
 
         do {
             try await store.delete(sample)
-            print("🗑️ Water entry deleted")
+            print("Water entry deleted")
             await fetchWaterData()
         } catch {
-            print("❌ Delete error: \(error)")
+            print("Delete error: \(error)")
         }
     }
 
@@ -262,7 +262,7 @@ class HealthKitManager {
         self.lastNightSleepHours = totalHours
         self.lastSleepStart = earliestStart
         self.lastSleepEnd = latestEnd
-        print("😴 Last night sleep: \(String(format: "%.1f", totalHours)) hours")
+        print("Last night sleep: \(String(format: "%.1f", totalHours)) hours")
     }
 
     // MARK: - Fetch Weekly Sleep
@@ -316,7 +316,7 @@ class HealthKitManager {
                 options: .cumulativeSum
             ) { _, statistics, error in
                 if let error = error {
-                    print("❌ Stats query error: \(error.localizedDescription)")
+                    print("Stats query error: \(error.localizedDescription)")
                     continuation.resume(returning: 0)
                     return
                 }
@@ -343,7 +343,7 @@ class HealthKitManager {
                 )]
             ) { _, samples, error in
                 if let error = error {
-                    print("❌ Sample query error: \(error.localizedDescription)")
+                    print("Sample query error: \(error.localizedDescription)")
                     continuation.resume(returning: [])
                     return
                 }
@@ -363,7 +363,7 @@ class HealthKitManager {
             defer { completionHandler() }
 
             guard let self = self, error == nil else {
-                if let error = error { print("❌ Water observer error: \(error)") }
+                if let error = error { print("Water observer error: \(error)") }
                 return
             }
 
@@ -373,12 +373,12 @@ class HealthKitManager {
                 // gives HealthKit time to commit the write before we query.
                 try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 s
                 await self?.fetchWaterData()
-                print("🔄 Water data refreshed via observer (first pass)")
+                print("Water data refreshed via observer (first pass)")
 
                 // Second fetch 3 s later as a safety net for slow commits
                 try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 s
                 await self?.fetchWaterData()
-                print("🔄 Water data refreshed via observer (safety pass)")
+                print("Water data refreshed via observer (safety pass)")
             }
         }
 
@@ -404,7 +404,7 @@ class HealthKitManager {
             Task { @MainActor [weak self] in
                 await self?.fetchLastNightSleep()
                 await self?.fetchWeeklySleep()
-                print("🔄 Sleep data refreshed via observer")
+                print("Sleep data refreshed via observer")
             }
         }
 
@@ -419,16 +419,16 @@ class HealthKitManager {
     private nonisolated func enableBackgroundDelivery() {
         store.enableBackgroundDelivery(for: waterType, frequency: .immediate) { success, error in
             if success {
-                print("✅ Background delivery enabled for water")
+                print("Background delivery enabled for water")
             } else {
-                print("❌ Background delivery error (water): \(error?.localizedDescription ?? "unknown")")
+                print("Background delivery error (water): \(error?.localizedDescription ?? "unknown")")
             }
         }
         store.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { success, error in
             if success {
-                print("✅ Background delivery enabled for sleep")
+                print("Background delivery enabled for sleep")
             } else {
-                print("❌ Background delivery error (sleep): \(error?.localizedDescription ?? "unknown")")
+                print("Background delivery error (sleep): \(error?.localizedDescription ?? "unknown")")
             }
         }
     }

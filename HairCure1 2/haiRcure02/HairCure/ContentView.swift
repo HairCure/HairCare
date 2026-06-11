@@ -1,71 +1,4 @@
-//
-//import SwiftUI
-//
-//// MARK: - Navigation Routes
-//enum AppRoute: Hashable {
-//    case auth
-//    case assessment
-//    case hairAnalysis
-//    case planResults
-//    case mainApp
-//}
-//// MARK: - Main Content Container
-//struct ContentView: View {
-//    @State private var route: AppRoute = .auth
-//    @State private var selectedTab = 0
-//
-//    var body: some View {
-//        Group {
-//            switch route {
-//            case .auth:
-//                AuthLandingView {
-//                    withAnimation(.easeInOut(duration: 0.3)) { route = .assessment }
-//                }
-//            case .assessment:
-//                AssessmentView {
-//                    withAnimation(.easeInOut(duration: 0.3)) { route = .hairAnalysis }
-//                }
-//                .transition(.opacity)
-//            case .hairAnalysis:
-//                HairAnalysisView {
-//                    withAnimation(.easeInOut(duration: 0.3)) { route = .planResults }
-//                }
-//                .transition(.opacity)
-//            case .planResults:
-//                PlanResultsView {
-//                    withAnimation(.easeInOut(duration: 0.3)) { route = .mainApp }
-//                }
-//                .transition(.opacity)
-//            case .mainApp:
-//                
-//                TabView(selection: $selectedTab) {
-//                    HomeView(selectedTab: $selectedTab)
-//                        .tabItem { Label("Home", systemImage: "house.fill") }
-//                        .tag(0)
-//
-//                    WellnessView()
-//                        .tabItem { Label("Wellness", systemImage: "heart.fill") }
-//                        .tag(1)
-//
-//                    HairInsightsView()
-//                        .tabItem { Label("Hair Insights", systemImage: "lightbulb.fill") }
-//                        .tag(2)
-//
-//                    ProfileView()
-//                        .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
-//                        .tag(3)
-//                }
-//                .accentColor(Color.hcBrown)
-//                .transition(.opacity)
-//            }
-//        }
-//    }
-//}
-//
-//
-//#Preview {
-//    ContentView()
-//}
+
 import SwiftUI
 
 enum AppRoute: Hashable {
@@ -175,68 +108,20 @@ struct ContentView: View {
                 }
             }
         }
-//        .onAppear {
-//            // If already logged in resume from main app
-//            if authVM.isLoggedIn {
-//                route = .mainApp
-//            }
-//        }
-//        .onAppear {
-//            if authVM.isLoggedIn {
-//                Task {
-//                    let hasAssessment = await BackendService.shared.fetchAssessment(
-//                        userId: store.currentUserId
-//                    )
-//                    await MainActor.run {
-//                        route = hasAssessment ? .mainApp : .assessment
-//                    }
-//                }
-//            }
-//        }
         .onAppear {
             if authVM.isLoggedIn {
                 Task {
-                    print("🔍 Checking assessment for userId: \(store.currentUserId)")
+                    print("Checking assessment for userId: \(store.currentUserId)")
                     let hasAssessment = await BackendService.shared.fetchAssessment(
                         userId: store.currentUserId
                     )
-                    print("✅ Has assessment: \(hasAssessment)")
+                    print("Has assessment: \(hasAssessment)")
                     await MainActor.run {
                         route = hasAssessment ? .mainApp : .assessment
                     }
                 }
             }
         }
-       
-//        .onChange(of: authVM.isLoading) { _, isLoading in
-//            guard !isLoading else { return }
-//            if authVM.isLoggedIn {
-//                // Restore user into store from saved session
-//                store.createUser(
-//                    name: authVM.userName ?? "User",
-//                    email: authVM.userEmail ?? "",
-//                    authProvider: .google,
-//                    supabaseId: authVM.currentUserId
-//                )
-//                Task {
-//                    // Use authVM UUID directly — not store.currentUserId
-//                    guard let userIdString = authVM.currentUserId,
-//                          let userId = UUID(uuidString: userIdString) else { return }
-//                    
-//                    print("🔍 store.currentUserId: \(store.currentUserId)")
-//                    print("🔍 authVM.currentUserId: \(userIdString)")
-//                    
-//                    let hasAssessment = await BackendService.shared.fetchAssessment(
-//                        userId: userId
-//                    )
-//                    print("✅ Has assessment: \(hasAssessment)")
-//                    await MainActor.run {
-//                        route = hasAssessment ? .mainApp : .assessment
-//                    }
-//                }
-//            }
-//        
-//        }
         .onChange(of: authVM.isLoading) { _, isLoading in
             guard !isLoading else { return }
             if authVM.isLoggedIn {
@@ -262,8 +147,8 @@ struct ContentView: View {
                         return
                     }
 
-                    print("🔍 store.currentUserId: \(store.currentUserId)")
-                    print("🔍 authVM.currentUserId: \(userIdString)")
+                    print("store.currentUserId: \(store.currentUserId)")
+                    print("authVM.currentUserId: \(userIdString)")
 
                     // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
                     await store.loadScanReports()
@@ -276,7 +161,7 @@ struct ContentView: View {
                     async let favTask: () = store.hairInsightsStore.loadFavourites(userId: userId)
                     async let assessmentTask = BackendService.shared.fetchAssessment(userId: userId)
                     let (_, hasAssessment) = await (favTask, assessmentTask)
-                    print("✅ Has assessment: \(hasAssessment)")
+                    print("Has assessment: \(hasAssessment)")
 
                     let hairType = store.latestScanReport?.hairType
                     await store.hairInsightsStore.loadContent(hairType: hairType)

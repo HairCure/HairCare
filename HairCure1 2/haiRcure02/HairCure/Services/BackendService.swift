@@ -17,9 +17,9 @@ class BackendService {
                 "display_name": AnyJSON.string(name),
                 "joined_at": AnyJSON.string(ISO8601DateFormatter().string(from: Date()))
             ]).execute()
-            print("✅ Profile saved")
+            print("Profile saved")
         } catch {
-            print("❌ Profile save error: \(error)")
+            print("Profile save error: \(error)")
         }
     }
     
@@ -42,9 +42,9 @@ class BackendService {
             ])
             .eq("id", value: userId.uuidString)
             .execute()
-            print("✅ Physical profile updated")
+            print("Physical profile updated")
         } catch {
-            print("❌ Physical profile update error: \(error)")
+            print("Physical profile update error: \(error)")
         }
     }
     
@@ -65,9 +65,9 @@ class BackendService {
                 data["completed_at"] = .string(ISO8601DateFormatter().string(from: date))
             }
             try await db.from("assessments").upsert(data).execute()
-            print("✅ Assessment saved")
+            print("Assessment saved")
         } catch {
-            print("❌ Assessment save error: \(error)")
+            print("Assessment save error: \(error)")
         }
     }
     
@@ -97,9 +97,9 @@ class BackendService {
                 return row
             }
             try await db.from("user_answers").upsert(rows).execute()
-            print("✅ \(answers.count) answers saved")
+            print("\(answers.count) answers saved")
         } catch {
-            print("❌ Answers save error: \(error)")
+            print("Answers save error: \(error)")
         }
     }
     
@@ -122,9 +122,9 @@ class BackendService {
                 "expires_at": .string(ISO8601DateFormatter().string(from: plan.expiresAt))
             ]
             try await db.from("user_plans").upsert(data).execute()
-            print("✅ User plan saved: \(plan.planId)")
+            print("User plan saved: \(plan.planId)")
         } catch {
-            print("❌ Plan save error: \(error)")
+            print("Plan save error: \(error)")
         }
     }
     
@@ -147,9 +147,9 @@ class BackendService {
                 "water_target_ml": .double(Double(profile.waterTargetML))
             ]
             try await db.from("nutrition_profiles").upsert(data).execute()
-            print("✅ Nutrition profile saved")
+            print("Nutrition profile saved")
         } catch {
-            print("❌ Nutrition save error: \(error)")
+            print("Nutrition save error: \(error)")
         }
     }
     
@@ -176,9 +176,9 @@ class BackendService {
                 "scan_type": .string(scanTypeValue)
             ]
             try await db.from("scalp_scans").upsert(data).execute()
-            print("✅ Scalp scan saved")
+            print("Scalp scan saved")
         } catch {
-            print("❌ Scalp scan save error: \(error)")
+            print("Scalp scan save error: \(error)")
         }
     }
 
@@ -225,7 +225,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch scalp scans error: \(error)")
+            print("Fetch scalp scans error: \(error)")
             return []
         }
     }
@@ -255,13 +255,13 @@ class BackendService {
                 data["hair_type"] = .string(hairType)
             }
             try await db.from("scan_reports").upsert(data).execute()
-            print("✅ Scan report saved")
+            print("Scan report saved")
         } catch {
-            print("❌ Scan report save error: \(error)")
+            print("Scan report save error: \(error)")
         }
     }
     func fetchAssessment(userId: UUID) async -> Bool {
-        print("🔍 Fetching assessment for UUID: \(userId.uuidString)")
+        print("Fetching assessment for UUID: \(userId.uuidString)")
         do {
             let response = try await db
                 .from("assessments")
@@ -270,11 +270,11 @@ class BackendService {
                 .not("completed_at", operator: .is, value: AnyJSON.null)
                 .execute()
             let decoded = try JSONSerialization.jsonObject(with: response.data) as? [[String: Any]]
-            print("📦 Assessment rows found: \(decoded?.count ?? 0)")
-            print("📦 Raw response: \(String(data: response.data, encoding: .utf8) ?? "nil")")
+            print("Assessment rows found: \(decoded?.count ?? 0)")
+            print("Raw response: \(String(data: response.data, encoding: .utf8) ?? "nil")")
             return !(decoded?.isEmpty ?? true)
         } catch {
-            print("❌ Fetch assessment error: \(error)")
+            print("Fetch assessment error: \(error)")
             return false
         }
     }
@@ -301,10 +301,10 @@ class BackendService {
             let dob: Date? = (row["date_of_birth"] as? String).flatMap {
                 isoFull.date(from: $0) ?? isoBasic.date(from: $0)
             }
-            print("✅ Profile fetched — height: \(height) weight: \(weight)")
+            print("Profile fetched — height: \(height) weight: \(weight)")
             return (heightCm: height, weightKg: weight, dob: dob)
         } catch {
-            print("❌ Fetch profile error: \(error)")
+            print("Fetch profile error: \(error)")
             return nil
         }
     }
@@ -334,7 +334,7 @@ class BackendService {
             }
             func f(_ key: String) -> Float { Float(row[key] as? Double ?? 0) }
 
-            print("✅ Nutrition profile fetched — tdee: \(f("tdee")) water: \(f("water_target_ml"))")
+            print("Nutrition profile fetched — tdee: \(f("tdee")) water: \(f("water_target_ml"))")
             return UserNutritionProfile(
                 id:                 id,
                 userId:             userId,
@@ -353,7 +353,7 @@ class BackendService {
                 updatedAt:          date("updated_at")
             )
         } catch {
-            print("❌ Fetch nutrition profile error: \(error)")
+            print("Fetch nutrition profile error: \(error)")
             return nil
         }
     }
@@ -390,7 +390,7 @@ class BackendService {
             }
             func i(_ key: String) -> Int { Int(row[key] as? Double ?? 0) }
 
-            print("✅ User plan fetched: \(planId)")
+            print("User plan fetched: \(planId)")
             return UserPlan(
                 id:                      id,
                 userId:                  userId,
@@ -408,7 +408,7 @@ class BackendService {
                 expiresAt:               date("expires_at")
             )
         } catch {
-            print("❌ Fetch plan error: \(error)")
+            print("Fetch plan error: \(error)")
             return nil
         }
     }
@@ -428,9 +428,9 @@ class BackendService {
                 "saved_at": .string(ISO8601DateFormatter().string(from: Date()))
             ]
             try await db.from("user_favourites").upsert(data).execute()
-            print("✅ Favourite saved: \(contentType)")
+            print("Favourite saved: \(contentType)")
         } catch {
-            print("❌ Favourite save error: \(error)")
+            print("Favourite save error: \(error)")
         }
     }
     
@@ -442,9 +442,9 @@ class BackendService {
                 .eq("user_id", value: userId.uuidString)
                 .eq("content_id", value: contentId.uuidString)
                 .execute()
-            print("✅ Favourite removed")
+            print("Favourite removed")
         } catch {
-            print("❌ Favourite delete error: \(error)")
+            print("Favourite delete error: \(error)")
         }
     }
     
@@ -472,7 +472,7 @@ class BackendService {
                 return (contentId: contentId, contentType: contentType, savedAt: savedAt)
             }
         } catch {
-            print("❌ Fetch favourites error: \(error)")
+            print("Fetch favourites error: \(error)")
             return []
         }
     }
@@ -511,7 +511,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch care tips error: \(error)")
+            print("Fetch care tips error: \(error)")
             return []
         }
     }
@@ -555,7 +555,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch home remedies error: \(error)")
+            print("Fetch home remedies error: \(error)")
             return []
         }
     }
@@ -595,7 +595,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch hair care routines error: \(error)")
+            print("Fetch hair care routines error: \(error)")
             return []
         }
     }
@@ -664,7 +664,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch scan reports error: \(error)")
+            print("Fetch scan reports error: \(error)")
             return []
         }
     }
@@ -738,7 +738,7 @@ class BackendService {
                 )
             }
         } catch {
-            print("❌ Fetch meals error: \(error)")
+            print("Fetch meals error: \(error)")
             return []
         }
     }

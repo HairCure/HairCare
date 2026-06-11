@@ -521,13 +521,13 @@ struct RecommendationEngine {
         case .good:     significantImprovementThreshold = 9.0   // good → exceptional
         }
         if newScores.composite > significantImprovementThreshold {
-            highlights.append("Lifestyle score improved significantly 📈")
+            highlights.append("Lifestyle score improved significantly")
         }
         
         // Stage changes
         let oldStage = currentPlan.stage
         if newStage.intValue < oldStage {
-            highlights.append("Hair density scan shows recovery progress 🌱")
+            highlights.append("Hair density scan shows recovery progress ")
         } else if newStage.intValue > oldStage {
             highlights.append("Hair loss stage progressed — plan intensity increased.")
         }
