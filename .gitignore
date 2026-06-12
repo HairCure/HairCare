@@ -7,4 +7,5 @@ DerivedData/
 
 # Ignore your API keys / Secret files
 Secrets.plist
-HairCure1 2/Secrets.plist
+HairCure1 2/Secrets.plist.DS_Store
+**/.DS_Store
