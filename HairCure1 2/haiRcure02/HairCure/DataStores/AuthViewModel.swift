@@ -113,6 +113,33 @@ class AuthViewModel {
         }
     }
     
+    // MARK: - Delete Account
+    func deleteAccount() async {
+        guard let userIdStr = currentUserId, let userId = UUID(uuidString: userIdStr) else { return }
+        isLoading = true
+        errorMessage = nil
+        do {
+            // Delete user data from database
+            await BackendService.shared.deleteUserData(userId: userId)
+            
+            // Sign out from Auth
+            try await auth.signOut()
+            
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.currentUserId = nil
+                self.userEmail = nil
+                self.userName = nil
+                self.isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
+            }
+        }
+    }
+    
     // MARK: - Guest Mode
     @MainActor
     func continueAsGuest() {

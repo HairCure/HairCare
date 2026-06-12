@@ -120,27 +120,25 @@ struct HairInsightsView: View {
     
     // MARK: - Favourites Section
     
+    @ViewBuilder
     private var favouritesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            
-            NavigationLink {
-                FavouritesListView(insightStore: insightStore, userPlan: userPlan, userId: store.currentUserId)
-            } label: {
-                HStack {
-                    Text("Your Favourites")
-                        .font(.title3.bold())
-                        .foregroundStyle(.black)
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.black.opacity(0.5))
-                }
-                .padding(.horizontal, 20)
-            }
-            
-            if allFavourites.isEmpty {
-                EmptyFavouritesView()
+        if !allFavourites.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                
+                NavigationLink {
+                    FavouritesListView(insightStore: insightStore, userPlan: userPlan, userId: store.currentUserId)
+                } label: {
+                    HStack {
+                        Text("Your Favourites")
+                            .font(.title3.bold())
+                            .foregroundStyle(.black)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.black.opacity(0.5))
+                    }
                     .padding(.horizontal, 20)
-            } else {
+                }
+                
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(allFavourites) { item in
@@ -154,8 +152,8 @@ struct HairInsightsView: View {
                     .padding(.horizontal, 20)
                 }
             }
+            .padding(.bottom, 24)
         }
-        .padding(.bottom, 24)
     }
     
     // MARK: - Care Tips Section
@@ -171,14 +169,10 @@ struct HairInsightsView: View {
                 )
             } label: {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Care Tips")
-                            .font(.title3.bold())
-                            .foregroundStyle(.black)
-                        Text("Curated for your hair type")
-                            .font(.caption)
-                            .foregroundStyle(Color.hcBrown.opacity(0.8))
-                    }
+                    Text("Care Tips")
+                        .font(.title3.bold())
+                        .foregroundStyle(.black)
+                    Spacer()
                     Image(systemName: "chevron.right")
                         .font(.subheadline.bold())
                         .foregroundStyle(.black.opacity(0.5))
@@ -227,14 +221,10 @@ struct HairInsightsView: View {
                 )
             } label: {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Home Remedies")
-                            .font(.title3.bold())
-                            .foregroundStyle(.black)
-                        Text("Curated for your hair type")
-                            .font(.caption)
-                            .foregroundStyle(Color.hcBrown.opacity(0.8))
-                    }
+                    Text("Home Remedies")
+                        .font(.title3.bold())
+                        .foregroundStyle(.black)
+                    Spacer()
                     Image(systemName: "chevron.right")
                         .font(.subheadline.bold())
                         .foregroundStyle(.black.opacity(0.5))
@@ -302,20 +292,11 @@ struct RoutineCardView: View {
                         .foregroundStyle(Color.hcBrown)
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(routine.cardHeading)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.black)
-                    Text(routine.applyingFrequency)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.hcBrown.opacity(0.8))
-                }
+                Text(routine.cardHeading)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.black)
 
                 Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.hcBrown.opacity(0.45))
             }
 
             Text(routine.summary)
@@ -324,14 +305,22 @@ struct RoutineCardView: View {
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Frequency pill
-            Label(routine.applyingFrequency, systemImage: "calendar")
-                .font(.caption.bold())
-                .foregroundStyle(Color.hcBrown)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.hcBrown.opacity(0.1))
-                .clipShape(Capsule())
+            HStack {
+                // Frequency pill
+                Label(routine.applyingFrequency, systemImage: "calendar")
+                    .font(.caption.bold())
+                    .foregroundStyle(Color.hcBrown)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.hcBrown.opacity(0.1))
+                    .clipShape(Capsule())
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.hcBrown.opacity(0.45))
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

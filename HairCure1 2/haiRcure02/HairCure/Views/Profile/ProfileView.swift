@@ -143,6 +143,8 @@ private struct ProfileRow<Destination: View>: View {
 
 struct DeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppDataStore.self) private var store
+    @Environment(AuthViewModel.self) private var authVM
     @State private var showConfirmation = false
     
     var body: some View {
@@ -187,8 +189,11 @@ struct DeleteAccountView: View {
         .alert("Delete Account?", isPresented: $showConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete Forever", role: .destructive) {
-                // TODO: Implement actual account deletion
-                dismiss()
+                Task {
+                    store.resetForLogout()
+                    await authVM.deleteAccount()
+                    dismiss()
+                }
             }
         } message: {
             Text("All your data will be permanently deleted. This action cannot be undone.")
