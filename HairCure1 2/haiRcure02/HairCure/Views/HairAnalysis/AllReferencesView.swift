@@ -56,24 +56,30 @@ struct AllReferencesView: View {
                                         
                                         if let url = URL(string: ref.urlString) {
                                             Link(destination: url) {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "link")
-                                                        .font(.system(size: 11))
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "doc.text.fill")
+                                                        .font(.system(size: 12))
                                                     Text("View Paper")
-                                                        .font(.system(size: 13, weight: .medium))
+                                                        .font(.system(size: 13, weight: .semibold))
                                                 }
-                                                .foregroundStyle(Color.hcBrown)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 8)
+                                                .foregroundStyle(.white)
+                                                .background(Color.hcBrown)
+                                                .cornerRadius(8)
                                             }
                                         }
                                     }
                                     
                                     if ref.id != group.references.last?.id {
                                         Divider()
+                                            .padding(.vertical, 8)
                                     }
                                 }
                             }
                         }
                         .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
@@ -84,7 +90,7 @@ struct AllReferencesView: View {
             }
             .background(Color.hcCream.ignoresSafeArea())
             .navigationTitle("Research Basis")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -93,12 +99,13 @@ struct AllReferencesView: View {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 22))
                             .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.hcBrown)
                     }
                 }
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
     
     // MARK: - All Reference Groups
