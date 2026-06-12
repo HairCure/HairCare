@@ -743,6 +743,39 @@ class BackendService {
         }
     }
     
+    // MARK: - Delete User Data
+    func deleteUserData(userId: UUID) async {
+        let idString = userId.uuidString
+        let tables = [
+            "user_answers",
+            "assessments",
+            "user_plans",
+            "nutrition_profiles",
+            "scan_reports",
+            "scalp_scans",
+            "user_favourites",
+            "profiles"
+        ]
+        
+        for table in tables {
+            do {
+                let column = (table == "profiles") ? "id" : "user_id"
+                try await db.from(table).delete().eq(column, value: idString).execute()
+                print("Deleted data from \(table)")
+            } catch {
+                print("Error deleting from \(table): \(error)")
+            }
+        }
+        
+        // Also call the RPC to delete the user from auth.users
+        do {
+            try await db.rpc("delete_user").execute()
+            print("Deleted user from auth.users")
+        } catch {
+            print("Error deleting from auth.users: \(error)")
+        }
+    }
+    
     private func mealTypeFrom(_ raw: String) -> MealType? {
         switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "breakfast": return .breakfast

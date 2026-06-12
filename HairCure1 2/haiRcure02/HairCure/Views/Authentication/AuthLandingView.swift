@@ -211,9 +211,11 @@ struct LoginView: View {
                         Text("Don't have an account?")
                             .font(.system(size: 14))
                             .foregroundStyle(.secondary)
-                        Button("Register") { dismiss() }
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.hcWarmBrown)
+                        NavigationLink(destination: RegisterView(onProceed: onProceed)) {
+                            Text("Register")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.hcWarmBrown)
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -347,9 +349,11 @@ struct RegisterView: View {
                         Text("Already have an account?")
                             .font(.system(size: 14))
                             .foregroundStyle(.secondary)
-                        Button("Log In") { dismiss() }
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.hcWarmBrown)
+                        NavigationLink(destination: LoginView(onProceed: onProceed)) {
+                            Text("Log In")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.hcWarmBrown)
+                        }
                     }
                     .padding(.top, 4)
                 }

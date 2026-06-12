@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 enum AppRoute: Hashable {
@@ -177,9 +176,8 @@ struct ContentView: View {
                 isRouteResolved = true
             }
         }
-            }
     }
-
+}
 
 #Preview {
     ContentView()
