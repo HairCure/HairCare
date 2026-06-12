@@ -11,10 +11,12 @@
 		0248CBA22F9A0A5C002281FF /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 0248CBA12F9A0A5C002281FF /* Functions */; };
 		0248CBA42F9A0A5C002281FF /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 0248CBA32F9A0A5C002281FF /* Storage */; };
 		0248CBA62F9A0A5C002281FF /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 0248CBA52F9A0A5C002281FF /* Supabase */; };
+		A82E7F672FDBD39C001B47A2 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = A82E7F662FDBD39C001B47A2 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		026D77732F7E4E590097864C /* HairCure.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HairCure.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A82E7F662FDBD39C001B47A2 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -63,6 +65,7 @@
 		026D776A2F7E4E590097864C = {
 			isa = PBXGroup;
 			children = (
+				A82E7F662FDBD39C001B47A2 /* .gitignore */,
 				026D77752F7E4E590097864C /* haiRcure02 */,
 				0248CB9D2F9A0A10002281FF /* Frameworks */,
 				026D77742F7E4E590097864C /* Products */,
@@ -148,6 +151,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A82E7F672FDBD39C001B47A2 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
