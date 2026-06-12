@@ -4,7 +4,7 @@ class HairAnalysisService {
     
     // OpenRouter API key
     private let apiKey = ""
-    private let apiURL = "https://openrouter.ai/api/v1/chat/completions"
+    private let apiURL = ""
     
     private let systemPrompt = """
     You are receiving 4 images of the same person's hair from different angles:
