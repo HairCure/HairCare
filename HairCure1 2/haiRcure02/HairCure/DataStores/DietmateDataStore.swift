@@ -101,7 +101,7 @@ class DietmateDataStore {
             }
             isLoadingFoods = false
         }
-        print("✅ Loaded \(fetched.count) meals from backend")
+        print("Loaded \(fetched.count) meals from backend")
     }
 
     // MARK: - Meal Entry seeding

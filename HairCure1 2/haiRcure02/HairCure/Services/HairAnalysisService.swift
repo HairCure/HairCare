@@ -125,7 +125,7 @@ class HairAnalysisService {
         
         // DEBUG
         let rawString = String(data: data, encoding: .utf8) ?? "nil"
-        print("🔍 RAW RESPONSE: \(rawString)")
+        print("RAW RESPONSE: \(rawString)")
         
         // Parse OpenAI-compatible response
         guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],

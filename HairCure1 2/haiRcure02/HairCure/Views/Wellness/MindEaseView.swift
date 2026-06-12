@@ -1,6 +1,6 @@
 import SwiftUI
 import AVKit
-import AVFoundation   // ← required for AVAudioSession
+import AVFoundation   // required for AVAudioSession
 
 // MARK: - Theme
 
@@ -973,6 +973,3 @@ struct MindEaseThumbnail: View {
         .environment(MindEaseDataStore(currentUserId: UUID()))
 }
 
-// Note: The Category List preview is intentionally omitted here because
-// MindEaseDataStore no longer has a local fallback — all data loads from
-// Supabase. Run the app on a simulator/device to preview this screen.

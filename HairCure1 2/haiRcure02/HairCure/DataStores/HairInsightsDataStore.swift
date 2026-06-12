@@ -35,7 +35,7 @@ class HairInsightsDataStore {
             // hairCareRoutines intentionally uses seed data — the DB may have
             // stale rows. Seed contains all 7 routines with correct hair_types.
         }
-        print("✅ Loaded \(tips.count) tips, \(remedies.count) remedies from backend | routines from seed (\(self.hairCareRoutines.count))")
+        print("Loaded \(tips.count) tips, \(remedies.count) remedies from backend | routines from seed (\(self.hairCareRoutines.count))")
     }
     
     // MARK: - Personalised Content Filters
@@ -127,7 +127,7 @@ class HairInsightsDataStore {
                 )
             }
         }
-        print("✅ Loaded \(rows.count) favourites")
+        print("Loaded \(rows.count) favourites")
     }
     
     // Deprecated stub kept for binary compatibility — use filteredCareTips(for:) instead

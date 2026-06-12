@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 enum AppRoute: Hashable {
@@ -108,40 +107,20 @@ struct ContentView: View {
                 }
             }
         }
-//        .onAppear {
-//            // If already logged in resume from main app
-//            if authVM.isLoggedIn {
-//                route = .mainApp
-//            }
-//        }
-//        .onAppear {
-//            if authVM.isLoggedIn {
-//                Task {
-//                    let hasAssessment = await BackendService.shared.fetchAssessment(
-//                        userId: store.currentUserId
-//                    )
-//                    await MainActor.run {
-//                        route = hasAssessment ? .mainApp : .assessment
-//                    }
-//                }
-//            }
-//        }
         .onAppear {
             if authVM.isLoggedIn {
                 Task {
-                    print("🔍 Checking assessment for userId: \(store.currentUserId)")
+                    print("Checking assessment for userId: \(store.currentUserId)")
                     let hasAssessment = await BackendService.shared.fetchAssessment(
                         userId: store.currentUserId
                     )
-                    print("✅ Has assessment: \(hasAssessment)")
+                    print("Has assessment: \(hasAssessment)")
                     await MainActor.run {
                         route = hasAssessment ? .mainApp : .assessment
                     }
                 }
             }
         }
-       
-
         .onChange(of: authVM.isLoading) { _, isLoading in
             guard !isLoading else { return }
             if authVM.isLoggedIn {
@@ -167,8 +146,8 @@ struct ContentView: View {
                         return
                     }
 
-                    print("🔍 store.currentUserId: \(store.currentUserId)")
-                    print("🔍 authVM.currentUserId: \(userIdString)")
+                    print("store.currentUserId: \(store.currentUserId)")
+                    print("authVM.currentUserId: \(userIdString)")
 
                     // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
                     await store.loadScanReports()
@@ -197,9 +176,8 @@ struct ContentView: View {
                 isRouteResolved = true
             }
         }
-            }
     }
-
+}
 
 #Preview {
     ContentView()

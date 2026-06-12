@@ -1,0 +1,10 @@
+# Ignore Xcode user data and workspace states
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+DerivedData/
+.DS_Store
+
+# Ignore your API keys / Secret files
+Secrets.plist
+HairCure1 2/Secrets.plist

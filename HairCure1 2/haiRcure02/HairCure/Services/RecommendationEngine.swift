@@ -527,7 +527,7 @@ struct RecommendationEngine {
         // Stage changes
         let oldStage = currentPlan.stage
         if newStage.intValue < oldStage {
-            highlights.append("Hair density scan shows recovery progress")
+            highlights.append("Hair density scan shows recovery progress ")
         } else if newStage.intValue > oldStage {
             highlights.append("Hair loss stage progressed — plan intensity increased.")
         }

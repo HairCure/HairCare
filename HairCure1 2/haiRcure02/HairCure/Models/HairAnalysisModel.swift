@@ -1,11 +1,3 @@
-//
-//  AreaDetail.swift
-//  HairAnalysisDemo
-//
-//  Created by Chetan Kandpal on 21/04/26.
-//
-
-
 import Foundation
 
 // Area breakdown per angle

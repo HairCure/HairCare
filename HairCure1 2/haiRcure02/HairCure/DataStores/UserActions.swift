@@ -186,50 +186,6 @@ extension AppDataStore {
         assessments[idx].completionPercent = min(percent, 99)
     }
     
-    // ─────────────────────────────────────────────
-    // MARK: 2 — Hair Analysis & Engine Trigger
-    // ─────────────────────────────────────────────
-    
-    //    @discardableResult
-    //    func submitScanImages(
-    //        frontURL: String, leftURL: String,
-    //        rightURL: String, backURL: String, topURL: String,
-    //        scanType: ScanType = .initial
-    //    ) -> ActionResult {
-    //
-    //        guard let profile    = currentProfile,
-    //              let assessment = assessments.last(where: { $0.userId == currentUserId }),
-    //              assessment.completedAt != nil
-    //        else {
-    //            return .blocked(reason: "Please complete the assessment before scanning.")
-    //        }
-    //
-    //        let scanId = UUID()
-    //        let scan = ScalpScan(
-    //            id: scanId, userId: currentUserId, scanDate: Date(),
-    //            frontImageURL: frontURL, leftImageURL: leftURL,
-    //            rightImageURL: rightURL, backImageURL: backURL,
-    //            topImageURL: topURL, scanType: scanType
-    //        )
-    //        scalpScans.append(scan)
-    //
-    //        // Mock AI result — replace with real API call in production
-    //        let mockStage:   HairFallStage    = .stage2
-    //        let mockScalp:   ScalpCondition   = .dry
-    //        let mockDensity: HairDensityLevel = .low
-    //        let mockDensityPercent: Float     = 52.0
-    //
-    //        return runEngineAndApply(
-    //            scanId: scanId,
-    //            stage: mockStage, scalp: mockScalp,
-    //            density: mockDensity, densityPercent: mockDensityPercent,
-    //            source: .aiModel,
-    //            profile: profile, assessment: assessment
-    //        )
-    //        
-    //        
-    //    }
-    
     @discardableResult
     func submitScanImages(
         frontURL: String, leftURL: String,
@@ -311,9 +267,7 @@ extension AppDataStore {
         )
     }
     
-    // ─────────────────────────────────────────────
     // MARK: 5 — Water Intake
-    // ─────────────────────────────────────────────
     
     @discardableResult
     func logWaterIntake(cupSize: String, amountML: Float) -> ActionResult {
@@ -504,36 +458,6 @@ extension AppDataStore {
                     )
                 }
                 return result }
-            //            } else {
-            //                let scanId = UUID()
-            //                scalpScans.append(ScalpScan(
-            //                    id: scanId, userId: currentUserId, scanDate: Date(),
-            //                    frontImageURL: "weekly_front", leftImageURL: "weekly_left",
-            //                    rightImageURL: "weekly_right", backImageURL: "weekly_back",
-            //                    topImageURL: "weekly_top", scanType: .weekly
-            //                ))
-            //
-            //                let densityPct: Float
-            //                switch density {
-            //                case .high: densityPct = 85; case .medium: densityPct = 65
-            //                case .low:  densityPct = 45; case .veryLow: densityPct = 25
-            //                }
-            //
-            //                scanReports.append(ScanReport(
-            //                    id: UUID(), createdAt: Date(), scalpScanId: scanId,
-            //                    hairDensityPercent: densityPct, hairDensityLevel: density,
-            //                    hairFallStage: stage, scalpCondition: scalp,
-            //                    analysisSource: isAIModel ? .aiModel : .selfAssessed,
-            //                    planId: currentPlan.planId,
-            //                    lifestyleScore: newScores.composite,
-            //                    dietScore: newScores.diet, stressScore: newScores.stress,
-            //                    sleepScore: newScores.sleep, hairCareScore: newScores.hairCare,
-            //                    recommendedPlan: RecommendationEngine.planSummaryText(for: currentPlan.planId)
-            //                ))
-            //
-            //                return .success(message: "Weekly scan saved. Your plan \(currentPlan.planId) remains unchanged. \(update.reason)")
-            //            }
-            
             else {
                 let scanId = UUID()
                 let scan = ScalpScan(
@@ -579,9 +503,7 @@ extension AppDataStore {
         return submitSelfAssessedStage(stage: stage, scalp: scalp, density: density, scanType: .monthly)
     }
     
-    // ─────────────────────────────────────────────
     // MARK: 8 — Profile & Settings Updates
-    // ─────────────────────────────────────────────
     
     @discardableResult
     func updatePhysicalProfile(
@@ -642,9 +564,7 @@ extension AppDataStore {
         return .success(message: "Notification settings updated.")
     }
     
-    // ─────────────────────────────────────────────
     // MARK: 9 — Home Screen Computed Data
-    // ─────────────────────────────────────────────
     
     @MainActor var dailyProgress: RecommendationEngine.DailyProgressSummary {
         RecommendationEngine.buildDailyProgressSummary(store: self)
@@ -733,8 +653,6 @@ extension AppDataStore {
         if output.userPlan.planId == "refer_doctor" {
             return .referDoctor(message: output.planDescription.doctorReferralMessage ?? "")
         }
-        // ── Save plan + nutrition to Supabase ──
-        // ── Save everything to Supabase ──
         let scanToSave = scalpScans.last(where: { $0.id == scanId })
         let reportToSave = scanReports.last(where: { $0.scalpScanId == scanId })
         let userId = currentUserId

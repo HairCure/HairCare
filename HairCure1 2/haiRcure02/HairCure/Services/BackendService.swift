@@ -261,7 +261,7 @@ class BackendService {
         }
     }
     func fetchAssessment(userId: UUID) async -> Bool {
-        print("🔍 Fetching assessment for UUID: \(userId.uuidString)")
+        print("Fetching assessment for UUID: \(userId.uuidString)")
         do {
             let response = try await db
                 .from("assessments")
