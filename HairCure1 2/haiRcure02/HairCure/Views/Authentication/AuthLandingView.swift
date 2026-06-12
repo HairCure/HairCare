@@ -107,7 +107,7 @@ struct LoginView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 28)
+                .padding(.bottom, 8)
                 
                 // ── Form Card ───────────────────────────
                 VStack(spacing: 0) {
@@ -273,7 +273,7 @@ struct RegisterView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 28)
+                .padding(.bottom, 8)
                 
                 // ── Form Card ───────────────────────────
                 VStack(spacing: 0) {
@@ -281,9 +281,9 @@ struct RegisterView: View {
                     Divider().padding(.leading, 52)
                     inputRow(icon: "envelope", placeholder: "Email", text: $email, keyboard: .emailAddress, isSecure: false, autoCapitalize: false)
                     Divider().padding(.leading, 52)
-                    inputRow(icon: "lock", placeholder: "Password", text: $password, keyboard: .default, isSecure: true)
+                    PasswordRowView(icon: "lock", placeholder: "Password", text: $password)
                     Divider().padding(.leading, 52)
-                    inputRow(icon: "lock.rotation", placeholder: "Confirm password", text: $confirmPassword, keyboard: .default, isSecure: true)
+                    PasswordRowView(icon: "lock", placeholder: "Confirm password", text: $confirmPassword)
                 }
                 .background(Color(UIColor.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -403,6 +403,48 @@ struct RegisterView: View {
     }
 }
 
+// MARK: - PasswordRowView
+
+struct PasswordRowView: View {
+    let icon: String
+    let placeholder: String
+    @Binding var text: String
+    @State private var showPassword = false
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.hcBrown)
+                .frame(width: 24)
+                .padding(.leading, 16)
+            
+            Group {
+                if showPassword {
+                    TextField(placeholder, text: $text)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                } else {
+                    SecureField(placeholder, text: $text)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+            }
+            .font(.system(size: 16))
+            .padding(.vertical, 16)
+            
+            Button {
+                showPassword.toggle()
+            } label: {
+                Image(systemName: showPassword ? "eye" : "eye.slash")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 15))
+            }
+            .padding(.trailing, 16)
+        }
+    }
+}
+
 // MARK: Shared Auth Sub-views
 
 private func dividerRow(label: String) -> some View {
@@ -452,7 +494,7 @@ private func socialRow(onTap: @escaping () -> Void) -> some View {
             .frame(height: 50)
             .background(Color.white)
             .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.systemGray4), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.15), lineWidth: 1.5))
         }
     }
 }

@@ -17,6 +17,7 @@ struct AssessmentView: View {
     @State private var textValues:       [UUID: String]      = [:]
     
     @State private var isHeightMetric:   Bool                = true
+    @State private var hasStarted:       Bool                = false
     
     
     // ── Derived ──
@@ -30,80 +31,124 @@ struct AssessmentView: View {
     // MARK: Body
     
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             Color.hcCream.ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                headerBar
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
-                
-                TabView(selection: $currentIndex) {
-                    ForEach(Array(questions.enumerated()), id: \.offset) { index, q in
-                        questionBody(q)
-                            .tag(index)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                
-            }
-            .contentShape(Rectangle())
-            .simultaneousGesture(
-                DragGesture().onChanged { _ in }
-            )
-            
-            VStack(spacing: 0) {
-                Spacer()
-                
-                // Custom page dots
-                HStack(spacing: 8) {
-                    ForEach(0..<totalCount, id: \.self) { i in
-                        Circle()
-                            .fill(i == currentIndex ? Color.hcBrown : Color.hcBrown.opacity(0.2))
-                            .frame(width: i == currentIndex ? 8 : 7,
-                                   height: i == currentIndex ? 8 : 7)
-                            .animation(.easeInOut(duration: 0.2), value: currentIndex)
-                    }
-                }
-                .padding(.bottom, 12)
-                
-                continueButton
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 36)
+            if hasStarted {
+                assessmentContent
+            } else {
+                onboardingContent
             }
         }
         .onAppear {
-            
             store.startAssessment()
             seedPickerDefaults()
         }
+        .animation(.easeInOut(duration: 0.22), value: hasStarted)
         .animation(.easeInOut(duration: 0.22), value: currentIndex)
-        
+    }
+    
+    private var assessmentContent: some View {
+        VStack(spacing: 0) {
+            headerBar
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            
+            TabView(selection: $currentIndex) {
+                ForEach(Array(questions.enumerated()), id: \.offset) { index, q in
+                    questionBody(q)
+                        .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            
+            continueButton
+                .padding(.horizontal, 24)
+                .padding(.bottom, 36)
+                .padding(.top, 16)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            DragGesture().onChanged { _ in }
+        )
+    }
+    
+    private var onboardingContent: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            Image(systemName: "sparkles")
+                .font(.system(size: 60))
+                .foregroundStyle(Color.hcBrown)
+            
+            VStack(spacing: 12) {
+                Text("Let's get to know you")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.black)
+                
+                Text("Help us personalize your experience ♡")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 32)
+            
+            Spacer()
+            
+            Button {
+                hasStarted = true
+            } label: {
+                Text("Start")
+                    .hcPrimaryButton()
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 36)
+        }
     }
     
     // MARK: Header
     
     private var headerBar: some View {
-        HStack {
-            HCBackButton {
-                if currentIndex > 0 {
-                    currentIndex -= 1
-                } else {
-                    onBack?()
+        ZStack {
+            HStack {
+                HCBackButton {
+                    if currentIndex > 0 {
+                        currentIndex -= 1
+                    } else {
+                        onBack?()
+                    }
+                }
+                .opacity(currentIndex > 0 || onBack != nil ? 1 : 0.3)
+                .disabled(currentIndex == 0 && onBack == nil)
+                
+                Spacer()
+                
+                if currentQuestion?.scoreDimension != Optional.none {
+                    Button("Skip") { advance() }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.hcBrown)
                 }
             }
-            .opacity(currentIndex > 0 || onBack != nil ? 1 : 0.3)
-            .disabled(currentIndex == 0 && onBack == nil)
             
-            Spacer()
-            
-            if currentQuestion?.scoreDimension != Optional.none {
-                Button("Skip") { advance() }
-                    .font(.system(size: 16))
+            VStack(spacing: 6) {
+                Text("\(currentIndex + 1)/\(totalCount)")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
+                
+                // Progress bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.hcBrown.opacity(0.15))
+                            .frame(height: 6)
+                        Capsule()
+                            .fill(Color.hcBrown)
+                            .frame(width: geo.size.width * CGFloat(currentIndex + 1) / CGFloat(totalCount), height: 6)
+                            .animation(.easeInOut, value: currentIndex)
+                    }
+                }
+                .frame(width: 140, height: 6)
             }
-            
-            
         }
         .padding(.horizontal, 20)
     }
@@ -113,12 +158,14 @@ struct AssessmentView: View {
     @ViewBuilder
     private func questionBody(_ q: Question) -> some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 32) {
                 Text(q.questionText)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.black)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 8)
+                    .padding(.bottom, 4)
                 
                 switch q.questionType {
                 case .singleChoice:
@@ -134,7 +181,8 @@ struct AssessmentView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.top, 30)
+            .padding(.bottom, 40)
         }
     }
     
@@ -146,24 +194,32 @@ struct AssessmentView: View {
         
         return VStack(spacing: 12) {
             ForEach(opts) { opt in
+                let isSelected = selected == opt.id
                 Button {
                     singleSelections[q.id] = opt.id
                     store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
                 } label: {
-                    HStack {
+                    HStack(spacing: 16) {
                         Text(opt.optionText)
-                            .font(.system(size: 17, weight: selected == opt.id ? .semibold : .regular))
-                            .foregroundStyle(selected == opt.id ? .white : .primary)
-                            .padding(.leading, 20)
+                            .font(.system(size: 15, weight: isSelected ? .medium : .regular))
+                            .foregroundStyle(.black)
+                        
                         Spacer()
+                        
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Color.hcBrown)
+                        }
                     }
+                    .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 58)
-                    .background(selected == opt.id ? Color.hcBrown : Color.hcOptionBg)
-                    .cornerRadius(14)
+                    .frame(height: 64)
+                    .background(isSelected ? Color.hcBrown.opacity(0.05) : Color.white)
+                    .cornerRadius(12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(selected == opt.id ? Color.clear : Color(.systemGray4), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? Color.hcBrown : Color.black.opacity(0.06), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -190,26 +246,27 @@ struct AssessmentView: View {
                     multiSelections[q.id] = current
                     store.saveMultiAnswer(questionId: q.id, selectedOptionIds: Array(current))
                 } label: {
-                    HStack {
+                    HStack(spacing: 16) {
                         Text(opt.optionText)
-                            .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .white : .primary)
-                            .padding(.leading, 20)
+                            .font(.system(size: 15, weight: isSelected ? .medium : .regular))
+                            .foregroundStyle(.black)
+                        
                         Spacer()
+                        
                         if isSelected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.trailing, 20)
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Color.hcBrown)
                         }
                     }
+                    .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 58)
-                    .background(isSelected ? Color.hcBrown : Color.hcOptionBg)
-                    .cornerRadius(14)
+                    .frame(height: 64)
+                    .background(isSelected ? Color.hcBrown.opacity(0.05) : Color.white)
+                    .cornerRadius(12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(isSelected ? Color.clear : Color(.systemGray4), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? Color.hcBrown : Color.black.opacity(0.06), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)

@@ -674,14 +674,7 @@ private struct NorwoodInfoSheet: View {
                     .padding(.bottom, 16)
 
                 HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 32, height: 32)
-                            .background(Color(.systemGray6))
-                            .clipShape(Circle())
-                    }
+                    Color.clear.frame(width: 24, height: 24)
                     Spacer()
                     VStack(spacing: 2) {
                         Text("Norwood Scale")
@@ -691,7 +684,12 @@ private struct NorwoodInfoSheet: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Color.clear.frame(width: 32, height: 32)
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(Color.hcBrown)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
