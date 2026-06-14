@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct FallbackAssessmentView: View {
@@ -7,48 +6,30 @@ struct FallbackAssessmentView: View {
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
     
-    @State private var pendingScalp:   ScalpCondition  = .normal
-    @State private var pendingDensity: HairDensityLevel = .medium
-    @State private var showAuthSheet = false
-    
-    @State private var currentIndex    = 0
-    @State private var stageOptionId:  UUID? = nil
-    @State private var scalpOptionId:  UUID? = nil
-    @State private var densityOptionId: UUID? = nil
-    
-    @State private var showDoctorAlert = false
-    @State private var doctorMessage   = ""
-    
-    
-    private var questions: [Question] { store.fallbackQuestions() }
-    private var total: Int { questions.count }
-    private var current: Question? {
-        guard currentIndex < questions.count else { return nil }
-        return questions[currentIndex]
-    }
+    @State private var viewModel = FallbackAssessmentViewModel()
     
     var body: some View {
-        ZStack(alignment: .bottom) {
+        let questions = viewModel.questions(store: store)
+        let total = viewModel.totalCount(store: store)
+        let canContinue = viewModel.canContinue()
+        
+        return ZStack(alignment: .bottom) {
             Color.hcCream.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
                 HStack {
                     HCBackButton {
-                        if currentIndex > 0 { currentIndex -= 1 }
+                        if viewModel.currentIndex > 0 { viewModel.currentIndex -= 1 }
                     }
-                    .opacity(currentIndex > 0 ? 1 : 0.3)
-                    .disabled(currentIndex == 0)
+                    .opacity(viewModel.currentIndex > 0 ? 1 : 0.3)
+                    .disabled(viewModel.currentIndex == 0)
                     Spacer()
-                    
-                    
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
                 
-                //Paged questions
-                TabView(selection: $currentIndex) {
+                TabView(selection: $viewModel.currentIndex) {
                     ForEach(Array(questions.enumerated()), id: \.offset) { index, q in
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: 28) {
@@ -60,9 +41,9 @@ struct FallbackAssessmentView: View {
                                 
                                 switch q.questionType {
                                 case .imageChoice:
-                                    stageImageGrid(for: q)
+                                    FallbackStageImageGridView(q: q, viewModel: viewModel, store: store)
                                 case .singleChoice:
-                                    singleChoiceOptions(for: q)
+                                    FallbackSingleChoiceOptionsView(q: q, viewModel: viewModel, store: store)
                                 default:
                                     EmptyView()
                                 }
@@ -76,29 +57,26 @@ struct FallbackAssessmentView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
             }
-            
             .contentShape(Rectangle())
             .simultaneousGesture(
                 DragGesture().onChanged { _ in }
             )
             
-            // Continue button
             VStack(spacing: 12) {
                 Spacer()
                 
-                // Page dots
                 HStack(spacing: 8) {
                     ForEach(0..<total, id: \.self) { i in
                         Circle()
-                            .fill(i == currentIndex ? Color.hcBrown : Color.hcBrown.opacity(0.2))
+                            .fill(i == viewModel.currentIndex ? Color.hcBrown : Color.hcBrown.opacity(0.2))
                             .frame(width: 8, height: 8)
                     }
                 }
                 
                 Button {
-                    handleContinue()
+                    viewModel.handleContinue(authVM: authVM, store: store, onComplete: onComplete)
                 } label: {
-                    Text(currentIndex == total - 1 ? "Get My Plan" : "Continue")
+                    Text(viewModel.currentIndex == total - 1 ? "Get My Plan" : "Continue")
                         .hcPrimaryButton()
                         .opacity(canContinue ? 1.0 : 0.5)
                 }
@@ -107,40 +85,43 @@ struct FallbackAssessmentView: View {
                 .padding(.bottom, 36)
             }
         }
-        .onAppear { stylePageDots() }
-        .animation(.easeInOut(duration: 0.22), value: currentIndex)
-        
-        .alert("Doctor Consultation Recommended", isPresented: $showDoctorAlert) {
+        .onAppear {
+            UIPageControl.appearance().currentPageIndicatorTintColor = UIColor(Color.hcBrown)
+            UIPageControl.appearance().pageIndicatorTintColor = UIColor(Color.hcBrown.opacity(0.2))
+        }
+        .animation(.easeInOut(duration: 0.22), value: viewModel.currentIndex)
+        .alert("Doctor Consultation Recommended", isPresented: $viewModel.showDoctorAlert) {
             Button("Understood") { onComplete() }
         } message: {
-            Text(doctorMessage)
+            Text(viewModel.doctorMessage)
         }
-        .sheet(isPresented: $showAuthSheet) {
+        .sheet(isPresented: $viewModel.showAuthSheet) {
             AuthLandingView(hideGuestButton: true) {
-                showAuthSheet = false
-                submitToEngine()
+                viewModel.showAuthSheet = false
+                viewModel.submitToEngine(store: store, onComplete: onComplete)
             }
         }
     }
+}
+
+// MARK: - Subviews
+
+struct FallbackStageImageGridView: View {
+    let q: Question
+    var viewModel: FallbackAssessmentViewModel
+    var store: AppDataStore
     
-    private func stylePageDots() {
-        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor(Color.hcBrown)
-        UIPageControl.appearance().pageIndicatorTintColor = UIColor(Color.hcBrown.opacity(0.2))
-    }
-    
-    // MARK: Stage Image Grid (Q11)
-    
-    private func stageImageGrid(for q: Question) -> some View {
-        let opts     = store.options(for: q.id)
-        let selected = stageOptionId
-        let columns  = [GridItem(.flexible(), spacing: 16),
-                        GridItem(.flexible(), spacing: 16)]
+    var body: some View {
+        let opts = store.options(for: q.id)
+        let selected = viewModel.stageOptionId
+        let columns = [GridItem(.flexible(), spacing: 16),
+                       GridItem(.flexible(), spacing: 16)]
         
-        return LazyVGrid(columns: columns, spacing: 16) {
+        LazyVGrid(columns: columns, spacing: 16) {
             ForEach(opts) { opt in
                 let isSel = selected == opt.id
                 Button {
-                    stageOptionId = opt.id
+                    viewModel.stageOptionId = opt.id
                     store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
                 } label: {
                     ZStack(alignment: .topLeading) {
@@ -155,7 +136,7 @@ struct FallbackAssessmentView: View {
                             )
                         
                         VStack(spacing: 0) {
-                            stageImage(imageURL: opt.imageURL, index: opt.optionOrderIndex)
+                            FallbackStageImageView(imageURL: opt.imageURL, index: opt.optionOrderIndex)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 130)
                                 .clipped()
@@ -172,9 +153,13 @@ struct FallbackAssessmentView: View {
             }
         }
     }
+}
+
+struct FallbackStageImageView: View {
+    let imageURL: String?
+    let index: Int
     
-    @ViewBuilder
-    private func stageImage(imageURL: String?, index: Int) -> some View {
+    var body: some View {
         if let url = imageURL, UIImage(named: url) != nil {
             Image(url)
                 .resizable()
@@ -194,21 +179,25 @@ struct FallbackAssessmentView: View {
             }
         }
     }
+}
+
+struct FallbackSingleChoiceOptionsView: View {
+    let q: Question
+    var viewModel: FallbackAssessmentViewModel
+    var store: AppDataStore
     
-    // MARK: Single Choice (Q12 / Q13)
-    
-    private func singleChoiceOptions(for q: Question) -> some View {
+    var body: some View {
         let opts = store.options(for: q.id)
-        let selected: UUID? = q.questionOrderIndex == 12 ? scalpOptionId : densityOptionId
+        let selected: UUID? = q.questionOrderIndex == 12 ? viewModel.scalpOptionId : viewModel.densityOptionId
         
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             ForEach(opts) { opt in
                 let isSel = selected == opt.id
                 Button {
                     if q.questionOrderIndex == 12 {
-                        scalpOptionId = opt.id
+                        viewModel.scalpOptionId = opt.id
                     } else {
-                        densityOptionId = opt.id
+                        viewModel.densityOptionId = opt.id
                     }
                     store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
                 } label: {
@@ -230,100 +219,5 @@ struct FallbackAssessmentView: View {
                 .buttonStyle(.plain)
             }
         }
-    }
-    
-    // MARK: Can Continue
-    
-    private var canContinue: Bool {
-        guard let q = current else { return false }
-        switch q.questionOrderIndex {
-        case 11: return stageOptionId   != nil
-        case 12: return scalpOptionId   != nil
-        case 13: return densityOptionId != nil
-        default: return true
-        }
-    }
-    
-    // MARK: Handle Continue / Submit
-    
-    private func handleContinue() {
-        if currentIndex < total - 1 {
-            currentIndex += 1
-            return
-        }
-        
-        if authVM.isGuestMode {
-            showAuthSheet = true
-        } else {
-            submitToEngine()
-        }
-    }
-    
-    private func submitToEngine() {
-        let stage   = resolveStage()
-        let scalp   = resolveScalp()
-        let density = resolveDensity()
-        
-        let result = store.submitSelfAssessedStage(
-            stage: stage, scalp: scalp, density: density
-        )
-        
-        switch result {
-        case .referDoctor(let msg):
-            doctorMessage   = msg
-            showDoctorAlert = true
-            
-            // Store scalp + density so we can use them after "Understood"
-            pendingScalp    = scalp
-            pendingDensity  = density
-        default:
-            onComplete()
-        }
-    }
-    
-    
-    // MARK: Enum Mappers
-    
-    private func resolveStage() -> HairFallStage {
-        guard let optId = stageOptionId,
-              let q = questions.first(where: { $0.questionOrderIndex == 11 }),
-              let opt = store.options(for: q.id).first(where: { $0.id == optId })
-        else { return .stage2 }
-        
-        switch opt.optionOrderIndex {
-        case 1: return .stage1
-        case 2: return .stage2
-        case 3: return .stage3
-        case 4: return .stage4
-        default: return .stage2
-        }
-    }
-    
-    private func resolveScalp() -> ScalpCondition {
-        guard let optId = scalpOptionId,
-              let q = questions.first(where: { $0.questionOrderIndex == 12 }),
-              let opt = store.options(for: q.id).first(where: { $0.id == optId })
-        else { return .normal }
-        
-        let text = opt.optionText.lowercased()
-        if text.contains("flak") || text.contains("dandruff") { return .dandruff }
-        if text.contains("tight") || text.contains("dry")     { return .dry }
-        if text.contains("greasy") || text.contains("oily")   { return .oily }
-        if text.contains("red") || text.contains("inflam")    { return .inflamed }
-        return .normal
-    }
-    
-    private func resolveDensity() -> HairDensityLevel {
-        guard let optId = densityOptionId,
-              let q = questions.first(where: { $0.questionOrderIndex == 13 }),
-              let opt = store.options(for: q.id).first(where: { $0.id == optId })
-        else { return .medium }
-        
-        let text = opt.optionText.lowercased()
-        if text.contains("thick")      { return .high }
-        if text.contains("medium")     { return .medium }
-        if text.contains("very thin")  { return .veryLow }
-        if text.contains("thin")       { return .low }
-        return .medium
     }
 }

@@ -1,47 +1,11 @@
 import SwiftUI
 import PhotosUI
 
-private struct PhotoSlot: Identifiable {
-    let id: String
-    let label: String
-    let icon: String
-    let instruction: String
-    var image: UIImage? = nil
-}
-
 struct HairAnalysisView: View {
     let onComplete: () -> Void
 
     @Environment(AppDataStore.self) private var store
-
-    @State private var slots: [PhotoSlot] = [
-        PhotoSlot(id: "front", label: "Front",
-                  icon: "arrow.up",
-                  instruction: "Hold camera directly above your forehead"),
-        PhotoSlot(id: "left",  label: "Left Side",
-                  icon: "arrow.left",
-                  instruction: "Tilt your head slightly to show left temple"),
-        PhotoSlot(id: "right", label: "Right Side",
-                  icon: "arrow.right",
-                  instruction: "Tilt your head slightly to show right temple"),
-        PhotoSlot(id: "back",  label: "Back",
-                  icon: "arrow.down",
-                  instruction: "Show the back of your head and crown area")
-    ]
-
-    @State private var activeSlotId: String?
-    @State private var showingActionSheet = false
-    @State private var showingPicker  = false
-    @State private var showingCamera  = false
-    
-    @State private var isAnalyzing    = false
-    @State private var showFallback   = false
-    @State private var analysisError: String? = nil
-
-    private let service = HairAnalysisService()
-
-    private var capturedCount: Int { slots.filter { $0.image != nil }.count }
-    private var allCaptured: Bool { capturedCount == 4 }
+    @State private var viewModel = HairAnalysisViewModel()
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -53,8 +17,15 @@ struct HairAnalysisView: View {
             Color.hcCream.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                navBar
-                    .padding(.top, 8)
+                HStack {
+                    HCBackButton { viewModel.goToFallback() }
+                    Spacer()
+                    Button("Skip") { viewModel.goToFallback() }
+                        .font(.system(size: 16))
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
@@ -71,8 +42,8 @@ struct HairAnalysisView: View {
                         .padding(.top, 12)
 
                         LazyVGrid(columns: columns, spacing: 24) {
-                            ForEach(0..<slots.count, id: \.self) { i in
-                                photoGridCell(index: i)
+                            ForEach(0..<viewModel.slots.count, id: \.self) { i in
+                                PhotoGridCellView(index: i, viewModel: viewModel)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -80,12 +51,12 @@ struct HairAnalysisView: View {
                         VStack(spacing: 0) {
                             Divider()
                                 .padding(.horizontal, 20)
-                            Text("\(capturedCount) of 4 photos captured")
+                            Text("\(viewModel.capturedCount) of 4 photos captured")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 16)
 
-                            if let error = analysisError {
+                            if let error = viewModel.analysisError {
                                 Text(error)
                                     .font(.caption)
                                     .foregroundColor(.red)
@@ -103,12 +74,12 @@ struct HairAnalysisView: View {
             VStack {
                 Spacer()
                 Button {
-                    Task { await analyzeButtonTapped() }
+                    Task { await viewModel.analyzeButtonTapped(store: store, onComplete: onComplete) }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 15))
-                        Text(allCaptured ? "Analyze My Scalp" : "Skip to Manual Assessment")
+                        Text(viewModel.allCaptured ? "Analyze My Scalp" : "Skip to Manual Assessment")
                     }
                     .hcPrimaryButton()
                 }
@@ -116,61 +87,56 @@ struct HairAnalysisView: View {
                 .padding(.bottom, 36)
             }
 
-            if isAnalyzing { analyzingOverlay }
+            if viewModel.isAnalyzing {
+                HairAnalyzingOverlayView()
+            }
         }
-        .confirmationDialog("Add Photo", isPresented: $showingActionSheet, titleVisibility: .visible) {
-            Button("Take Photo") { showingCamera = true }
-            Button("Choose from Library") { showingPicker = true }
+        .confirmationDialog("Add Photo", isPresented: $viewModel.showingActionSheet, titleVisibility: .visible) {
+            Button("Take Photo") { viewModel.showingCamera = true }
+            Button("Choose from Library") { viewModel.showingPicker = true }
             
-            if let activeId = activeSlotId, slots.first(where: { $0.id == activeId })?.image != nil {
+            if let activeId = viewModel.activeSlotId, viewModel.slots.first(where: { $0.id == activeId })?.image != nil {
                 Button("Remove Photo", role: .destructive) {
-                    if let idx = slots.firstIndex(where: { $0.id == activeId }) {
-                        slots[idx].image = nil
-                    }
+                    viewModel.removePhoto(activeId: activeId)
                 }
             }
-            Button("Cancel", role: .cancel) { activeSlotId = nil }
+            Button("Cancel", role: .cancel) { viewModel.activeSlotId = nil }
         }
-        .fullScreenCover(isPresented: $showingCamera) {
+        .fullScreenCover(isPresented: $viewModel.showingCamera) {
             ImagePicker(sourceType: .camera) { image in
-                if let activeId = activeSlotId, let idx = slots.firstIndex(where: { $0.id == activeId }) {
-                    slots[idx].image = image
+                if let activeId = viewModel.activeSlotId {
+                    viewModel.setPhoto(activeId: activeId, image: image)
                 }
             }
             .ignoresSafeArea()
         }
-        .sheet(isPresented: $showingPicker) {
+        .sheet(isPresented: $viewModel.showingPicker) {
             ImagePicker(sourceType: .photoLibrary) { image in
-                if let activeId = activeSlotId, let idx = slots.firstIndex(where: { $0.id == activeId }) {
-                    slots[idx].image = image
+                if let activeId = viewModel.activeSlotId {
+                    viewModel.setPhoto(activeId: activeId, image: image)
                 }
             }
             .ignoresSafeArea()
         }
-        .fullScreenCover(isPresented: $showFallback) {
+        .fullScreenCover(isPresented: $viewModel.showFallback) {
             FallbackAssessmentView(onComplete: onComplete)
         }
     }
+}
 
-    private var navBar: some View {
-        HStack {
-            HCBackButton { goToFallback() }
-            Spacer()
-            Button("Skip") { goToFallback() }
-                .font(.system(size: 16))
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 16)
-    }
+// MARK: - Subviews
 
-    private func photoGridCell(index i: Int) -> some View {
-        let slot = slots[i]
+struct PhotoGridCellView: View {
+    let index: Int
+    var viewModel: HairAnalysisViewModel
+    
+    var body: some View {
+        let slot = viewModel.slots[index]
         return VStack(spacing: 12) {
             Button {
-                activeSlotId = slot.id
-                showingActionSheet = true
+                viewModel.activeSlotId = slot.id
+                viewModel.showingActionSheet = true
             } label: {
-                // Perfect 1:1 square for consistency and to prevent grid bleed
                 Color.clear
                     .aspectRatio(1, contentMode: .fit)
                     .overlay(
@@ -180,7 +146,6 @@ struct HairAnalysisView: View {
                                     .resizable()
                                     .scaledToFill()
                                 
-                                // Clean subtle retake overlay
                                 VStack {
                                     HStack {
                                         Spacer()
@@ -224,7 +189,6 @@ struct HairAnalysisView: View {
                         }
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16))
-                    // Soft shadow makes the empty cards feel highly native
                     .shadow(color: .black.opacity(slot.image == nil ? 0.04 : 0), radius: 8, y: 4)
             }
             .buttonStyle(.plain)
@@ -236,8 +200,10 @@ struct HairAnalysisView: View {
             }
         }
     }
+}
 
-    private var analyzingOverlay: some View {
+struct HairAnalyzingOverlayView: View {
+    var body: some View {
         ZStack {
             Color.black.opacity(0.45).ignoresSafeArea()
             VStack(spacing: 20) {
@@ -250,114 +216,4 @@ struct HairAnalysisView: View {
             .cornerRadius(20)
         }
     }
-
-    private func analyzeButtonTapped() async {
-        guard allCaptured,
-              let frontImg = slots.first(where: { $0.id == "front" })?.image,
-              let leftImg  = slots.first(where: { $0.id == "left"  })?.image,
-              let rightImg = slots.first(where: { $0.id == "right" })?.image,
-              let backImg  = slots.first(where: { $0.id == "back"  })?.image
-        else {
-            goToFallback()
-            return
-        }
-
-        isAnalyzing   = true
-        analysisError = nil
-
-        do {
-            let result = try await service.analyse(
-                front: frontImg,
-                crown: backImg,
-                left:  leftImg,
-                right: rightImg
-            )
-
-            guard result.images_valid.front &&
-                  result.images_valid.crown &&
-                  result.images_valid.left  &&
-                  result.images_valid.right
-            else {
-                await MainActor.run {
-                    isAnalyzing   = false
-                    analysisError = "One or more photos were unclear. Please retake them."
-                }
-                return
-            }
-
-            // Save images locally so PlanResultView can display them
-            let frontPath = saveImageLocally(frontImg, prefix: "front")
-            let leftPath  = saveImageLocally(leftImg, prefix: "left")
-            let rightPath = saveImageLocally(rightImg, prefix: "right")
-            let backPath  = saveImageLocally(backImg, prefix: "back")
-
-            let densityLevel: HairDensityLevel
-            switch result.overall_density_percentage {
-            case 76...100: densityLevel = .high
-            case 51...75:  densityLevel = .medium
-            case 26...50:  densityLevel = .low
-            default:       densityLevel = .veryLow
-            }
-
-            let hairFallStage: HairFallStage
-            let norwood = result.norwood_stage.lowercased()
-            if norwood.contains("7") || norwood.contains("6") {
-                hairFallStage = .stage4
-            } else if norwood.contains("5") || norwood.contains("4") {
-                hairFallStage = .stage3
-            } else if norwood.contains("3") || norwood.contains("2") {
-                hairFallStage = .stage2
-            } else {
-                hairFallStage = .stage1
-            }
-
-            let scalpCondition: ScalpCondition = .normal
-
-            let _ = store.submitScanImages(
-                frontURL: frontPath,
-                leftURL:  leftPath,
-                rightURL: rightPath,
-                backURL:  backPath,
-                topURL:   ""
-            )
-
-            store.applyAIResult(
-                densityPercent: Float(result.overall_density_percentage),
-                densityLevel:   densityLevel,
-                hairFallStage:  hairFallStage,
-                scalpCondition: scalpCondition,
-                hairType:       result.hair_type
-            )
-
-            await MainActor.run {
-                isAnalyzing = false
-                onComplete()
-            }
-
-        } catch {
-            await MainActor.run {
-                isAnalyzing   = false
-                analysisError = "Analysis failed. Please try again or skip to manual assessment."
-            }
-        }
-    }
-
-    private func goToFallback() {
-        showFallback = true
-    }
-
-    private func saveImageLocally(_ image: UIImage, prefix: String) -> String {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return "" }
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let url = docs.appendingPathComponent("\(prefix)_\(UUID().uuidString).jpg")
-        try? data.write(to: url)
-        return url.path
-    }
-}
-
-
-
-#Preview {
-    HairAnalysisView { print("Completed") }
-        .environment(AppDataStore())
 }

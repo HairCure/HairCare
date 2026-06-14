@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct AssessmentView: View {
@@ -6,46 +5,23 @@ struct AssessmentView: View {
     let onComplete: () -> Void
     var onBack: (() -> Void)? = nil
     
-    // Navigation state
-    @State private var currentIndex = 0
-    
-    // (reset/restore per question)
-    @State private var singleSelections: [UUID: UUID]       = [:]
-    @State private var multiSelections:  [UUID: Set<UUID>]  = [:]
-    @State private var pickerValues:     [UUID: Float]       = [:]
-    @State private var imageSelections:  [UUID: UUID]        = [:]
-    @State private var textValues:       [UUID: String]      = [:]
-    
-    @State private var isHeightMetric:   Bool                = true
-    @State private var hasStarted:       Bool                = false
-    
-    
-    // ── Derived ──
-    private var questions:        [Question] { store.assessmentQuestions() }
-    private var totalCount:       Int        { questions.count }
-    private var currentQuestion:  Question?  {
-        guard currentIndex < questions.count else { return nil }
-        return questions[currentIndex]
-    }
-    
-    // MARK: Body
+    @State private var viewModel = AssessmentViewModel()
     
     var body: some View {
         ZStack {
             Color.hcCream.ignoresSafeArea()
             
-            if hasStarted {
+            if viewModel.hasStarted {
                 assessmentContent
             } else {
                 onboardingContent
             }
         }
         .onAppear {
-            store.startAssessment()
-            seedPickerDefaults()
+            viewModel.startAssessment(store: store)
         }
-        .animation(.easeInOut(duration: 0.22), value: hasStarted)
-        .animation(.easeInOut(duration: 0.22), value: currentIndex)
+        .animation(.easeInOut(duration: 0.22), value: viewModel.hasStarted)
+        .animation(.easeInOut(duration: 0.22), value: viewModel.currentIndex)
     }
     
     private var assessmentContent: some View {
@@ -54,9 +30,9 @@ struct AssessmentView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 12)
             
-            TabView(selection: $currentIndex) {
-                ForEach(Array(questions.enumerated()), id: \.offset) { index, q in
-                    questionBody(q)
+            TabView(selection: $viewModel.currentIndex) {
+                ForEach(Array(viewModel.questions(store: store).enumerated()), id: \.offset) { index, q in
+                    QuestionBodyView(q: q, viewModel: viewModel, store: store)
                         .tag(index)
                 }
             }
@@ -96,7 +72,7 @@ struct AssessmentView: View {
             Spacer()
             
             Button {
-                hasStarted = true
+                viewModel.hasStarted = true
             } label: {
                 Text("Start")
                     .hcPrimaryButton()
@@ -106,36 +82,36 @@ struct AssessmentView: View {
         }
     }
     
-    // MARK: Header
-    
     private var headerBar: some View {
-        ZStack {
+        let currentQuestion = viewModel.currentQuestion(store: store)
+        let totalCount = viewModel.totalCount(store: store)
+        
+        return ZStack {
             HStack {
                 HCBackButton {
-                    if currentIndex > 0 {
-                        currentIndex -= 1
+                    if viewModel.currentIndex > 0 {
+                        viewModel.currentIndex -= 1
                     } else {
                         onBack?()
                     }
                 }
-                .opacity(currentIndex > 0 || onBack != nil ? 1 : 0.3)
-                .disabled(currentIndex == 0 && onBack == nil)
+                .opacity(viewModel.currentIndex > 0 || onBack != nil ? 1 : 0.3)
+                .disabled(viewModel.currentIndex == 0 && onBack == nil)
                 
                 Spacer()
                 
                 if currentQuestion?.scoreDimension != Optional.none {
-                    Button("Skip") { advance() }
+                    Button("Skip") { viewModel.advance(store: store) }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Color.hcBrown)
                 }
             }
             
             VStack(spacing: 6) {
-                Text("\(currentIndex + 1)/\(totalCount)")
+                Text("\(viewModel.currentIndex + 1)/\(totalCount)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                 
-                // Progress bar
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule()
@@ -143,8 +119,8 @@ struct AssessmentView: View {
                             .frame(height: 6)
                         Capsule()
                             .fill(Color.hcBrown)
-                            .frame(width: geo.size.width * CGFloat(currentIndex + 1) / CGFloat(totalCount), height: 6)
-                            .animation(.easeInOut, value: currentIndex)
+                            .frame(width: geo.size.width * CGFloat(viewModel.currentIndex + 1) / CGFloat(totalCount), height: 6)
+                            .animation(.easeInOut, value: viewModel.currentIndex)
                     }
                 }
                 .frame(width: 140, height: 6)
@@ -153,10 +129,29 @@ struct AssessmentView: View {
         .padding(.horizontal, 20)
     }
     
-    // MARK: Question body — routes by type
+    private var continueButton: some View {
+        let totalCount = viewModel.totalCount(store: store)
+        let canContinue = viewModel.canContinue(store: store)
+        
+        return Button {
+            viewModel.handleContinue(store: store, onComplete: onComplete)
+        } label: {
+            Text(viewModel.currentIndex == totalCount - 1 ? "Finish" : "Continue")
+                .hcPrimaryButton()
+                .opacity(canContinue ? 1.0 : 0.5)
+        }
+        .disabled(!canContinue)
+    }
+}
+
+// MARK: - Subviews for Questions
+
+struct QuestionBodyView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    @ViewBuilder
-    private func questionBody(_ q: Question) -> some View {
+    var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 32) {
                 Text(q.questionText)
@@ -169,15 +164,15 @@ struct AssessmentView: View {
                 
                 switch q.questionType {
                 case .singleChoice:
-                    singleChoiceOptions(for: q)
+                    SingleChoiceOptionsView(q: q, viewModel: viewModel, store: store)
                 case .multiChoice:
-                    multiChoiceOptions(for: q)
+                    MultiChoiceOptionsView(q: q, viewModel: viewModel, store: store)
                 case .picker:
-                    pickerQuestion(for: q)
+                    PickerQuestionView(q: q, viewModel: viewModel, store: store)
                 case .imageChoice:
-                    imageChoiceGrid(for: q)
+                    ImageChoiceGridView(q: q, viewModel: viewModel, store: store)
                 case .freeText:
-                    freeTextQuestion(for: q)
+                    FreeTextQuestionView(q: q, viewModel: viewModel)
                 }
             }
             .padding(.horizontal, 20)
@@ -185,19 +180,22 @@ struct AssessmentView: View {
             .padding(.bottom, 40)
         }
     }
+}
+
+struct SingleChoiceOptionsView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    // MARK: Single Choice
-    
-    private func singleChoiceOptions(for q: Question) -> some View {
-        let opts     = store.options(for: q.id)
-        let selected = singleSelections[q.id]
+    var body: some View {
+        let opts = store.options(for: q.id)
+        let selected = viewModel.singleSelections[q.id]
         
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             ForEach(opts) { opt in
                 let isSelected = selected == opt.id
                 Button {
-                    singleSelections[q.id] = opt.id
-                    store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
+                    viewModel.saveSingleChoice(store: store, questionId: q.id, optionId: opt.id)
                 } label: {
                     HStack(spacing: 16) {
                         Text(opt.optionText)
@@ -208,8 +206,8 @@ struct AssessmentView: View {
                         
                         if isSelected {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(Color.hcBrown)
+                               .font(.system(size: 22))
+                               .foregroundStyle(Color.hcBrown)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -226,25 +224,28 @@ struct AssessmentView: View {
             }
         }
     }
+}
+
+struct MultiChoiceOptionsView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    // MARK: Multi Choice
-    
-    private func multiChoiceOptions(for q: Question) -> some View {
-        let opts     = store.options(for: q.id)
-        let selected = multiSelections[q.id] ?? []
+    var body: some View {
+        let opts = store.options(for: q.id)
+        let selected = viewModel.multiSelections[q.id] ?? []
         
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             ForEach(opts) { opt in
                 let isSelected = selected.contains(opt.id)
                 Button {
-                    var current = multiSelections[q.id] ?? []
+                    var current = viewModel.multiSelections[q.id] ?? []
                     if current.contains(opt.id) {
                         current.remove(opt.id)
                     } else {
                         current.insert(opt.id)
                     }
-                    multiSelections[q.id] = current
-                    store.saveMultiAnswer(questionId: q.id, selectedOptionIds: Array(current))
+                    viewModel.saveMultiChoice(store: store, questionId: q.id, optionIds: Array(current))
                 } label: {
                     HStack(spacing: 16) {
                         Text(opt.optionText)
@@ -273,28 +274,34 @@ struct AssessmentView: View {
             }
         }
     }
+}
+
+struct PickerQuestionView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    // MARK: Picker (age / height / weight)
-    
-    @ViewBuilder
-    private func pickerQuestion(for q: Question) -> some View {
+    var body: some View {
         if q.pickerUnit == "cm" {
-            heightPickerQuestion(for: q)
+            HeightPickerQuestionView(q: q, viewModel: viewModel, store: store)
         } else {
-            standardPickerQuestion(for: q)
+            StandardPickerQuestionView(q: q, viewModel: viewModel, store: store)
         }
     }
+}
+
+struct StandardPickerQuestionView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    private func standardPickerQuestion(for q: Question) -> some View {
+    var body: some View {
         let minVal  = Int(q.pickerMin  ?? 0)
         let maxVal  = Int(q.pickerMax  ?? 100)
         let unit    = q.pickerUnit ?? ""
         let current = Binding<Float>(
-            get: { pickerValues[q.id] ?? q.pickerMin ?? 0 },
-            set: { newVal in
-                pickerValues[q.id] = newVal
-                store.savePickerAnswer(questionId: q.id, pickerValue: newVal)
-            }
+            get: { viewModel.pickerValues[q.id] ?? q.pickerMin ?? 0 },
+            set: { viewModel.savePickerValue(store: store, questionId: q.id, value: $0) }
         )
         
         let intCurrent = Binding<Int>(
@@ -307,7 +314,7 @@ struct AssessmentView: View {
             set: { _ in }
         )
         
-        return VStack(spacing: 20) {
+        VStack(spacing: 20) {
             TextField("", text: displayText)
                 .font(.system(size: 17))
                 .multilineTextAlignment(.center)
@@ -329,14 +336,19 @@ struct AssessmentView: View {
         }
         .padding(.horizontal, 4)
     }
+}
+
+struct HeightPickerQuestionView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    private func heightPickerQuestion(for q: Question) -> some View {
+    var body: some View {
+        @Bindable var vm = viewModel
+        
         let cmBinding = Binding<Float>(
-            get: { pickerValues[q.id] ?? 175.0 },
-            set: { newVal in
-                pickerValues[q.id] = newVal
-                store.savePickerAnswer(questionId: q.id, pickerValue: newVal)
-            }
+            get: { vm.pickerValues[q.id] ?? 175.0 },
+            set: { vm.savePickerValue(store: store, questionId: q.id, value: $0) }
         )
         
         let cmIntBinding = Binding<Int>(
@@ -344,7 +356,6 @@ struct AssessmentView: View {
             set: { cmBinding.wrappedValue = Float($0) }
         )
         
-        // Math: 1 cm = 0.393701 inches. Total inches = cm * 0.393701
         let ftBinding = Binding<Int>(
             get: {
                 let totalInches = cmBinding.wrappedValue * 0.393701
@@ -374,7 +385,7 @@ struct AssessmentView: View {
         
         let displayText = Binding<String>(
             get: {
-                if isHeightMetric {
+                if vm.isHeightMetric {
                     return "\(Int(cmBinding.wrappedValue)) cm"
                 } else {
                     return "\(ftBinding.wrappedValue)' \(inBinding.wrappedValue)\""
@@ -383,8 +394,8 @@ struct AssessmentView: View {
             set: { _ in }
         )
         
-        return VStack(spacing: 20) {
-            Picker("Unit", selection: $isHeightMetric) {
+        VStack(spacing: 20) {
+            Picker("Unit", selection: $vm.isHeightMetric) {
                 Text("cm").tag(true)
                 Text("ft/in").tag(false)
             }
@@ -401,7 +412,7 @@ struct AssessmentView: View {
                 .cornerRadius(12)
                 .disabled(true)
             
-            if isHeightMetric {
+            if vm.isHeightMetric {
                 Picker("", selection: cmIntBinding) {
                     ForEach(140...220, id: \.self) { val in
                         Text("\(val) cm").tag(val)
@@ -435,21 +446,24 @@ struct AssessmentView: View {
         }
         .padding(.horizontal, 4)
     }
+}
+
+struct ImageChoiceGridView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
+    var store: AppDataStore
     
-    // MARK: Image Choice (stage cards)
-    
-    private func imageChoiceGrid(for q: Question) -> some View {
-        let opts     = store.options(for: q.id)
-        let selected = imageSelections[q.id]
-        let columns  = [GridItem(.flexible(), spacing: 16),
-                        GridItem(.flexible(), spacing: 16)]
+    var body: some View {
+        let opts = store.options(for: q.id)
+        let selected = viewModel.imageSelections[q.id]
+        let columns = [GridItem(.flexible(), spacing: 16),
+                       GridItem(.flexible(), spacing: 16)]
         
-        return LazyVGrid(columns: columns, spacing: 16) {
+        LazyVGrid(columns: columns, spacing: 16) {
             ForEach(opts) { opt in
                 let isSelected = selected == opt.id
                 Button {
-                    imageSelections[q.id] = opt.id
-                    store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
+                    viewModel.saveImageChoice(store: store, questionId: q.id, optionId: opt.id)
                 } label: {
                     ZStack(alignment: .topLeading) {
                         RoundedRectangle(cornerRadius: 14)
@@ -463,7 +477,7 @@ struct AssessmentView: View {
                             )
                         
                         VStack(spacing: 0) {
-                            stageImage(imageURL: opt.imageURL, index: opt.optionOrderIndex)
+                            StageImageView(imageURL: opt.imageURL, index: opt.optionOrderIndex)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 130)
                                 .clipped()
@@ -480,9 +494,13 @@ struct AssessmentView: View {
             }
         }
     }
+}
+
+struct StageImageView: View {
+    let imageURL: String?
+    let index: Int
     
-    @ViewBuilder
-    private func stageImage(imageURL: String?, index: Int) -> some View {
+    var body: some View {
         if let url = imageURL, !url.isEmpty, UIImage(named: url) != nil {
             Image(url).resizable().scaledToFit().padding(12)
         } else {
@@ -499,73 +517,17 @@ struct AssessmentView: View {
             }
         }
     }
+}
+
+struct FreeTextQuestionView: View {
+    let q: Question
+    var viewModel: AssessmentViewModel
     
-    
-    private func freeTextQuestion(for q: Question) -> some View {
+    var body: some View {
         let binding = Binding<String>(
-            get: { textValues[q.id] ?? "" },
-            set: { textValues[q.id] = $0 }
+            get: { viewModel.textValues[q.id] ?? "" },
+            set: { viewModel.saveFreeText(questionId: q.id, text: $0) }
         )
-        return TextField("Your answer", text: binding).hcInputField()
-    }
-    
-    // MARK: Continue Button
-    
-    private var continueButton: some View {
-        Button {
-            guard canContinue else { return }
-            if currentIndex == totalCount - 1 {
-                store.completeAssessment()
-                onComplete()
-            } else {
-                advance()
-            }
-        } label: {
-            Text(currentIndex == totalCount - 1 ? "Finish" : "Continue")
-                .hcPrimaryButton()
-                .opacity(canContinue ? 1.0 : 0.5)
-        }
-        .disabled(!canContinue)
-    }
-    
-    // MARK: Can Continue Logic
-    
-    private var canContinue: Bool {
-        guard let q = currentQuestion else { return false }
-        switch q.questionType {
-        case .singleChoice: return singleSelections[q.id] != nil
-        case .multiChoice:  return !(multiSelections[q.id]?.isEmpty ?? true)
-        case .picker:       return true
-        case .imageChoice:  return imageSelections[q.id] != nil
-        case .freeText:
-            return !(textValues[q.id]?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
-        }
-    }
-    
-    // MARK: Helpers
-    
-    private func advance() {
-        if currentIndex < totalCount - 1 { currentIndex += 1 }
-    }
-    
-    private func seedPickerDefaults() {
-        for q in questions where q.questionType == .picker {
-            if pickerValues[q.id] == nil {
-                let defaultVal: Float
-                
-                if q.pickerUnit == "yrs" {
-                    defaultVal = 20
-                } else if q.pickerUnit == "cm" {
-                    defaultVal = 175
-                } else if q.pickerUnit == "kg" {
-                    defaultVal = 70
-                } else {
-                    defaultVal = ((q.pickerMin ?? 0) + (q.pickerMax ?? 100)) / 2
-                }
-                
-                pickerValues[q.id] = defaultVal
-                store.savePickerAnswer(questionId: q.id, pickerValue: defaultVal)
-            }
-        }
+        TextField("Your answer", text: binding).hcInputField()
     }
 }

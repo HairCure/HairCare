@@ -3,8 +3,8 @@ import UIKit
 class HairAnalysisService {
     
     // OpenRouter API key
-    private let apiKey = ""
-    private let apiURL = ""
+    private let apiKey = "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"
+    private let apiURL = "https://openrouter.ai/api/v1/chat/completions"
     
     private let systemPrompt = """
     You are receiving 4 images of the same person's hair from different angles:

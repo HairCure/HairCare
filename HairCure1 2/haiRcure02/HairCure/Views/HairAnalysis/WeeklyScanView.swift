@@ -1,13 +1,3 @@
-
-//  Shown when a monthly scan is due.
-//  Flow:
-//    1. User uploads 3 scalp photos (Top, Front, Side)
-//    2. Taps "Analyse Scalp"
-//    3. Animated 4-step analysis overlay (~3.2 s)
-//    4. Calls store.submitWeeklyScan() → returns ScanReport
-//    5. Fires onComplete(report) → caller navigates to HairProgressDetailView
-//
-
 import SwiftUI
 import PhotosUI
 
@@ -17,35 +7,15 @@ struct WeeklyScanView: View {
     
     let onComplete: (ScanReport) -> Void
     
-    // ── Photo picker state (3 independent slots)
-    @State private var pickerItem1: PhotosPickerItem? = nil
-    @State private var pickerItem2: PhotosPickerItem? = nil
-    @State private var pickerItem3: PhotosPickerItem? = nil
-    @State private var photo1: UIImage? = nil
-    @State private var photo2: UIImage? = nil
-    @State private var photo3: UIImage? = nil
-    
-    // Analysis state
-    @State private var isAnalysing   = false
-    @State private var analysisStep  = 0
-    
-    private let analysisSteps = [
-        "Scanning scalp density...",
-        "Measuring follicle distribution...",
-        "Calculating hair fall stage...",
-        "Generating your report..."
-    ]
-    
-    private var allPhotosSelected: Bool { photo1 != nil && photo2 != nil && photo3 != nil }
-    
+    @State private var viewModel = WeeklyScanViewModel()
     
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.hcCream.ignoresSafeArea()
                 
-                if isAnalysing {
-                    analysingOverlay
+                if viewModel.isAnalysing {
+                    AnalysingOverlayView(viewModel: viewModel)
                 } else {
                     mainContent
                 }
@@ -59,35 +29,30 @@ struct WeeklyScanView: View {
                 }
             }
         }
-        .onChange(of: pickerItem1) { _, item in loadPhoto(from: item, into: .slot1) }
-        .onChange(of: pickerItem2) { _, item in loadPhoto(from: item, into: .slot2) }
-        .onChange(of: pickerItem3) { _, item in loadPhoto(from: item, into: .slot3) }
     }
     
     private var mainContent: some View {
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
-                    
-                    // ── Instructions card ────────────────────────────
-                    instructionsCard
+                    WeeklyInstructionsCardView()
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
                     
-                    // ── Photo upload section ─────────────────────────
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
                             Text("Upload Scalp Photos")
                                 .font(.system(size: 20, weight: .bold))
                             Spacer()
-                            // Progress indicator
-                            Text("\([photo1, photo2, photo3].compactMap { $0 }.count)/3")
+                            
+                            let count = [viewModel.photo1, viewModel.photo2, viewModel.photo3].compactMap { $0 }.count
+                            Text("\(count)/3")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(allPhotosSelected ? Color.hcBrown : .secondary)
+                                .foregroundStyle(viewModel.allPhotosSelected ? Color.hcBrown : .secondary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 5)
                                 .background(
-                                    allPhotosSelected
+                                    viewModel.allPhotosSelected
                                     ? Color.hcBrown.opacity(0.12)
                                     : Color(UIColor.systemGray6)
                                 )
@@ -95,16 +60,14 @@ struct WeeklyScanView: View {
                         }
                         
                         HStack(spacing: 12) {
-                            photoSlot(image: photo1, picker: $pickerItem1,
-                                      label: "Top",   sfIcon: "arrow.up")
-                            photoSlot(image: photo2, picker: $pickerItem2,
-                                      label: "Front", sfIcon: "person.fill")
-                            photoSlot(image: photo3, picker: $pickerItem3,
-                                      label: "Side",  sfIcon: "arrow.right")
+                            @Bindable var vm = viewModel
+                            PhotoSlotView(image: viewModel.photo1, picker: $vm.pickerItem1, label: "Top", sfIcon: "arrow.up")
+                            PhotoSlotView(image: viewModel.photo2, picker: $vm.pickerItem2, label: "Front", sfIcon: "person.fill")
+                            PhotoSlotView(image: viewModel.photo3, picker: $vm.pickerItem3, label: "Side", sfIcon: "arrow.right")
                         }
                         .frame(height: 118)
                         
-                        photoTipsView
+                        WeeklyPhotoTipsView()
                     }
                     .padding(.horizontal, 20)
                     
@@ -116,22 +79,44 @@ struct WeeklyScanView: View {
         }
     }
     
+    private var analyseButtonBar: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [Color.hcCream.opacity(0), Color.hcCream],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: 28)
+            .allowsHitTesting(false)
+            
+            Button {
+                viewModel.startAnalysis(store: store, onComplete: onComplete)
+            } label: {
+                Text("Analyse Scalp")
+                    .hcPrimaryButton()
+                    .opacity(viewModel.allPhotosSelected ? 1.0 : 0.40)
+            }
+            .disabled(!viewModel.allPhotosSelected)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 36)
+            .background(Color.hcCream)
+        }
+    }
+}
+
+// MARK: - Subviews
+
+struct PhotoSlotView: View {
+    let image: UIImage?
+    var picker: Binding<PhotosPickerItem?>
+    let label: String
+    let sfIcon: String
     
-    // MARK: Photo Slot
-    
-    private func photoSlot(
-        image:   UIImage?,
-        picker:  Binding<PhotosPickerItem?>,
-        label:   String,
-        sfIcon:  String
-    ) -> some View {
+    var body: some View {
         PhotosPicker(selection: picker, matching: .images) {
             ZStack(alignment: .bottom) {
-                // Card background
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(image != nil ? Color.clear : Color(UIColor.systemGray6))
                 
-                // Border
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(
                         image != nil ? Color.hcBrown : Color(UIColor.systemGray4),
@@ -142,14 +127,12 @@ struct WeeklyScanView: View {
                     )
                 
                 if let img = image {
-                    // Filled: show photo + label badge
                     Image(uiImage: img)
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     
-                    // Label badge at bottom
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11, weight: .semibold))
@@ -182,9 +165,10 @@ struct WeeklyScanView: View {
         }
         .buttonStyle(.plain)
     }
-    
-    
-    private var instructionsCard: some View {
+}
+
+struct WeeklyInstructionsCardView: View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 ZStack {
@@ -213,18 +197,16 @@ struct WeeklyScanView: View {
         .background(Color(UIColor.systemGray6).opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
-    
-    
-    // MARK: Photo Tips
-    
-    
-    private var photoTipsView: some View {
+}
+
+struct WeeklyPhotoTipsView: View {
+    var body: some View {
         let tips: [(String, String)] = [
             ("lightbulb.fill",        "Use bright, even lighting — avoid direct flash"),
             ("iphone",                "Hold camera 6–8 inches from your scalp"),
             ("person.fill.viewfinder","Part hair clearly before each shot")
         ]
-        return VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Tips for best results")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -245,40 +227,18 @@ struct WeeklyScanView: View {
         .background(Color(UIColor.systemGray6).opacity(0.35))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+}
+
+struct AnalysingOverlayView: View {
+    var viewModel: WeeklyScanViewModel
     
-    
-    // MARK: Analyse Button Bar
-    
-    private var analyseButtonBar: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [Color.hcCream.opacity(0), Color.hcCream],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 28)
-            .allowsHitTesting(false)
-            
-            Button { startAnalysis() } label: {
-                Text("Analyse Scalp")
-                    .hcPrimaryButton()
-                    .opacity(allPhotosSelected ? 1.0 : 0.40)
-            }
-            .disabled(!allPhotosSelected)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 36)
-            .background(Color.hcCream)
-        }
-    }
-    
-    
-    // MARK: Analysing Overlay
-    
-    
-    private var analysingOverlay: some View {
+    var body: some View {
+        let step = viewModel.analysisStep
+        let steps = viewModel.analysisSteps
+        
         VStack(spacing: 36) {
             Spacer()
             
-            // Spinning scan ring
             ZStack {
                 Circle()
                     .stroke(Color.hcBrown.opacity(0.10), lineWidth: 3)
@@ -292,10 +252,10 @@ struct WeeklyScanView: View {
                     .stroke(Color.hcBrown,
                             style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .frame(width: 132, height: 132)
-                    .rotationEffect(.degrees(Double(analysisStep) * 90 - 90))
+                    .rotationEffect(.degrees(Double(step) * 90 - 90))
                     .animation(
                         .linear(duration: 0.75).repeatForever(autoreverses: false),
-                        value: analysisStep
+                        value: step
                     )
                 
                 Image(systemName: "camera.viewfinder")
@@ -308,22 +268,21 @@ struct WeeklyScanView: View {
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
                 
-                Text(analysisSteps[min(analysisStep, analysisSteps.count - 1)])
+                Text(steps[min(step, steps.count - 1)])
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
-                    .animation(.easeInOut(duration: 0.25), value: analysisStep)
+                    .animation(.easeInOut(duration: 0.25), value: step)
             }
             
-            // Step progress dots
             HStack(spacing: 8) {
-                ForEach(0..<analysisSteps.count, id: \.self) { i in
+                ForEach(0..<steps.count, id: \.self) { i in
                     Circle()
-                        .fill(i <= analysisStep ? Color.hcBrown : Color(UIColor.systemGray4))
+                        .fill(i <= step ? Color.hcBrown : Color(UIColor.systemGray4))
                         .frame(
-                            width:  i == analysisStep ? 10 : 7,
-                            height: i == analysisStep ? 10 : 7
+                            width:  i == step ? 10 : 7,
+                            height: i == step ? 10 : 7
                         )
-                        .animation(.easeInOut(duration: 0.2), value: analysisStep)
+                        .animation(.easeInOut(duration: 0.2), value: step)
                 }
             }
             
@@ -331,99 +290,5 @@ struct WeeklyScanView: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.hcCream.ignoresSafeArea())
-    }
-    
-    
-    // MARK: Analysis Pipeline
-    
-    
-    private func startAnalysis() {
-        isAnalysing  = true
-        analysisStep = 0
-        
-        let stepInterval = 0.80
-        
-        // Advance step indicator at each interval
-        for i in 1..<analysisSteps.count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * stepInterval) {
-                analysisStep = i
-            }
-        }
-        
-        // Complete analysis after all steps
-        let totalDuration = Double(analysisSteps.count) * stepInterval + 0.40
-        DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
-            let report = deriveAndSubmitResult()
-            onComplete(report)
-        }
-    }
-    
-    
-    
-    private func deriveAndSubmitResult() -> ScanReport {
-        let prior = store.latestScanReport
-        
-        let baseDensity = prior?.hairDensityPercent ?? 65.0
-        let baseStage   = prior?.hairFallStage      ?? .stage2
-        let baseScalp   = prior?.scalpCondition     ?? .normal
-        
-        let delta      = Float.random(in: -0.5...2.5)
-        let newDensity = min(100.0, max(20.0, baseDensity + delta))
-        
-        let newLevel: HairDensityLevel
-        switch newDensity {
-        case 80...:   newLevel = .high
-        case 60..<80: newLevel = .medium
-        case 40..<60: newLevel = .low
-        default:      newLevel = .veryLow
-        }
-        
-        // Call with correct signature
-        store.submitWeeklyScan(
-            stage:   baseStage,
-            scalp:   baseScalp,
-            density: newLevel
-        )
-        
-        // Return the latest scan report that was just created
-        return store.latestScanReport ?? ScanReport(
-            id: UUID(), createdAt: Date(), scalpScanId: UUID(),
-            hairDensityPercent: newDensity, hairDensityLevel: newLevel,
-            hairFallStage: baseStage, scalpCondition: baseScalp,
-            analysisSource: .selfAssessed, planId: "unknown",
-            lifestyleScore: 5, dietScore: 5, stressScore: 5,
-            sleepScore: 5, hairCareScore: 5, recommendedPlan: ""
-        )
-    }
-    
-    // ─────────────────────────────────────
-    // MARK: Photo Loading
-    // ─────────────────────────────────────
-    
-    private enum PhotoSlot { case slot1, slot2, slot3 }
-    
-    private func loadPhoto(from item: PhotosPickerItem?, into slot: PhotoSlot) {
-        guard let item else { clearPhoto(slot: slot); return }
-        
-        Task {
-            if let data  = try? await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                await MainActor.run {
-                    switch slot {
-                    case .slot1: photo1 = image
-                    case .slot2: photo2 = image
-                    case .slot3: photo3 = image
-                    }
-                }
-            }
-        }
-    }
-    
-    private func clearPhoto(slot: PhotoSlot) {
-        switch slot {
-        case .slot1: photo1 = nil
-        case .slot2: photo2 = nil
-        case .slot3: photo3 = nil
-        }
     }
 }
