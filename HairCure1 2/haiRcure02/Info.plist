@@ -9,5 +9,16 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to take photos of your scalp for AI analysis.</string>
+	<key>GIDClientID</key>
+	<string>124233580774-0kfm0sgg1osv55d8mud2n714jik8n44o.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.124233580774-0kfm0sgg1osv55d8mud2n714jik8n44o</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

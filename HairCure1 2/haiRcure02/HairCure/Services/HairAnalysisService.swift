@@ -3,7 +3,7 @@ import UIKit
 class HairAnalysisService {
     
     // OpenRouter API key
-    private let apiKey = "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"
+    private let apiKey = "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"
     private let apiURL = "https://openrouter.ai/api/v1/chat/completions"
     
     private let systemPrompt = """

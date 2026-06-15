@@ -1,5 +1,8 @@
-
 import SwiftUI
+#if canImport(GoogleSignIn)
+import GoogleSignIn
+#endif
+
 
 @main
 struct Hair12App: App {
@@ -28,6 +31,11 @@ struct Hair12App: App {
                         await healthKit.refresh()
                         print("Refreshed on foreground")
                     }
+                }
+                .onOpenURL { url in
+                    #if canImport(GoogleSignIn)
+                    GIDSignIn.sharedInstance.handle(url)
+                    #endif
                 }
         }
     }
