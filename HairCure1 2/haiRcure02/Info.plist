@@ -10,15 +10,21 @@
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to take photos of your scalp for AI analysis.</string>
 	<key>GIDClientID</key>
-	<string>124233580774-0kfm0sgg1osv55d8mud2n714jik8n44o.apps.googleusercontent.com</string>
+	<string>$(GOOGLE_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.124233580774-0kfm0sgg1osv55d8mud2n714jik8n44o</string>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
 	</array>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>OPENROUTER_API_KEY</key>
+	<string>$(OPENROUTER_API_KEY)</string>
 </dict>
 </plist>
