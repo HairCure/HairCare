@@ -54,6 +54,10 @@ struct PlanResultsView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
 
+                    causeBreakdown
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+
                     recommendedPlanSection
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
@@ -530,6 +534,19 @@ struct PlanResultsView: View {
     }
 
     // MARK: Helpers
+
+    // ── Cause Attribution ─────────────────────────────────────────────────────
+    /// Builds the personalised "Why Your Hair Is Falling" section from the
+    /// existing ScanReport scores + user answers. No new data collection needed.
+    private var causeBreakdown: some View {
+        let causes = CauseAttributionEngine.buildCauses(
+            report  : report,
+            answers : store.userAnswers,
+            questions: store.questions,
+            options : store.questionOptions
+        )
+        return CauseAttributionSection(causes: causes)
+    }
 
     private func stageColor(_ s: Int) -> Color {
         switch s {
