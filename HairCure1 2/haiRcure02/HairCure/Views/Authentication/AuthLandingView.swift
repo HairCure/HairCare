@@ -205,7 +205,23 @@ struct LoginView: View {
                     
                     dividerRow(label: "Or continue with")
                     
-                    socialRow { onProceed() }
+                    socialRow(
+                        onAppleTap: { onProceed() },
+                        onGoogleTap: {
+                            Task {
+                                await authVM.signInWithGoogle()
+                                if authVM.isLoggedIn {
+                                    store.createUser(
+                                        name: authVM.userName ?? "User",
+                                        email: authVM.userEmail ?? "",
+                                        authProvider: .google,
+                                        supabaseId: authVM.currentUserId
+                                    )
+                                    onProceed()
+                                }
+                            }
+                        }
+                    )
                     
                     HStack(spacing: 4) {
                         Text("Don't have an account?")
@@ -343,7 +359,23 @@ struct RegisterView: View {
                     
                     dividerRow(label: "Or continue with")
                     
-                    socialRow { onProceed() }
+                    socialRow(
+                        onAppleTap: { onProceed() },
+                        onGoogleTap: {
+                            Task {
+                                await authVM.signInWithGoogle()
+                                if authVM.isLoggedIn {
+                                    store.createUser(
+                                        name: authVM.userName ?? "User",
+                                        email: authVM.userEmail ?? "",
+                                        authProvider: .google,
+                                        supabaseId: authVM.currentUserId
+                                    )
+                                    onProceed()
+                                }
+                            }
+                        }
+                    )
                     
                     HStack(spacing: 4) {
                         Text("Already have an account?")
@@ -462,10 +494,10 @@ private func dividerRow(label: String) -> some View {
     }
 }
 
-private func socialRow(onTap: @escaping () -> Void) -> some View {
+private func socialRow(onAppleTap: @escaping () -> Void, onGoogleTap: @escaping () -> Void) -> some View {
     VStack(spacing: 12) {
         // Apple — HIG: solid black background, white logo, "Continue with Apple"
-        Button(action: onTap) {
+        Button(action: onAppleTap) {
             HStack(spacing: 8) {
                 Image(systemName: "apple.logo")
                     .font(.system(size: 20))
@@ -480,10 +512,12 @@ private func socialRow(onTap: @escaping () -> Void) -> some View {
             .cornerRadius(12)
         }
         
-        // Google — standard "Continue with Google" with G icon in white circle
-        Button(action: onTap) {
+        // Google — standard "Continue with Google" with official G icon
+        Button(action: onGoogleTap) {
             HStack(spacing: 8) {
-                GoogleLogoView()
+                Image("GoogleLogo")
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 22, height: 22)
                 
                 Text("Continue with Google")
@@ -497,61 +531,5 @@ private func socialRow(onTap: @escaping () -> Void) -> some View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.15), lineWidth: 1.5))
         }
     }
-}
-
-// MARK: - Google "G" Logo (Official brand colours drawn with SwiftUI)
-
-private struct GoogleLogoView: View {
-    var body: some View {
-        Canvas { context, size in
-            let w = size.width
-            let h = size.height
-            let cx = w / 2
-            let cy = h / 2
-            let r = min(w, h) / 2
-            let thickness = r * 0.42
-            let inner = r - thickness
-            
-            // Background arc — blue (bottom-left → top-right, clockwise)
-            drawArc(in: &context, center: CGPoint(x: cx, y: cy),
-                    radius: r, innerRadius: inner,
-                    startAngle: .degrees(-45), endAngle: .degrees(45),
-                    color: Color(red: 0.26, green: 0.52, blue: 0.96))  // #4285F4
-            
-            // Green (bottom-right)
-            drawArc(in: &context, center: CGPoint(x: cx, y: cy),
-                    radius: r, innerRadius: inner,
-                    startAngle: .degrees(45), endAngle: .degrees(135),
-                    color: Color(red: 0.20, green: 0.66, blue: 0.33))  // #34A853
-            
-            // Yellow (bottom-left)
-            drawArc(in: &context, center: CGPoint(x: cx, y: cy),
-                    radius: r, innerRadius: inner,
-                    startAngle: .degrees(135), endAngle: .degrees(210),
-                    color: Color(red: 0.98, green: 0.74, blue: 0.02))  // #FBBC05
-            
-            // Red (top-left portion)
-            drawArc(in: &context, center: CGPoint(x: cx, y: cy),
-                    radius: r, innerRadius: inner,
-                    startAngle: .degrees(210), endAngle: .degrees(315),
-                    color: Color(red: 0.92, green: 0.26, blue: 0.21))  // #EA4335
-            
-            // Horizontal bar extending right from center (blue)
-            let barH = thickness
-            let barRect = CGRect(x: cx, y: cy - barH / 2, width: r + thickness * 0.1, height: barH)
-            context.fill(Path(barRect), with: .color(Color(red: 0.26, green: 0.52, blue: 0.96)))
-        }
-    }
     
-    private func drawArc(in context: inout GraphicsContext,
-                         center: CGPoint, radius: CGFloat, innerRadius: CGFloat,
-                         startAngle: Angle, endAngle: Angle, color: Color) {
-        var path = Path()
-        path.addArc(center: center, radius: radius,
-                    startAngle: startAngle, endAngle: endAngle, clockwise: false)
-        path.addArc(center: center, radius: innerRadius,
-                    startAngle: endAngle, endAngle: startAngle, clockwise: true)
-        path.closeSubpath()
-        context.fill(path, with: .color(color))
-    }
 }

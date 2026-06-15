@@ -16,10 +16,11 @@ struct ContentView: View {
     /// Becomes true once the post-login route (mainApp / assessment) has been resolved.
     /// Keeps the splash screen visible until we know where to send a returning user.
     @State private var isRouteResolved: Bool = false
+    @State private var isInitialLoad: Bool = true
 
     var body: some View {
         Group {
-            if authVM.isLoading || (authVM.isLoggedIn && !isRouteResolved) {
+            if (authVM.isLoading && isInitialLoad) || (authVM.isLoggedIn && !isRouteResolved) {
                 // Splash / loading screen — also shown while we resolve the route
                 // for a returning logged-in user, to prevent AuthLandingView from flashing.
                 ZStack {
@@ -123,6 +124,7 @@ struct ContentView: View {
         }
         .onChange(of: authVM.isLoading) { _, isLoading in
             guard !isLoading else { return }
+            isInitialLoad = false
             if authVM.isLoggedIn {
                 // Reset any stale data from a previous session BEFORE setting up the new user
                 store.resetForLogout()
