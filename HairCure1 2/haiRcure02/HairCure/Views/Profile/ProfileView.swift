@@ -5,8 +5,6 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(AppDataStore.self) private var store
-    @Environment(AuthViewModel.self) private var authVM
-    @State private var showLogoutAlert = false
     
     private var user: User? {
         store.users.first(where: { $0.id == store.currentUserId })
@@ -15,8 +13,6 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             List {
-                
-                //  General
                 Section {
                     ProfileRow(icon: "person.fill", color: Color.hcBrown, title: "My Profile") {
                         MyProfileView()
@@ -24,46 +20,8 @@ struct ProfileView: View {
                     ProfileRow(icon: "bell.badge.fill", color: Color.hcBrownLight, title: "Notifications") {
                         NotificationSettingsView()
                     }
-                    ProfileRow(icon: "gearshape.fill", color: Color.hcWarmBrown, title: "App Preferences") {
-                        ProgressPlaceholderView(title: "App Preferences")
-                    }
-                }
-                
-                // Support
-                Section {
-                    ProfileRow(icon: "questionmark.circle.fill", color: Color.hcBrown, title: "Help & Support") {
-                        ProgressPlaceholderView(title: "Help & Support")
-                    }
-                    ProfileRow(icon: "doc.text.fill", color: Color.hcBrownLight, title: "Terms & Policies") {
-                        ProgressPlaceholderView(title: "Terms & Policies")
-                    }
-                    ProfileRow(icon: "info.circle.fill", color: Color.hcWarmBrown, title: "About Us") {
-                        ProgressPlaceholderView(title: "About Us")
-                    }
-                }
-                
-                //  Sign Out
-                Section {
-                    Button(role: .destructive) {
-                        showLogoutAlert = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("Sign Out")
-                                .fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                }
-                
-                //  Account Management
-                Section {
-                    NavigationLink(destination: DeleteAccountView()) {
-                        HStack(spacing: 14) {
-                            iconBadge(systemName: "trash.fill", color: Color.hcBrown)
-                            Text("Delete Account")
-                                .foregroundStyle(Color.hcBrown)
-                        }
+                    ProfileRow(icon: "gearshape.fill", color: Color.hcWarmBrown, title: "Settings") {
+                        SettingsView()
                     }
                 }
             }
@@ -71,22 +29,75 @@ struct ProfileView: View {
             .scrollContentBackground(.hidden)
             .background(Color.hcCream)
             .navigationTitle("Profile")
-            .alert("Sign Out", isPresented: $showLogoutAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sign Out") {
-                    Task {
-                        store.resetForLogout()   // clear in-memory data before auth sign-out
-                        await authVM.signOut()
-                    }
-                }
-                .foregroundColor(.red)
-            } message: {
-                Text("Are you sure you want to sign out?")
-            }
         }
     }
+}
+
+// MARK: - SettingsView
+
+struct SettingsView: View {
+    @Environment(AppDataStore.self) private var store
+    @Environment(AuthViewModel.self) private var authVM
+    @State private var showLogoutAlert = false
     
-    // MARK:  Icon Badge Helper
+    var body: some View {
+        List {
+            Section {
+                ProfileRow(icon: "gearshape.fill", color: Color.hcWarmBrown, title: "App Preferences") {
+                    ProgressPlaceholderView(title: "App Preferences")
+                }
+                ProfileRow(icon: "questionmark.circle.fill", color: Color.hcBrown, title: "Help & Support") {
+                    ProgressPlaceholderView(title: "Help & Support")
+                }
+                ProfileRow(icon: "doc.text.fill", color: Color.hcBrownLight, title: "Terms & Policies") {
+                    ProgressPlaceholderView(title: "Terms & Policies")
+                }
+                ProfileRow(icon: "info.circle.fill", color: Color.hcWarmBrown, title: "About Us") {
+                    ProgressPlaceholderView(title: "About Us")
+                }
+            }
+            
+            Section {
+                Button(role: .destructive) {
+                    showLogoutAlert = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Sign Out")
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                }
+            }
+            
+            Section {
+                NavigationLink(destination: DeleteAccountView()) {
+                    HStack(spacing: 14) {
+                        iconBadge(systemName: "trash.fill", color: Color.hcBrown)
+                        Text("Delete Account")
+                            .foregroundStyle(Color.hcBrown)
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color.hcCream)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Sign Out", isPresented: $showLogoutAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Sign Out") {
+                Task {
+                    store.resetForLogout()
+                    await authVM.signOut()
+                }
+            }
+            .foregroundColor(.red)
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
+    }
     
     private func iconBadge(systemName: String, color: Color) -> some View {
         ZStack {
