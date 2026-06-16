@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PlanResultsView: View {
     let onStart: () -> Void
+    var onRetake: (() -> Void)? = nil
 
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
@@ -206,6 +207,7 @@ struct PlanResultsView: View {
         let density  = report?.hairDensityPercent ?? 52
         let stage    = report?.hairFallStage.intValue ?? plan?.stage ?? 2
         let hairType = report?.hairType?.capitalized ?? "N/A"
+        let isNotAssessed = report?.hairDensityLevel == .notAssessed
 
         return VStack(alignment: .leading, spacing: 0) {
             Text("Your Hair Analysis Results")
@@ -216,8 +218,8 @@ struct PlanResultsView: View {
             Divider().padding(.bottom, 14)
 
             resultRow(label: "Hair Density",
-                      value: "\(Int(density))%",
-                      color: densityColor(density))
+                      value: isNotAssessed ? "Not Assessed" : "\(Int(density))%",
+                      color: isNotAssessed ? .secondary : densityColor(density))
 
             resultRow(label: "Growth Stage",
                       value: "Stage \(stage)",
@@ -509,7 +511,9 @@ struct PlanResultsView: View {
     
 
     private var ctaButton: some View {
-        VStack(spacing: 0) {
+        let isNotAssessed = report?.hairDensityLevel == .notAssessed
+        
+        return VStack(spacing: 0) {
             LinearGradient(
                 colors: [Color.hcCream.opacity(0), Color.hcCream],
                 startPoint: .top, endPoint: .bottom
@@ -517,18 +521,33 @@ struct PlanResultsView: View {
             .frame(height: 32)
             .allowsHitTesting(false)
 
-            Button {
-                if authVM.isGuestMode {
-                    showAuthSheet = true
-                } else {
-                    onStart()
+            VStack(spacing: 12) {
+                if isNotAssessed, let onRetake = onRetake {
+                    Button {
+                        onRetake()
+                    } label: {
+                        Text("Upload Photo for Better Analysis")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.hcBrown)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                    .padding(.horizontal, 20)
                 }
-            } label: {
-                Text(authVM.isGuestMode ? "Create Account to Continue" : "Get Started")
-                    .hcPrimaryButton()
+
+                Button {
+                    if authVM.isGuestMode {
+                        showAuthSheet = true
+                    } else {
+                        onStart()
+                    }
+                } label: {
+                    Text(authVM.isGuestMode ? "Create Account to Continue" : "Get Started")
+                        .hcPrimaryButton()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 36)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 36)
             .background(Color.hcCream)
         }
     }
@@ -564,6 +583,7 @@ struct PlanResultsView: View {
         case .oily:     return "Oily Scalp"
         case .inflamed: return "Inflamed"
         case .normal:   return "Normal"
+        case .notAssessed: return "Not Assessed"
         }
     }
 
@@ -574,6 +594,7 @@ struct PlanResultsView: View {
         case .oily:     return "waveform.path"
         case .inflamed: return "flame.fill"
         case .normal:   return "checkmark.seal.fill"
+        case .notAssessed: return "sparkles"
         }
     }
 
@@ -594,6 +615,9 @@ struct PlanResultsView: View {
         case .normal:
             return ("Maintain Scalp Health",
                     "Oil once a week, wash every 2–3 days — keep up the healthy routine")
+        case .notAssessed:
+            return ("General Scalp Health",
+                    "Maintain a clean, nourished scalp with regular washing and light oiling to support hair growth.")
         }
     }
 

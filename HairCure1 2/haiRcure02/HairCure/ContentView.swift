@@ -3,6 +3,7 @@ import SwiftUI
 enum AppRoute: Hashable {
     case auth
     case assessment
+    case stageSelection
     case hairAnalysis
     case planResults
     case mainApp
@@ -17,6 +18,8 @@ struct ContentView: View {
     /// Keeps the splash screen visible until we know where to send a returning user.
     @State private var isRouteResolved: Bool = false
     @State private var isInitialLoad: Bool = true
+    @State private var analysisViewModel = HairAnalysisViewModel()
+    @State private var assessmentInitialIndex = 0
 
     var body: some View {
         Group {
@@ -64,29 +67,42 @@ struct ContentView: View {
                     }
                 case .assessment:
                     AssessmentView(onComplete: {
+                        assessmentInitialIndex = 0
                         withAnimation(.easeInOut(duration: 0.3)) {
                             route = .hairAnalysis
                         }
                     }, onBack: {
+                        assessmentInitialIndex = 0
                         withAnimation(.easeInOut(duration: 0.3)) {
                             route = .auth
                         }
-                    })
+                    }, initialIndex: assessmentInitialIndex)
                     .transition(.opacity)
+                case .stageSelection:
+                    EmptyView()
                 case .hairAnalysis:
-                    HairAnalysisView {
+                    HairAnalysisView(onComplete: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             route = .planResults
                         }
-                    }
+                    }, onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            assessmentInitialIndex = 7
+                            route = .assessment
+                        }
+                    }, viewModel: analysisViewModel)
                     .transition(.opacity)
                 case .planResults:
-                    PlanResultsView {
+                    PlanResultsView(onStart: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 0   // Always land on Home tab
                             route = .mainApp
                         }
-                    }
+                    }, onRetake: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            route = .hairAnalysis
+                        }
+                    })
                     .transition(.opacity)
                 case .mainApp:
                     TabView(selection: $selectedTab) {

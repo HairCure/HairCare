@@ -24,6 +24,7 @@ enum ScalpCondition: String, Codable {
     case oily
     case inflamed
     case normal
+    case notAssessed
 }
 
 enum HairDensityLevel: String, Codable {
@@ -31,6 +32,7 @@ enum HairDensityLevel: String, Codable {
     case medium
     case low
     case veryLow
+    case notAssessed
 }
 
 enum AnalysisSource: String, Codable {

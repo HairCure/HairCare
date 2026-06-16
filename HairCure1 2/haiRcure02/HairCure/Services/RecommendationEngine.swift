@@ -466,7 +466,7 @@ struct RecommendationEngine {
         case .inflamed:  score += food.isOmega3Rich   ? 4 : 0
             score += food.isVitaminARich ? 1 : 0
         case .oily:      score += food.isZincRich     ? 3 : 0
-        case .normal:    break
+        case .normal, .notAssessed:    break
         }
         
         return score
@@ -673,7 +673,7 @@ struct RecommendationEngine {
                 )
             ]
             
-        case .normal:
+        case .notAssessed, .normal:
             return [
                 HairCareRoutine(
                     iconName: "shower",
@@ -883,6 +883,7 @@ struct RecommendationEngine {
         case .oily:     return "Oily scalp detected — sebum-balancing tips and adjusted wash frequency added."
         case .inflamed: return "Scalp inflammation detected — Omega-3 foods and cooling oil routine prioritised."
         case .normal:   return "Scalp condition is normal — standard plan applied."
+        case .notAssessed: return "General scalp health tips applied."
         }
     }
     
