@@ -261,14 +261,30 @@ struct HomeHairHealthCardView: View {
         .padding(.all, 16)
         .frame(height: heroCardHeight)
         .background(
-            LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0.28, green: 0.17, blue: 0.15), location: 0.0),
-                    .init(color: Color(red: 0.17, green: 0.10, blue: 0.09), location: 1.0),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            ZStack {
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
+                        .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                RadialGradient(
+                    colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.14), .clear],
+                    center: .init(x: 0.75, y: 0.25),
+                    startRadius: 10,
+                    endRadius: 160
+                )
+
+                RadialGradient(
+                    colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
+                    center: .init(x: 0.15, y: 0.80),
+                    startRadius: 5,
+                    endRadius: 120
+                )
+            }
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
