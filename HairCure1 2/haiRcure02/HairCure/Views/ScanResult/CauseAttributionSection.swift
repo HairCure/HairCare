@@ -89,7 +89,7 @@ enum CauseAttributionEngine {
         // ── 2. NUTRITIONAL DEFICIENCY (Q4 diet, orderIndex 4) ───────────────
         let dietScore = report.dietScore
         if dietScore < 8.5 {
-            let answerStr   = answerText(forOrderIndex: 4, answers: answers,
+            let answerStr   = answerText(forOrderIndex: 2, answers: answers,
                                          questions: questions, options: options)
                               ?? "a suboptimal diet"
             let lif         = lifestyle(for: dietScore)
@@ -107,33 +107,35 @@ enum CauseAttributionEngine {
             ))
         }
 
-        // ── 3. CHRONIC STRESS / TELOGEN EFFLUVIUM (Q3, orderIndex 3) ────────
-        let stressScore = report.stressScore
-        if stressScore < 8.5 {
-            let answerStr   = answerText(forOrderIndex: 3, answers: answers,
-                                         questions: questions, options: options)
-                              ?? "elevated stress"
-            let lif         = lifestyle(for: stressScore)
-            let conf        = lifestyleConf(score: stressScore)
-            cards.append(CauseCard(
-                icon          : "brain.head.profile",
-                iconColor     : Color(red: 0.55, green: 0.35, blue: 0.85),
-                severityLabel : lif.label,
-                severityColor : lif.color,
-                headline      : "Chronic Stress (Telogen Effluvium)",
-                yourDataLine  : "Your stress score is \(fmt(stressScore))/10 — you indicated \"\(answerStr)\", a documented cortisol trigger.",
-                mechanismLine : "Elevated cortisol forces follicles into a resting (telogen) phase prematurely. This causes 100–300 extra hairs to shed daily, typically 2–4 months after the stress peak.",
-                confidenceFraction: conf,
-                isPrimary     : lif.isPrimary
-            ))
+        // ── 3. CHRONIC STRESS / TELOGEN EFFLUVIUM (SCORED) ────────
+        if questions.contains(where: { $0.scoreDimension == .stress }) {
+            let stressScore = report.stressScore
+            if stressScore < 8.5 {
+                let answerStr   = answerText(forOrderIndex: 3, answers: answers,
+                                             questions: questions, options: options)
+                                  ?? "elevated stress"
+                let lif         = lifestyle(for: stressScore)
+                let conf        = lifestyleConf(score: stressScore)
+                cards.append(CauseCard(
+                    icon          : "brain.head.profile",
+                    iconColor     : Color(red: 0.55, green: 0.35, blue: 0.85),
+                    severityLabel : lif.label,
+                    severityColor : lif.color,
+                    headline      : "Chronic Stress (Telogen Effluvium)",
+                    yourDataLine  : "Your stress score is \(fmt(stressScore))/10 — you indicated \"\(answerStr)\", a documented cortisol trigger.",
+                    mechanismLine : "Elevated cortisol forces follicles into a resting (telogen) phase prematurely. This causes 100–300 extra hairs to shed daily, typically 2–4 months after the stress peak.",
+                    confidenceFraction: conf,
+                    isPrimary     : lif.isPrimary
+                ))
+            }
         }
 
-        // ── 4. SLEEP DEPRIVATION (Q2, orderIndex 2) ──────────────────────────
+        // ── 4. SLEEP DEPRIVATION (Q1, orderIndex 1) ──────────────────────────
         let sleepScore = report.sleepScore
         if sleepScore < 8.5 {
-            let answerStr   = answerText(forOrderIndex: 2, answers: answers,
+            let answerStr   = answerText(forOrderIndex: 1, answers: answers,
                                          questions: questions, options: options)
-                              ?? "insufficient sleep"
+                                  ?? "insufficient sleep"
             let lif         = lifestyle(for: sleepScore)
             let conf        = lifestyleConf(score: sleepScore)
             cards.append(CauseCard(
@@ -166,10 +168,10 @@ enum CauseAttributionEngine {
             ))
         }
 
-        // ── 6. HAIR CARE ROUTINE (Q6, orderIndex 6) ──────────────────────────
+        // ── 6. HAIR CARE ROUTINE (Q3, orderIndex 3) ──────────────────────────
         let hairCareScore = report.hairCareScore
         if hairCareScore < 6.5 {
-            let answerStr = answerText(forOrderIndex: 6, answers: answers,
+            let answerStr = answerText(forOrderIndex: 3, answers: answers,
                                        questions: questions, options: options)
                             ?? "a suboptimal washing routine"
             let conf      = min(lifestyleConf(score: hairCareScore), 0.58)
@@ -266,7 +268,7 @@ enum CauseAttributionEngine {
                 "scalp inflammation",
                 "Active inflammation releases cytokines that damage follicle stem cells and shorten the anagen (growth) phase."
             )
-        case .normal:
+        case .normal, .notAssessed:
             return ("", "")
         }
     }

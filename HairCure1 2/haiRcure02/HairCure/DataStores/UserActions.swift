@@ -181,7 +181,7 @@ extension AppDataStore {
         guard let idx = assessments.lastIndex(where: { $0.userId == currentUserId }) else { return }
         let assessmentId = assessments[idx].id
         let answered = userAnswers.filter { $0.assessmentId == assessmentId }.count
-        let total    = questions.filter { $0.questionOrderIndex <= 7 }.count
+        let total    = questions.filter { $0.questionOrderIndex <= 8 }.count
         let percent  = total > 0 ? Float(answered) / Float(total) * 100 : 0
         assessments[idx].completionPercent = min(percent, 99)
     }
@@ -256,6 +256,7 @@ extension AppDataStore {
         case .medium:  densityPercent = 65
         case .low:     densityPercent = 45
         case .veryLow: densityPercent = 25
+        case .notAssessed: densityPercent = -1
         }
         
         return runEngineAndApply(
@@ -474,6 +475,7 @@ extension AppDataStore {
                 case .medium:  densityPct = 65
                 case .low:     densityPct = 45
                 case .veryLow: densityPct = 25
+                case .notAssessed: densityPct = -1
                 }
                 
                 let report = ScanReport(
@@ -586,9 +588,9 @@ extension AppDataStore {
     ) -> Float {
         let orderIndex: Int
         switch key {
-        case "age":    orderIndex = 7
-        case "height": orderIndex = 8
-        case "weight": orderIndex = 9
+        case "age":    orderIndex = 4
+        case "height": orderIndex = 5
+        case "weight": orderIndex = 6
         default:       return fallback
         }
         guard let question = questions.first(where: { $0.questionOrderIndex == orderIndex }),
@@ -694,7 +696,7 @@ extension AppDataStore {
     
     
     private func resolvedActivityLevel(from assessment: Assessment) -> ActivityLevel? {
-        guard let q7 = questions.first(where: { $0.questionOrderIndex == 10 }),
+        guard let q7 = questions.first(where: { $0.questionOrderIndex == 7 }),
               let answer = userAnswers.first(where: {
                   $0.questionId == q7.id && $0.assessmentId == assessment.id
               }),

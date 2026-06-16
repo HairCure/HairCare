@@ -15,6 +15,28 @@ class AssessmentViewModel {
     
     init() {}
     
+    func loadExistingAnswers(store: AppDataStore) {
+        guard let assessment = store.assessments.last(where: { $0.userId == store.currentUserId }) else { return }
+        let answers = store.userAnswers.filter { $0.assessmentId == assessment.id }
+        
+        for ans in answers {
+            let qId = ans.questionId
+            if let selOpt = ans.selectedOptionId {
+                singleSelections[qId] = selOpt
+                imageSelections[qId] = selOpt
+            }
+            if !ans.selectedOptionIds.isEmpty {
+                multiSelections[qId] = Set(ans.selectedOptionIds)
+            }
+            if let pickVal = ans.pickerValue {
+                pickerValues[qId] = pickVal
+            }
+            if let txt = ans.answerText {
+                textValues[qId] = txt
+            }
+        }
+    }
+    
     func questions(store: AppDataStore) -> [Question] {
         store.assessmentQuestions()
     }

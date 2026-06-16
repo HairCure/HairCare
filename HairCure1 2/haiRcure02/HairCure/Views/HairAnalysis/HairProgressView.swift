@@ -359,21 +359,26 @@ struct MonthlyAssessmentWrapper: View {
     let onComplete: (ScanReport) -> Void
     let onCancel:   () -> Void
 
-    /// Tracks whether the Q1-Q10 assessment questionnaire is done.
-    /// When `true`, the wrapper shows the hair analysis self-assessment (Q11-Q13).
-    @State private var assessmentDone = false
+    enum AssessmentStep {
+        case questions
+        case photoPrompt
+    }
+
+    @State private var currentStep: AssessmentStep = .questions
+    @State private var analysisViewModel = HairAnalysisViewModel()
+    @State private var assessmentInitialIndex = 0
 
     var body: some View {
         NavigationStack {
-            if assessmentDone {
-                // Step 2: Hair analysis self-assessment (stage, scalp, density)
-                FallbackAssessmentView(onComplete: {
-                    if let newReport = store.latestScanReport {
-                        onComplete(newReport)
-                    } else {
-                        onCancel()
-                    }
-                })
+            switch currentStep {
+            case .questions:
+                AssessmentView(onComplete: {
+                    assessmentInitialIndex = 0
+                    withAnimation { currentStep = .photoPrompt }
+                }, onBack: {
+                    assessmentInitialIndex = 0
+                    onCancel()
+                }, initialIndex: assessmentInitialIndex)
                 .environment(store)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -381,13 +386,20 @@ struct MonthlyAssessmentWrapper: View {
                             .foregroundStyle(Color.hcBrown)
                     }
                 }
-            } else {
-                // Step 1: Assessment questionnaire (Q1-Q10)
-                AssessmentView(onComplete: {
-                    withAnimation { assessmentDone = true }
+                
+            case .photoPrompt:
+                HairAnalysisView(onComplete: {
+                    if let newReport = store.latestScanReport {
+                        onComplete(newReport)
+                    } else {
+                        onCancel()
+                    }
                 }, onBack: {
-                    onCancel()
-                })
+                    withAnimation {
+                        assessmentInitialIndex = 7
+                        currentStep = .questions
+                    }
+                }, viewModel: analysisViewModel)
                 .environment(store)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {

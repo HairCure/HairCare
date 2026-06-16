@@ -46,6 +46,7 @@ class PlanResultViewModel {
         case .oily:     return "Oily Scalp"
         case .inflamed: return "Inflamed"
         case .normal:   return "Normal"
+        case .notAssessed: return "Not Assessed"
         }
     }
 
@@ -56,6 +57,7 @@ class PlanResultViewModel {
         case .oily:     return "waveform.path"
         case .inflamed: return "flame.fill"
         case .normal:   return "checkmark.seal.fill"
+        case .notAssessed: return "sparkles"
         }
     }
 
@@ -76,6 +78,9 @@ class PlanResultViewModel {
         case .normal:
             return ("Maintain Scalp Health",
                     "Oil once a week, wash every 2–3 days — keep up the healthy routine")
+        case .notAssessed:
+            return ("General Scalp Health",
+                    "Maintain a clean, nourished scalp with regular washing and light oiling to support hair growth.")
         }
     }
     

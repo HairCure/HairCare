@@ -10,6 +10,11 @@ struct HairPhotoSlot: Identifiable {
     var image: UIImage? = nil
 }
 
+enum AnalysisMode {
+    case photo
+    case manual
+}
+
 @Observable
 @MainActor
 class HairAnalysisViewModel {
@@ -33,8 +38,12 @@ class HairAnalysisViewModel {
     var showingPicker = false
     var showingCamera = false
     
+    var mode: AnalysisMode = .photo
+    var manualStageOptionId: UUID? = nil
+    var showDoctorAlert = false
+    var doctorMessage = ""
+    
     var isAnalyzing = false
-    var showFallback = false
     var analysisError: String? = nil
     
     private let service = HairAnalysisService()
@@ -61,8 +70,48 @@ class HairAnalysisViewModel {
         }
     }
     
-    func goToFallback() {
-        showFallback = true
+    func submitManualStage(store: AppDataStore, onComplete: @escaping () -> Void) {
+        guard let q = store.questions.first(where: { $0.questionOrderIndex == 8 }) else { return }
+        
+        let targetOptId: UUID?
+        if let optId = manualStageOptionId {
+            targetOptId = optId
+        } else {
+            if let assessment = store.assessments.last(where: { $0.userId == store.currentUserId }),
+               let ans = store.userAnswers.first(where: { $0.assessmentId == assessment.id && $0.questionId == q.id }) {
+                targetOptId = ans.selectedOptionId
+            } else {
+                targetOptId = nil
+            }
+        }
+        
+        guard let optId = targetOptId,
+              let opt = store.options(for: q.id).first(where: { $0.id == optId })
+        else { return }
+        
+        let stage: HairFallStage
+        switch opt.optionOrderIndex {
+        case 1: stage = .stage1
+        case 2: stage = .stage2
+        case 3: stage = .stage3
+        case 4: stage = .stage4
+        default: stage = .stage2
+        }
+        
+        let result = store.submitSelfAssessedStage(
+            stage: stage,
+            scalp: .notAssessed,
+            density: .notAssessed,
+            scanType: .initial
+        )
+        
+        switch result {
+        case .referDoctor(let msg):
+            doctorMessage = msg
+            showDoctorAlert = true
+        default:
+            onComplete()
+        }
     }
     
     func analyzeButtonTapped(store: AppDataStore, onComplete: @escaping () -> Void) async {
@@ -71,10 +120,7 @@ class HairAnalysisViewModel {
               let leftImg  = slots.first(where: { $0.id == "left"  })?.image,
               let rightImg = slots.first(where: { $0.id == "right" })?.image,
               let backImg  = slots.first(where: { $0.id == "back"  })?.image
-        else {
-            goToFallback()
-            return
-        }
+        else { return }
         
         isAnalyzing = true
         analysisError = nil

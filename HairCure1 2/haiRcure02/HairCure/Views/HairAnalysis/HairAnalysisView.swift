@@ -3,9 +3,10 @@ import PhotosUI
 
 struct HairAnalysisView: View {
     let onComplete: () -> Void
+    var onBack: (() -> Void)? = nil
 
     @Environment(AppDataStore.self) private var store
-    @State private var viewModel = HairAnalysisViewModel()
+    @Bindable var viewModel: HairAnalysisViewModel
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -18,52 +19,53 @@ struct HairAnalysisView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    HCBackButton { viewModel.goToFallback() }
+                    HCBackButton {
+                        onBack?()
+                    }
+                    .opacity(onBack != nil ? 1 : 0)
+                    .disabled(onBack == nil)
                     Spacer()
-                    Button("Skip") { viewModel.goToFallback() }
-                        .font(.system(size: 16))
-                        .foregroundStyle(.primary)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
-                        VStack(spacing: 8) {
-                            Text("Capture 4 scalp views")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundStyle(.primary)
-                            Text("Take clear, well-lit photos for accurate AI analysis")
-                                .font(.system(size: 15, weight: .regular))
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-
-                        LazyVGrid(columns: columns, spacing: 24) {
-                            ForEach(0..<viewModel.slots.count, id: \.self) { i in
-                                PhotoGridCellView(index: i, viewModel: viewModel)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-
-                        VStack(spacing: 0) {
-                            Divider()
-                                .padding(.horizontal, 20)
-                            Text("\(viewModel.capturedCount) of 4 photos captured")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 16)
-
-                            if let error = viewModel.analysisError {
-                                Text(error)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
+                            VStack(spacing: 8) {
+                                Text("Capture 4 scalp views")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundStyle(.primary)
+                                Text("Take clear, well-lit photos for accurate AI analysis")
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 20)
-                                    .padding(.top, 8)
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+
+                            LazyVGrid(columns: columns, spacing: 24) {
+                                ForEach(0..<viewModel.slots.count, id: \.self) { i in
+                                    PhotoGridCellView(index: i, viewModel: viewModel)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+
+                            VStack(spacing: 0) {
+                                Divider()
+                                    .padding(.horizontal, 20)
+                                Text("\(viewModel.capturedCount) of 4 photos captured")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 16)
+
+                                if let error = viewModel.analysisError {
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 20)
+                                        .padding(.top, 8)
+                                }
                         }
                         .padding(.top, 8)
                     }
@@ -71,7 +73,7 @@ struct HairAnalysisView: View {
                 }
             }
 
-            VStack {
+            VStack(spacing: 12) {
                 Spacer()
                 Button {
                     Task { await viewModel.analyzeButtonTapped(store: store, onComplete: onComplete) }
@@ -79,12 +81,25 @@ struct HairAnalysisView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 15))
-                        Text(viewModel.allCaptured ? "Analyze My Scalp" : "Skip to Manual Assessment")
+                        Text("Analyze My Scalp")
                     }
                     .hcPrimaryButton()
+                    .opacity(viewModel.allCaptured ? 1.0 : 0.5)
+                }
+                .disabled(!viewModel.allCaptured)
+                .padding(.horizontal, 20)
+                
+                Button {
+                    viewModel.submitManualStage(store: store, onComplete: onComplete)
+                } label: {
+                    Text("Skip & Generate Plan")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.hcBrown)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 36)
+                .padding(.bottom, 24)
             }
 
             if viewModel.isAnalyzing {
@@ -118,8 +133,10 @@ struct HairAnalysisView: View {
             }
             .ignoresSafeArea()
         }
-        .fullScreenCover(isPresented: $viewModel.showFallback) {
-            FallbackAssessmentView(onComplete: onComplete)
+        .alert("Doctor Consultation Recommended", isPresented: $viewModel.showDoctorAlert) {
+            Button("Understood") { onComplete() }
+        } message: {
+            Text(viewModel.doctorMessage)
         }
     }
 }
@@ -214,6 +231,83 @@ struct HairAnalyzingOverlayView: View {
             .padding(36)
             .background(Color(red: 0.15, green: 0.1, blue: 0.1).opacity(0.92))
             .cornerRadius(20)
+        }
+    }
+}
+
+struct ManualStageImageGridView: View {
+    var viewModel: HairAnalysisViewModel
+    var store: AppDataStore
+    
+    var body: some View {
+        let qs = store.fallbackQuestions()
+        if let q = qs.first(where: { $0.questionOrderIndex == 11 }) {
+            let opts = store.options(for: q.id)
+            let selected = viewModel.manualStageOptionId
+            let columns = [GridItem(.flexible(), spacing: 16),
+                           GridItem(.flexible(), spacing: 16)]
+            
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(opts) { opt in
+                    let isSel = selected == opt.id
+                    Button {
+                        viewModel.manualStageOptionId = opt.id
+                        store.saveAnswer(questionId: q.id, selectedOptionId: opt.id)
+                    } label: {
+                        ZStack(alignment: .topLeading) {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(
+                                            isSel ? Color.hcBrown : Color(.systemGray5),
+                                            lineWidth: isSel ? 2.5 : 1
+                                        )
+                                )
+                            
+                            VStack(spacing: 0) {
+                                ManualStageImageView(imageURL: opt.imageURL, index: opt.optionOrderIndex)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 130)
+                                    .clipped()
+                            }
+                            
+                            Text("\(opt.optionOrderIndex)")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                        }
+                        .frame(height: 150)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+struct ManualStageImageView: View {
+    let imageURL: String?
+    let index: Int
+    
+    var body: some View {
+        if let url = imageURL, UIImage(named: url) != nil {
+            Image(url)
+                .resizable()
+                .scaledToFit()
+                .padding(12)
+        } else {
+            ZStack {
+                Color(.systemGray6)
+                VStack(spacing: 6) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(Color(.systemGray3))
+                    Text("Stage \(index)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(.systemGray2))
+                }
+            }
         }
     }
 }

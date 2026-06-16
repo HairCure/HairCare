@@ -140,208 +140,152 @@ class AppDataStore {
     
     private func seedQuestions() {
         
-        // Q1 Hair fall duration (context only, not scored) ──
-        let q1 = Question(id: UUID(), questionType: .singleChoice,
-                          questionText: "How long have you been experiencing hair fall?",
-                          questionOrderIndex: 1, scoreDimension: .none)
-        questions.append(q1)
-        ["Just started (less than 1 month)",
-         "1–3 months",
-         "3–6 months",
-         "More than 6 months"].enumerated().forEach { i, text in
-            questionOptions.append(QuestionOption(id: UUID(), questionId: q1.id,
-                                                  optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
-        }
-        
-        // Q2 Sleep hours (SCORED)
+        // Q1 Sleep hours (SCORED)
         // Research: PSQI scale (Buysse 1989) + Trüeb 2015 cortisol-hair link
         //   <6 hrs  → PSQI severe → cortisol spike → telogen effluvium  → 1.5
         //   6–7 hrs → PSQI moderate impairment                           → 4.5
         //   7–8 hrs → WHO/NHS optimal range                              → 10.0
         //   >8 hrs  → elevated cortisol link (Motivala 2008)             → 6.5
-        let q2 = Question(id: UUID(), questionType: .singleChoice,
+        let q1 = Question(id: UUID(), questionType: .singleChoice,
                           questionText: "How many hours of sleep do you get each night?",
-                          questionOrderIndex: 2, scoreDimension: .sleep)
-        questions.append(q2)
-        let q2opts: [(String, Float)] = [
+                          questionOrderIndex: 1, scoreDimension: .sleep)
+        questions.append(q1)
+        let q1opts: [(String, Float)] = [
             ("Less than 6 hours", 1.5),
             ("6–7 hours",         4.5),
             ("7–8 hours",         10.0),
             ("More than 8 hours", 6.5)
+        ]
+        q1opts.enumerated().forEach { i, pair in
+            let opt = QuestionOption(id: UUID(), questionId: q1.id,
+                                     optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
+            questionOptions.append(opt)
+            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q1.id,
+                                                      optionId: opt.id, scoreDimension: .sleep, scoreValue: pair.1))
+        }
+        
+        // Q2 Diet quality
+        // Research: Almohanna et al. 2019 (Dermatol Ther) + Rushton 2002 (Clin Exp Dermatol)
+        //   Very healthy  → all key nutrients likely met                  → 10.0
+        //   Fairly balanced → partial zinc/iron gaps probable             → 6.5
+        //   Often junk    → iron/zinc/biotin deficiency high probability  → 2.5
+        //   Very poor     → severe multi-nutrient deficiency — TE trigger → 1.0
+        let q2 = Question(id: UUID(), questionType: .singleChoice,
+                          questionText: "How would you describe your typical daily diet?",
+                          questionOrderIndex: 2, scoreDimension: .diet)
+        questions.append(q2)
+        let q2opts: [(String, Float)] = [
+            ("Balanced meals", 10.0),
+            ("Fairly balanced",               6.5),
+            ("Often junk food",        2.5),
+            ("Skipping meals",    1.0)
         ]
         q2opts.enumerated().forEach { i, pair in
             let opt = QuestionOption(id: UUID(), questionId: q2.id,
                                      optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
             questionOptions.append(opt)
             questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q2.id,
-                                                      optionId: opt.id, scoreDimension: .sleep, scoreValue: pair.1))
-        }
-        
-        //Q3  Stress level (SCORED)
-        let q3 = Question(id: UUID(), questionType: .singleChoice,
-                          questionText: "How stressed do you feel on most days?",
-                          questionOrderIndex: 3, scoreDimension: .stress)
-        questions.append(q3)
-        let q3opts: [(String, Float)] = [
-            ("Rarely or never",    10.0),
-            ("Occasionally",        6.5),
-            ("Most days",           3.0),
-            ("Always / burnout",    1.0)
-        ]
-        q3opts.enumerated().forEach { i, pair in
-            let opt = QuestionOption(id: UUID(), questionId: q3.id,
-                                     optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
-            questionOptions.append(opt)
-            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q3.id,
-                                                      optionId: opt.id, scoreDimension: .stress, scoreValue: pair.1))
-        }
-        
-        // Q4 Diet quality
-        // Research: Almohanna et al. 2019 (Dermatol Ther) + Rushton 2002 (Clin Exp Dermatol)
-        //   Very healthy  → all key nutrients likely met                  → 10.0
-        //   Fairly balanced → partial zinc/iron gaps probable             → 6.5
-        //   Often junk    → iron/zinc/biotin deficiency high probability  → 2.5
-        //   Very poor     → severe multi-nutrient deficiency — TE trigger → 1.0
-        let q4 = Question(id: UUID(), questionType: .singleChoice,
-                          questionText: "How would you describe your typical daily diet?",
-                          questionOrderIndex: 4, scoreDimension: .diet)
-        questions.append(q4)
-        let q4opts: [(String, Float)] = [
-            ("Balanced meals", 10.0),
-            ("Fairly balanced",               6.5),
-            ("Often junk food",        2.5),
-            ("Skipping meals",    1.0)
-        ]
-        q4opts.enumerated().forEach { i, pair in
-            let opt = QuestionOption(id: UUID(), questionId: q4.id,
-                                     optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
-            questionOptions.append(opt)
-            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q4.id,
                                                       optionId: opt.id, scoreDimension: .diet, scoreValue: pair.1))
         }
         
-        // Q5 Water intake (SCORED)
-        // Research: EFSA 2010 — 2.5L/day adult male recommendation
-        //   <3 glasses (~600ml)  → severe deficit vs 2.5L target         → 1.5
-        //   3–5 glasses (~1000ml) → significant deficit                  → 4.0
-        //   6–8 glasses (~1800ml) → near adequate                        → 7.5
-        //   >8 glasses (>2000ml) → meets/exceeds EFSA target             → 10.0
-        let q5 = Question(id: UUID(), questionType: .singleChoice,
-                          questionText: "How many glasses of water do you drink daily?",
-                          questionOrderIndex: 5, scoreDimension: .hydration)
-        questions.append(q5)
-        let q5opts: [(String, Float)] = [
-            ("Less than 3 glasses",  1.5),
-            ("3–5 glasses",          4.0),
-            ("6–8 glasses",          7.5),
-            ("More than 8 glasses", 10.0)
-        ]
-        q5opts.enumerated().forEach { i, pair in
-            let opt = QuestionOption(id: UUID(), questionId: q5.id,
-                                     optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
-            questionOptions.append(opt)
-            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q5.id,
-                                                      optionId: opt.id, scoreDimension: .hydration, scoreValue: pair.1))
-        }
-        
-        // ── Q6 — Hair washing frequency (SCORED) ──
+        // ── Q3 — Hair washing frequency (SCORED) ──
         // Research: Ranganathan & Mukhopadhyay 2010 (Indian J Dermatol)
         //           + Trüeb scalp hygiene guidelines
         //   Daily          → strips sebum, disrupts microbiome             → 3.5
         //   Every 2–3 days → optimal sebum balance — trichology consensus  → 10.0
         //   Every 4–5 days → suboptimal but acceptable                     → 6.5
         //   Once a week    → product buildup + follicle blockage risk       → 2.5
-        let q6 = Question(id: UUID(), questionType: .singleChoice,
+        let q3 = Question(id: UUID(), questionType: .singleChoice,
                           questionText: "How often do you wash your hair?",
-                          questionOrderIndex: 6, scoreDimension: .hairCare)
-        questions.append(q6)
-        let q6opts: [(String, Float)] = [
+                          questionOrderIndex: 3, scoreDimension: .hairCare)
+        questions.append(q3)
+        let q3opts: [(String, Float)] = [
             ("Daily",                 3.5),
             ("Every 2–3 days",       10.0),
             ("Every 4–5 days",        6.5),
             ("Once a week or less",   2.5)
         ]
-        q6opts.enumerated().forEach { i, pair in
-            let opt = QuestionOption(id: UUID(), questionId: q6.id,
+        q3opts.enumerated().forEach { i, pair in
+            let opt = QuestionOption(id: UUID(), questionId: q3.id,
                                      optionOrderIndex: i+1, optionText: pair.0, imageURL: nil, optionType: .text)
             questionOptions.append(opt)
-            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q6.id,
+            questionScoreMaps.append(QuestionScoreMap(id: UUID(), questionId: q3.id,
                                                       optionId: opt.id, scoreDimension: .hairCare, scoreValue: pair.1))
         }
         
-        // Q7  Age (picker)
+        // Q4  Age (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your age?",
-                                  questionOrderIndex: 7, scoreDimension: .none,
+                                  questionOrderIndex: 4, scoreDimension: .none,
                                   pickerMin: 18, pickerMax: 40 , pickerStep: 1, pickerUnit: "yrs",
                                   keyboardType: .number))
         
-        //  Q8  Height (picker)
+        //  Q5  Height (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your height?",
-                                  questionOrderIndex: 8, scoreDimension: .none,
+                                  questionOrderIndex: 5, scoreDimension: .none,
                                   pickerMin: 140, pickerMax: 220, pickerStep: 1, pickerUnit: "cm",
                                   keyboardType: .number))
         
-        // Q9 Weight (picker)
+        // Q6 Weight (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your weight?",
-                                  questionOrderIndex: 9, scoreDimension: .none,
+                                  questionOrderIndex: 6, scoreDimension: .none,
                                   pickerMin: 40, pickerMax: 150, pickerStep: 0.5, pickerUnit: "kg",
                                   keyboardType: .decimal))
         
-        // Q10 Activity level (TDEE only, not lifestyle-scored)
-        let q10 = Question(id: UUID(), questionType: .singleChoice,
+        // Q7 Activity level (TDEE only, not lifestyle-scored)
+        let q7 = Question(id: UUID(), questionType: .singleChoice,
                            questionText: "How active are you on most days?",
-                           questionOrderIndex: 10, scoreDimension: .none)
-        questions.append(q10)
+                           questionOrderIndex: 7, scoreDimension: .none)
+        questions.append(q7)
         ["Sedentary ",
          "Light ",
          "Moderate ",
          "Very active "].enumerated().forEach { i, text in
-            questionOptions.append(QuestionOption(id: UUID(), questionId: q10.id,
+            questionOptions.append(QuestionOption(id: UUID(), questionId: q7.id,
                                                   optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
         }
         
-        //  FB1  Fallback: self-select stage
-        let fb1 = Question(id: UUID(), questionType: .imageChoice,
+        //  Q8  Fallback: self-select stage
+        let q8 = Question(id: UUID(), questionType: .imageChoice,
                            questionText: "Select your current hair fall stage",
-                           questionOrderIndex: 11, scoreDimension: .none)
-        questions.append(fb1)
+                           questionOrderIndex: 8, scoreDimension: .none)
+        questions.append(q8)
         [("Stage 1 — Slight thinning, hairline normal", "stage1_illustration"),
          ("Stage 2 — Noticeable thinning on top",       "stage2_illustration"),
          ("Stage 3 — Clear bald patch forming",         "stage3_illustration"),
          ("Stage 4 — Large bald area",                  "stage4_illustration")
         ].enumerated().forEach { i, pair in
-            questionOptions.append(QuestionOption(id: UUID(), questionId: fb1.id,
+            questionOptions.append(QuestionOption(id: UUID(), questionId: q8.id,
                                                   optionOrderIndex: i+1, optionText: pair.0,
                                                   imageURL: pair.1, optionType: .image))
         }
         
-        // FB2  Fallback: scalp condition
-        let fb2 = Question(id: UUID(), questionType: .singleChoice,
+        // Q9  Fallback: scalp condition
+        let q9 = Question(id: UUID(), questionType: .singleChoice,
                            questionText: "How does your scalp feel most of the time?",
-                           questionOrderIndex: 12, scoreDimension: .none)
-        questions.append(fb2)
+                           questionOrderIndex: 9, scoreDimension: .none)
+        questions.append(q9)
         ["Dandruff",
          "Dry scalp",
          "Oily scalp",
          "Inflammation",
          "No issues"].enumerated().forEach { i, text in
-            questionOptions.append(QuestionOption(id: UUID(), questionId: fb2.id,
+            questionOptions.append(QuestionOption(id: UUID(), questionId: q9.id,
                                                   optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
         }
         
-        //  FB3  Fallback: hair density
-        let fb3 = Question(id: UUID(), questionType: .singleChoice,
+        //  Q10  Fallback: hair density
+        let q10 = Question(id: UUID(), questionType: .singleChoice,
                            questionText: "How would you describe your hair thickness?",
-                           questionOrderIndex: 13, scoreDimension: .none)
-        questions.append(fb3)
+                           questionOrderIndex: 10, scoreDimension: .none)
+        questions.append(q10)
         ["Thick and full",
          "Medium ",
          "Thin ",
          "Very thin"].enumerated().forEach { i, text in
-            questionOptions.append(QuestionOption(id: UUID(), questionId: fb3.id,
+            questionOptions.append(QuestionOption(id: UUID(), questionId: q10.id,
                                                   optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
         }
     }
@@ -440,13 +384,13 @@ class AppDataStore {
     
     func assessmentQuestions() -> [Question] {
         questions
-            .filter { $0.questionOrderIndex <= 10 }
+            .filter { $0.questionOrderIndex <= 8 }
             .sorted(by: { $0.questionOrderIndex < $1.questionOrderIndex })
     }
     
     func fallbackQuestions() -> [Question] {
         questions
-            .filter { $0.questionOrderIndex > 10 }
+            .filter { $0.questionOrderIndex > 8 }
             .sorted(by: { $0.questionOrderIndex < $1.questionOrderIndex })
     }
     

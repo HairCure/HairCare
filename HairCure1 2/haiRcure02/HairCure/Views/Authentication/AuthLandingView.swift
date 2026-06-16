@@ -91,152 +91,175 @@ struct LoginView: View {
         ZStack(alignment: .topLeading) {
             Color.hcCream.ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                
-                // Space for the manual back button
-                Spacer().frame(height: 72)
-                
-                // ── Header ──────────────────────────────
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Welcome back!")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text("Sign in to continue your hair journey")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
-                
-                // ── Form Card ───────────────────────────
-                VStack(spacing: 0) {
-                    // Email row
-                    HStack(spacing: 14) {
-                        Image(systemName: "envelope")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(Color.hcBrown)
-                            .frame(width: 24)
-                            .padding(.leading, 16)
-                        TextField("Email", text: $email)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .font(.system(size: 16))
-                            .padding(.vertical, 16)
-                        Spacer()
-                    }
-                    .padding(.trailing, 16)
-                    
-                    Divider().padding(.leading, 52)
-                    
-                    // Password row with eye toggle
-                    HStack(spacing: 14) {
-                        Image(systemName: "lock")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(Color.hcBrown)
-                            .frame(width: 24)
-                            .padding(.leading, 16)
-                        Group {
-                            if showPassword {
-                                TextField("Password", text: $password)
-                            } else {
-                                SecureField("Password", text: $password)
-                            }
-                        }
-                        .font(.system(size: 16))
-                        .padding(.vertical, 16)
-                        Button {
-                            showPassword.toggle()
-                        } label: {
-                            Image(systemName: showPassword ? "eye" : "eye.slash")
+            GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        
+                        // Space for the manual back button
+                        Spacer().frame(height: 72)
+                        
+
+                        
+                        // ── Header ──────────────────────────────
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Welcome back!")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundStyle(.primary)
+                            Text("Sign in to continue your hair journey")
+                                .font(.system(size: 16))
                                 .foregroundStyle(.secondary)
-                                .font(.system(size: 15))
                         }
-                        .padding(.trailing, 16)
-                    }
-                }
-                .background(Color(UIColor.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 20)
-                
-                // ── Forgot + inline error ───────────────
-                HStack {
-                    if let err = authVM.errorMessage {
-                        Label(err, systemImage: "exclamationmark.circle.fill")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.red)
-                    }
-                    Spacer()
-                    Button("Forgot Password?") {}
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 28)
-                .padding(.top, 10)
-                
-                Spacer().frame(height: 24)
-                
-                // ── CTA ─────────────────────────────────
-                VStack(spacing: 16) {
-                    Button {
-                        Task {
-                            await authVM.signIn(email: email, password: password)
-                            if authVM.isLoggedIn {
-                                store.createUser(
-                                    name: authVM.userName ?? "User",
-                                    email: authVM.userEmail ?? "",
-                                    authProvider: .google,
-                                    supabaseId: authVM.currentUserId
-                                )
-                                onProceed()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        
+                        // Flexible space to distribute layout naturally
+                        Spacer()
+                            .frame(minHeight: 32)
+                        
+                        // ── Form Card ───────────────────────────
+                        VStack(spacing: 0) {
+                            // Email row
+                            HStack(spacing: 14) {
+                                Image(systemName: "envelope")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(Color.hcBrown.opacity(0.8))
+                                    .frame(width: 24)
+                                    .padding(.leading, 18)
+                                TextField("Email", text: $email)
+                                    .keyboardType(.emailAddress)
+                                    .autocapitalization(.none)
+                                    .font(.system(size: 16))
+                                    .padding(.vertical, 18)
+                                Spacer()
+                            }
+                            .padding(.trailing, 16)
+                            
+                            Divider().padding(.leading, 56)
+                            
+                            // Password row with eye toggle
+                            HStack(spacing: 14) {
+                                Image(systemName: "lock")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(Color.hcBrown.opacity(0.8))
+                                    .frame(width: 24)
+                                    .padding(.leading, 18)
+                                Group {
+                                    if showPassword {
+                                        TextField("Password", text: $password)
+                                    } else {
+                                        SecureField("Password", text: $password)
+                                    }
+                                }
+                                .font(.system(size: 16))
+                                .padding(.vertical, 18)
+                                Button {
+                                    showPassword.toggle()
+                                } label: {
+                                    Image(systemName: showPassword ? "eye" : "eye.slash")
+                                        .foregroundStyle(.secondary)
+                                        .font(.system(size: 15))
+                                }
+                                .padding(.trailing, 18)
                             }
                         }
-                    } label: {
-                        Group {
-                            if authVM.isLoading {
-                                ProgressView().tint(.white)
-                            } else {
-                                Text("Log In")
+                        .background(Color(UIColor.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+                        .padding(.horizontal, 24)
+                        
+                        // ── Forgot + inline error ───────────────
+                        HStack {
+                            if let err = authVM.errorMessage {
+                                Label(err, systemImage: "exclamationmark.circle.fill")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.red)
                             }
+                            Spacer()
+                            Button("Forgot Password?") {}
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.hcBrown.opacity(0.8))
                         }
-                        .hcPrimaryButton()
-                    }
-                    .disabled(!canSubmit)
-                    
-                    dividerRow(label: "Or continue with")
-                    
-                    socialRow(
-                        onAppleTap: { onProceed() },
-                        onGoogleTap: {
-                            Task {
-                                await authVM.signInWithGoogle()
-                                if authVM.isLoggedIn {
-                                    store.createUser(
-                                        name: authVM.userName ?? "User",
-                                        email: authVM.userEmail ?? "",
-                                        authProvider: .google,
-                                        supabaseId: authVM.currentUserId
-                                    )
-                                    onProceed()
+                        .padding(.horizontal, 28)
+                        .padding(.top, 12)
+                        
+                        // Flexible space before CTA
+                        Spacer()
+                            .frame(minHeight: 32)
+                        
+                        // ── CTA ─────────────────────────────────
+                        VStack(spacing: 20) {
+                            Button {
+                                Task {
+                                    await authVM.signIn(email: email, password: password)
+                                    if authVM.isLoggedIn {
+                                        store.createUser(
+                                            name: authVM.userName ?? "User",
+                                            email: authVM.userEmail ?? "",
+                                            authProvider: .google,
+                                            supabaseId: authVM.currentUserId
+                                        )
+                                        onProceed()
+                                    }
+                                }
+                            } label: {
+                                Group {
+                                    if authVM.isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Text("Log In")
+                                    }
+                                }
+                                .hcPrimaryButton()
+                            }
+                            .disabled(!canSubmit)
+                            
+                            dividerRow(label: "Or continue with")
+                                .padding(.vertical, 4)
+                            
+                            socialRow(
+                                onAppleTap: { onProceed() },
+                                onGoogleTap: {
+                                    Task {
+                                        await authVM.signInWithGoogle()
+                                        if authVM.isLoggedIn {
+                                            store.createUser(
+                                                name: authVM.userName ?? "User",
+                                                email: authVM.userEmail ?? "",
+                                                authProvider: .google,
+                                                supabaseId: authVM.currentUserId
+                                            )
+                                            onProceed()
+                                        }
+                                    }
+                                }
+                            )
+                            
+                            HStack(spacing: 4) {
+                                Text("Don't have an account?")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(.secondary)
+                                NavigationLink(destination: RegisterView(onProceed: onProceed)) {
+                                    Text("Register")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.hcWarmBrown)
                                 }
                             }
+                            .padding(.top, 8)
                         }
-                    )
-                    
-                    HStack(spacing: 4) {
-                        Text("Don't have an account?")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
-                        NavigationLink(destination: RegisterView(onProceed: onProceed)) {
-                            Text("Register")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.hcWarmBrown)
-                        }
+                        .padding(.horizontal, 24)
+                        
+                        // Flexible space before bottom decorative text
+                        Spacer()
+                            .frame(minHeight: 40)
+                        
+                        // Decorative Tagline
+                        Text("Your best hair days await.")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.hcBrown.opacity(0.4))
+                            .padding(.bottom, 32)
                     }
-                    .padding(.top, 4)
+                    .frame(minHeight: geometry.size.height)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
             }
             
             // ── Single back button — pinned to safe area top-left ──
@@ -273,124 +296,149 @@ struct RegisterView: View {
         ZStack(alignment: .topLeading) {
             Color.hcCream.ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                
-                // Space for the manual back button
-                Spacer().frame(height: 72)
-                
-                // ── Header ──────────────────────────────
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Create Account")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text("Start your personalised hair journey")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
-                
-                // ── Form Card ───────────────────────────
-                VStack(spacing: 0) {
-                    inputRow(icon: "person", placeholder: "Full name", text: $name, keyboard: .default, isSecure: false)
-                    Divider().padding(.leading, 52)
-                    inputRow(icon: "envelope", placeholder: "Email", text: $email, keyboard: .emailAddress, isSecure: false, autoCapitalize: false)
-                    Divider().padding(.leading, 52)
-                    PasswordRowView(icon: "lock", placeholder: "Password", text: $password)
-                    Divider().padding(.leading, 52)
-                    PasswordRowView(icon: "lock", placeholder: "Confirm password", text: $confirmPassword)
-                }
-                .background(Color(UIColor.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 20)
-                
-                // ── Inline validation ───────────────────
-                Group {
-                    if !confirmPassword.isEmpty && !passwordsMatch {
-                        Label("Passwords don't match", systemImage: "xmark.circle.fill")
-                            .foregroundColor(.red)
-                    } else if let err = authVM.errorMessage {
-                        Label(err, systemImage: "exclamationmark.circle.fill")
-                            .foregroundColor(.red)
-                    } else {
-                        Color.clear.frame(height: 20)
-                    }
-                }
-                .font(.system(size: 12, weight: .medium))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 28)
-                .padding(.top, 8)
-                
-                Spacer(minLength: 0)
-                
-                // ── CTA ─────────────────────────────────
-                VStack(spacing: 16) {
-                    Button {
-                        Task {
-                            await authVM.signUp(
-                                email: email,
-                                password: password,
-                                name: name.isEmpty
-                                ? email.components(separatedBy: "@").first ?? "User"
-                                : name
-                            )
-                            if authVM.isLoggedIn {
-                                store.createUser(
-                                    name: authVM.userName ?? "User",
-                                    email: authVM.userEmail ?? "",
-                                    authProvider: .google,
-                                    supabaseId: authVM.currentUserId
-                                )
-                                onProceed()
-                            }
+            GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        
+                        // Space for the manual back button
+                        Spacer().frame(height: 72)
+                        
+
+                        
+                        // ── Header ──────────────────────────────
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Create Account")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundStyle(.primary)
+                            Text("Start your personalised hair journey")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.secondary)
                         }
-                    } label: {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        
+                        Spacer()
+                            .frame(minHeight: 24)
+                        
+                        // ── Form Card ───────────────────────────
+                        VStack(spacing: 0) {
+                            inputRow(icon: "person", placeholder: "Full name", text: $name, keyboard: .default, isSecure: false)
+                            Divider().padding(.leading, 56)
+                            inputRow(icon: "envelope", placeholder: "Email", text: $email, keyboard: .emailAddress, isSecure: false, autoCapitalize: false)
+                            Divider().padding(.leading, 56)
+                            PasswordRowView(icon: "lock", placeholder: "Password", text: $password)
+                            Divider().padding(.leading, 56)
+                            PasswordRowView(icon: "lock", placeholder: "Confirm password", text: $confirmPassword)
+                        }
+                        .background(Color(UIColor.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+                        .padding(.horizontal, 24)
+                        
+                        // ── Inline validation ───────────────────
                         Group {
-                            if authVM.isLoading {
-                                ProgressView().tint(.white)
+                            if !confirmPassword.isEmpty && !passwordsMatch {
+                                Label("Passwords don't match", systemImage: "xmark.circle.fill")
+                                    .foregroundColor(.red)
+                            } else if let err = authVM.errorMessage {
+                                Label(err, systemImage: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
                             } else {
-                                Text("Create Account")
+                                Color.clear.frame(height: 20)
                             }
                         }
-                        .hcPrimaryButton()
-                    }
-                    .disabled(!canSubmit)
-                    
-                    dividerRow(label: "Or continue with")
-                    
-                    socialRow(
-                        onAppleTap: { onProceed() },
-                        onGoogleTap: {
-                            Task {
-                                await authVM.signInWithGoogle()
-                                if authVM.isLoggedIn {
-                                    store.createUser(
-                                        name: authVM.userName ?? "User",
-                                        email: authVM.userEmail ?? "",
-                                        authProvider: .google,
-                                        supabaseId: authVM.currentUserId
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 28)
+                        .padding(.top, 12)
+                        
+                        Spacer()
+                            .frame(minHeight: 24)
+                            
+
+                        
+                        Spacer()
+                            .frame(minHeight: 24)
+                        
+                        // ── CTA ─────────────────────────────────
+                        VStack(spacing: 20) {
+                            Button {
+                                Task {
+                                    await authVM.signUp(
+                                        email: email,
+                                        password: password,
+                                        name: name.isEmpty
+                                        ? email.components(separatedBy: "@").first ?? "User"
+                                        : name
                                     )
-                                    onProceed()
+                                    if authVM.isLoggedIn {
+                                        store.createUser(
+                                            name: authVM.userName ?? "User",
+                                            email: authVM.userEmail ?? "",
+                                            authProvider: .google,
+                                            supabaseId: authVM.currentUserId
+                                        )
+                                        onProceed()
+                                    }
+                                }
+                            } label: {
+                                Group {
+                                    if authVM.isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Text("Create Account")
+                                    }
+                                }
+                                .hcPrimaryButton()
+                            }
+                            .disabled(!canSubmit)
+                            
+                            dividerRow(label: "Or continue with")
+                                .padding(.vertical, 4)
+                            
+                            socialRow(
+                                onAppleTap: { onProceed() },
+                                onGoogleTap: {
+                                    Task {
+                                        await authVM.signInWithGoogle()
+                                        if authVM.isLoggedIn {
+                                            store.createUser(
+                                                name: authVM.userName ?? "User",
+                                                email: authVM.userEmail ?? "",
+                                                authProvider: .google,
+                                                supabaseId: authVM.currentUserId
+                                            )
+                                            onProceed()
+                                        }
+                                    }
+                                }
+                            )
+                            
+                            HStack(spacing: 4) {
+                                Text("Already have an account?")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(.secondary)
+                                NavigationLink(destination: LoginView(onProceed: onProceed)) {
+                                    Text("Log In")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.hcWarmBrown)
                                 }
                             }
+                            .padding(.top, 8)
                         }
-                    )
-                    
-                    HStack(spacing: 4) {
-                        Text("Already have an account?")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
-                        NavigationLink(destination: LoginView(onProceed: onProceed)) {
-                            Text("Log In")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.hcWarmBrown)
-                        }
+                        .padding(.horizontal, 24)
+                        
+                        Spacer()
+                            .frame(minHeight: 40)
+                            
+                        // Decorative Tagline
+                        Text("Your best hair days await.")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.hcBrown.opacity(0.4))
+                            .padding(.bottom, 32)
                     }
-                    .padding(.top, 4)
+                    .frame(minHeight: geometry.size.height)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
             }
             
             // ── Single back button — pinned to safe area top-left ──
@@ -401,6 +449,8 @@ struct RegisterView: View {
         }
         .navigationBarHidden(true)
     }
+    
+
     
     // ── Grouped input row (icon + field) ────────────────────────────────────
     @ViewBuilder
@@ -415,23 +465,23 @@ struct RegisterView: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.hcBrown)
+                .foregroundStyle(Color.hcBrown.opacity(0.8))
                 .frame(width: 24)
-                .padding(.leading, 16)
+                .padding(.leading, 18)
             
             if isSecure {
                 SecureField(placeholder, text: text)
                     .font(.system(size: 16))
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 18)
             } else {
                 TextField(placeholder, text: text)
                     .keyboardType(keyboard)
                     .autocapitalization(autoCapitalize ? .words : .none)
                     .font(.system(size: 16))
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 18)
             }
         }
-        .padding(.trailing, 16)
+        .padding(.trailing, 18)
     }
 }
 
@@ -447,9 +497,9 @@ struct PasswordRowView: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.hcBrown)
+                .foregroundStyle(Color.hcBrown.opacity(0.8))
                 .frame(width: 24)
-                .padding(.leading, 16)
+                .padding(.leading, 18)
             
             Group {
                 if showPassword {
@@ -463,7 +513,7 @@ struct PasswordRowView: View {
                 }
             }
             .font(.system(size: 16))
-            .padding(.vertical, 16)
+            .padding(.vertical, 18)
             
             Button {
                 showPassword.toggle()
@@ -472,7 +522,7 @@ struct PasswordRowView: View {
                     .foregroundStyle(.secondary)
                     .font(.system(size: 15))
             }
-            .padding(.trailing, 16)
+            .padding(.trailing, 18)
         }
     }
 }
