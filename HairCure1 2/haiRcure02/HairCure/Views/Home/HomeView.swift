@@ -112,11 +112,9 @@ struct HomeHairHealthCardView: View {
         let plan = store.activePlan
         let hasReport = report != nil
         let density   = report?.hairDensityPercent ?? 0
-        let stage     = report?.hairFallStage.intValue ?? plan?.stage
-        let progress  = hasReport ? min(CGFloat(density) / 100.0, 1.0) : CGFloat(0)
-
+        let stage     = report?.hairFallStage.intValue ?? plan?.stage ?? 2
+        
         let (severityLabel, severityColor): (String, Color) = {
-            guard let stage else { return ("", .clear) }
             switch stage {
             case 1: return ("Healthy",  Color(red: 0.22, green: 0.78, blue: 0.45))
             case 2: return ("Moderate", Color(red: 1.00, green: 0.60, blue: 0.15))
@@ -124,169 +122,156 @@ struct HomeHairHealthCardView: View {
             default: return ("Critical", Color(red: 0.85, green: 0.15, blue: 0.15))
             }
         }()
-
-        let ringColor: Color = {
-            guard let stage else { return Color.white.opacity(0.25) }
-            switch stage {
-            case 1: return Color(red: 0.22, green: 0.88, blue: 0.52)
-            case 2: return Color(red: 1.00, green: 0.62, blue: 0.18)
-            case 3: return Color(red: 0.95, green: 0.38, blue: 0.22)
-            default: return Color(red: 0.85, green: 0.20, blue: 0.20)
-            }
+        
+        let dateString: String = {
+            guard let date = report?.createdAt else { return "N/A" }
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM"
+            return formatter.string(from: date)
         }()
-
-        return VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                LinearGradient(
-                    stops: [
-                        .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
-                        .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                RadialGradient(
-                    colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.12), .clear],
-                    center: .init(x: 0.78, y: 0.22),
-                    startRadius: 10,
-                    endRadius: 140
-                )
-
-                RadialGradient(
-                    colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.28), .clear],
-                    center: .init(x: 0.15, y: 0.80),
-                    startRadius: 5,
-                    endRadius: 110
-                )
-
-                HStack(alignment: .center, spacing: 20) {
-                    if hasReport {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 11)
-                                .frame(width: 96, height: 96)
-
-                            Circle()
-                                .trim(from: 0, to: progress)
-                                .stroke(
-                                    AngularGradient(
-                                        colors: [ringColor.opacity(0.6), ringColor, ringColor.opacity(0.85)],
-                                        center: .center,
-                                        startAngle: .degrees(-90),
-                                        endAngle:   .degrees(270)
-                                    ),
-                                    style: StrokeStyle(lineWidth: 11, lineCap: .round)
-                                )
-                                .rotationEffect(.degrees(-90))
-                                .frame(width: 96, height: 96)
-                                .animation(.easeOut(duration: 0.9), value: progress)
-
-                            VStack(spacing: 1) {
-                                Text("\(Int(density))%")
-                                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.white)
-                                Text("DENSITY")
-                                    .font(.system(size: 8, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.55))
-                                    .kerning(1.2)
-                            }
-                        }
-                    } else {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 11)
-                                .frame(width: 96, height: 96)
-                            Image(systemName: "camera.viewfinder")
-                                .font(.system(size: 34, weight: .light))
-                                .foregroundStyle(.white.opacity(0.55))
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        if hasReport, let stage {
-                            HStack(spacing: 7) {
-                                Text("Stage \(stage)")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(.white.opacity(0.18), in: Capsule())
-                                    .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 0.5))
-
-                                Text(severityLabel)
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(severityColor)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(severityColor.opacity(0.18), in: Capsule())
-                                    .overlay(Capsule().stroke(severityColor.opacity(0.35), lineWidth: 0.5))
-                            }
-                        }
-
-                        Text(hasReport ? "Hair Health Score" : "Scan Your Scalp")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-
-                        Text(hasReport ? "Last scan available" : "No scan yet — tap to start")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.50))
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 22)
+        
+        let primaryAccentColor = Color(red: 1.00, green: 0.60, blue: 0.15)
+        
+        return VStack(spacing: 12) {
+            // Top Row: Title & Severity Badge
+            HStack(alignment: .center) {
+                Text("Hair Health Score")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                Text(severityLabel)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(severityColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .stroke(severityColor, lineWidth: 1)
+                    )
             }
-            .frame(height: heroCardHeight - 50)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 18, bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0, topTrailingRadius: 18
-            ))
-
-            Button { viewModel.pushHairProgress = true } label: {
-                HStack(spacing: 13) {
-                    Image(systemName: "waveform.path.ecg")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color(red: 0.28, green: 0.14, blue: 0.08))
-                        .frame(width: 26)
-
-                    Text("View Hair Progress")
+            
+            // Columns Row: Density, Stage, Last Scanned
+            HStack(alignment: .center, spacing: 0) {
+                // Density Column
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 1) {
+                        Text(hasReport ? "\(Int(density))" : "--")
+                            .font(.system(size: 46, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                        Text("%")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    .frame(height: 46)
+                    
+                    Text("Density")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Divider 1
+                Rectangle()
+                    .fill(Color.white.opacity(0.12))
+                    .frame(width: 1, height: 40)
+                    .padding(.horizontal, 8)
+                
+                // Stage Column
+                VStack(alignment: .center, spacing: 4) {
+                    Text("Stage")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                    
+                    Text("\(stage)")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
+                        .foregroundStyle(.white)
+                        .frame(width: 64, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                }
+                .frame(maxWidth: .infinity)
+                
+                // Divider 2
+                Rectangle()
+                    .fill(Color.white.opacity(0.12))
+                    .frame(width: 1, height: 40)
+                    .padding(.horizontal, 8)
+                
+                // Last Scanned Column
+                VStack(alignment: .center, spacing: 4) {
+                    Text("Last Scanned")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                    
+                    Text(dateString)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 82, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 2)
+            
+            // Divider line before bottom section
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(height: 1)
+            
+            // Bottom Button Row
+            Button {
+                viewModel.pushHairProgress = true
+            } label: {
+                HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color(red: 0.18, green: 0.08, blue: 0.05))
+                            .stroke(primaryAccentColor, lineWidth: 1)
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "waveform.path.ecg")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(primaryAccentColor)
+                    }
+                    
+                    Text("View Hair Progress")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                    
+                    Spacer()
+                    
+                    ZStack {
+                        Circle()
+                            .stroke(primaryAccentColor, lineWidth: 1)
                             .frame(width: 32, height: 32)
                         Image(systemName: "arrow.right")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(primaryAccentColor)
                     }
                 }
-                .padding(.horizontal, 18)
-                .frame(height: 50)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .background(Color.hcCream)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 0, bottomLeadingRadius: 18,
-                bottomTrailingRadius: 18, topTrailingRadius: 0
-            ))
         }
+        .padding(.all, 16)
         .frame(height: heroCardHeight)
-        .background(Color.hcCream)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        .background(
+            LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0.28, green: 0.17, blue: 0.15), location: 0.0),
+                    .init(color: Color(red: 0.17, green: 0.10, blue: 0.09), location: 1.0),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
     }
 }
 
