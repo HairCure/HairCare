@@ -15,7 +15,7 @@ enum OptionType: String, Codable {
 enum ScanType: String, Codable {
     case initial
     case monthly
-    case weekly  // legacy — kept so old DB records decode gracefully; treated as monthly in UI
+    case weekly  
 }
 
 enum ScalpCondition: String, Codable {

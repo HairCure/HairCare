@@ -34,7 +34,7 @@ struct MealFood: Identifiable {
     var quantity: Float      
 }
 
-// MARK: - Food  (maps to meals + meal_nutrients backend tables)
+// MARK: - Food  
 
 struct Food: Identifiable {
     let id: Int
@@ -46,7 +46,7 @@ struct Food: Identifiable {
     var hairBenefit: String?
     var dataSource: String?
 
-    // Calories per serving (from backend calories_kcal column)
+    // Calories per serving
     var caloriesKcal: Float
 
     // Macros per serving

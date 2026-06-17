@@ -615,13 +615,13 @@ struct RecommendationEngine {
                     iconName: "shower",
                     cardHeading: "Gentle Wash Routine",
                     applyingFrequency: "Every 3 days",
-                    summary: "Use a sulphate-free shampoo to gently cleanse without stripping the little natural oil your dry scalp produces."
+                    summary: "Use a sulphate free shampoo to gently cleanse without stripping the little natural oil your dry scalp produces."
                 ),
                 HairCareRoutine(
                     iconName: "drop.fill",
                     cardHeading: "Deep Moisture Oiling",
                     applyingFrequency: "2× per week",
-                    summary: "Warm coconut or almond oil pre-wash to replenish scalp moisture and strengthen hair follicles starved by low sebum production."
+                    summary: "Warm coconut or almond oil pre wash to replenish scalp moisture and strengthen hair follicles starved by low sebum production."
                 )
             ]
             
@@ -653,7 +653,7 @@ struct RecommendationEngine {
                     iconName: "leaf.fill",
                     cardHeading: "Lightweight Scalp Care",
                     applyingFrequency: "Skip heavy oiling",
-                    summary: "Avoid heavy scalp oils. Use a light leave-in serum with salicylic acid on wash days to regulate sebum without clogging follicles."
+                    summary: "Avoid heavy scalp oils. Use a light leave in serum with salicylic acid on wash days to regulate sebum without clogging follicles."
                 )
             ]
             
@@ -663,7 +663,7 @@ struct RecommendationEngine {
                     iconName: "shower",
                     cardHeading: "Soothing Wash Routine",
                     applyingFrequency: "Every 3–4 days",
-                    summary: "Use fragrance-free, sulphate-free shampoo to avoid aggravating scalp inflammation linked to stress and DHT sensitivity."
+                    summary: "Use fragrance free, sulphate-free shampoo to avoid aggravating scalp inflammation linked to stress and DHT sensitivity."
                 ),
                 HairCareRoutine(
                     iconName: "drop.fill",
@@ -685,7 +685,7 @@ struct RecommendationEngine {
                     iconName: "drop.fill",
                     cardHeading: "Nourishing Oil Pre-Wash",
                     applyingFrequency: "1–2× per week",
-                    summary: "Coconut or bhringraj oil pre-wash to maintain follicle strength and support healthy hair growth cycles."
+                    summary: "Coconut or bhringraj oil pre wash to maintain follicle strength and support healthy hair growth cycles."
                 )
             ]
         }

@@ -156,7 +156,8 @@ struct LoginView: View {
                                     showPassword.toggle()
                                 } label: {
                                     Image(systemName: showPassword ? "eye" : "eye.slash")
-                                        .foregroundStyle(.secondary)
+//                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.hcBrown.opacity(0.8))
                                         .font(.system(size: 15))
                                 }
                                 .padding(.trailing, 18)
@@ -511,7 +512,7 @@ struct PasswordRowView: View {
                 showPassword.toggle()
             } label: {
                 Image(systemName: showPassword ? "eye" : "eye.slash")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.hcBrown.opacity(0.8))
                     .font(.system(size: 15))
             }
             .padding(.trailing, 18)

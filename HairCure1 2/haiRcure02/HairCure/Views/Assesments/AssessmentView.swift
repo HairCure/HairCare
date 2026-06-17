@@ -61,7 +61,7 @@ struct AssessmentView: View {
         VStack(spacing: 32) {
             Spacer()
             
-            Image(systemName: "sparkles")
+            Image(systemName: "heart.text.square")
                 .font(.system(size: 60))
                 .foregroundStyle(Color.hcBrown)
             
@@ -70,7 +70,7 @@ struct AssessmentView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.black)
                 
-                Text("Help us personalize your experience ♡")
+                Text("Help us personalize your experience")
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
