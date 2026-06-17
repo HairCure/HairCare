@@ -252,11 +252,7 @@ struct LoginView: View {
                         Spacer()
                             .frame(minHeight: 40)
                         
-                        // Decorative Tagline
-                        Text("Your best hair days await.")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.hcBrown.opacity(0.4))
-                            .padding(.bottom, 32)
+                       
                     }
                     .frame(minHeight: geometry.size.height)
                 }
@@ -431,11 +427,7 @@ struct RegisterView: View {
                         Spacer()
                             .frame(minHeight: 40)
                             
-                        // Decorative Tagline
-                        Text("Your best hair days await.")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.hcBrown.opacity(0.4))
-                            .padding(.bottom, 32)
+                        
                     }
                     .frame(minHeight: geometry.size.height)
                 }

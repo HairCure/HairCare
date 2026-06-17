@@ -32,10 +32,10 @@ struct HairAnalysisView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                             VStack(spacing: 8) {
-                                Text("Capture 4 scalp views")
+                                Text("Capture 4 scalp photos")
                                     .font(.system(size: 24, weight: .bold))
                                     .foregroundStyle(.primary)
-                                Text("Take clear, well-lit photos for accurate AI analysis")
+                                Text("Take clear, well lit photos for accurate AI analysis")
                                     .font(.system(size: 15, weight: .regular))
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)

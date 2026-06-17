@@ -9,18 +9,18 @@ class AppDataStore {
     var userProfiles: [UserProfile] = []
     var currentUserId: UUID = UUID()
     
-    // MARK: - Assessment (answers created live in app, not pre-populated)
+    // MARK: - Assessment
     var assessments: [Assessment] = []
     var questions: [Question] = []
     var questionOptions: [QuestionOption] = []
     var questionScoreMaps: [QuestionScoreMap] = []
     var userAnswers: [UserAnswer] = []
     
-    // MARK: - Scalp Scan (done in app, not pre-populated)
+    // MARK: - Scalp Scan
     var scalpScans: [ScalpScan] = []
     var scanReports: [ScanReport] = []
     
-    // MARK: - Engine Output (pre-populated for Arjun mock)
+    // MARK: - Engine Output
     var userPlans: [UserPlan] = []
     var userNutritionProfiles: [UserNutritionProfile] = []
     
@@ -28,13 +28,13 @@ class AppDataStore {
     var sleepRecords: [SleepRecord] = []
     var waterIntakeLogs: [WaterIntakeLog] = []
     
-    // MARK: - Hair Insights (delegated to HairInsightsDataStore)
+    // MARK: - Hair Insights
     private(set) var hairInsightsStore: HairInsightsDataStore = HairInsightsDataStore()
     
-    // MARK: - DietMate (delegated to DietmateDataStore)
+    // MARK: - DietMate
     private(set) var dietMateStore: DietmateDataStore = DietmateDataStore(currentUserId: UUID())
     
-    // MARK: - MindEase (delegated to MindEaseDataStore)
+    // MARK: - MindEase
     private(set) var mindEaseStore: MindEaseDataStore = MindEaseDataStore(currentUserId: UUID())
     
     // MARK: - Settings
@@ -152,8 +152,8 @@ class AppDataStore {
         questions.append(q1)
         let q1opts: [(String, Float)] = [
             ("Less than 6 hours", 1.5),
-            ("6–7 hours",         4.5),
-            ("7–8 hours",         10.0),
+            ("6 to 7 hours",         4.5),
+            ("7 to 8 hours",         10.0),
             ("More than 8 hours", 6.5)
         ]
         q1opts.enumerated().forEach { i, pair in
@@ -201,8 +201,8 @@ class AppDataStore {
         questions.append(q3)
         let q3opts: [(String, Float)] = [
             ("Daily",                 3.5),
-            ("Every 2–3 days",       10.0),
-            ("Every 4–5 days",        6.5),
+            ("Every 2 to 3 days",       10.0),
+            ("Every 4 to 5 days",        6.5),
             ("Once a week or less",   2.5)
         ]
         q3opts.enumerated().forEach { i, pair in

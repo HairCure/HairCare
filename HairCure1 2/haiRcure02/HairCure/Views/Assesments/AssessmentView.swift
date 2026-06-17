@@ -213,12 +213,7 @@ struct SingleChoiceOptionsView: View {
                         
                         Spacer()
                         
-                        if isSelected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.trailing, 20)
-                        }
+                        
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 60)
