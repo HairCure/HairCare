@@ -872,6 +872,7 @@ struct HomeWaterCardCompactView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(18)
+        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -916,16 +917,14 @@ struct HomeSleepCardCompactView: View {
             HStack(spacing: 24) {
                 ZStack {
                     Circle()
-                        .trim(from: 0.62, to: 1.0)
                         .stroke(
                             Color(.systemGray5),
-                            style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 10)
                         )
-                        .rotationEffect(.degrees(162))
                         .frame(width: 84, height: 84)
 
                     Circle()
-                        .trim(from: 0.62, to: 0.62 + 0.38 * progress)
+                        .trim(from: 0.0, to: CGFloat(progress))
                         .stroke(
                             LinearGradient(
                                 colors: [arcColor.opacity(0.65), arcColor],
@@ -933,7 +932,7 @@ struct HomeSleepCardCompactView: View {
                             ),
                             style: StrokeStyle(lineWidth: 10, lineCap: .round)
                         )
-                        .rotationEffect(.degrees(162))
+                        .rotationEffect(.degrees(-90))
                         .frame(width: 84, height: 84)
                         .animation(.easeOut(duration: 0.6), value: progress)
 
@@ -1005,21 +1004,27 @@ struct HomeSleepTimeRowView: View {
 
 struct HomeDailyTipCardView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Daily Tips")
-                .font(.system(size: 20, weight: .bold))
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Daily Tip")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+
             HStack(spacing: 16) {
                 Image(systemName: "figure.walk")
-                    .font(.system(size: 24))
+                    .font(.system(size: 22))
                     .foregroundStyle(Color(red: 0.55, green: 0.40, blue: 0.30))
                 Text("20 minutes walk improves blood flow to scalp.")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(16)
-            .background(Color(red: 0.96, green: 0.95, blue: 0.93))
-            .cornerRadius(18)
         }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(18)
+        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
 }

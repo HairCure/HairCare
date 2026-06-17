@@ -110,13 +110,7 @@ struct CareTipsListView: View {
                 NavigationLink {
                     CareTipDetailView(tip: tip, insightStore: insightStore , userId: userId)
                 } label: {
-                    CareTipRowView(
-                        tip: tip,
-                        isFav: insightStore.isFavorite(contentId: tip.id),
-                        onFavTap: {
-                            insightStore.toggleFavorite(contentId: tip.id, userId: userId)
-                        }
-                    )
+                    CareTipRowView(tip: tip)
                 }
             }
         }
@@ -142,8 +136,6 @@ struct CareTipsListView: View {
 
 struct CareTipRowView: View {
     let tip: CareTip
-    let isFav: Bool
-    let onFavTap: () -> Void
     
     var body: some View {
         HStack(spacing: 14) {
@@ -189,12 +181,6 @@ struct CareTipRowView: View {
             }
             
             Spacer()
-            
-            Button(action: onFavTap) {
-                Image(systemName: isFav ? "heart.fill" : "heart")
-                    .foregroundStyle(isFav ? .red : Color(.systemGray3))
-            }
-            .buttonStyle(.plain)
         }
         .padding(.vertical, 6)
     }
