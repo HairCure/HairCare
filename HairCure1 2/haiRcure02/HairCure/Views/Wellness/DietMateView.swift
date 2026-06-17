@@ -494,6 +494,7 @@ struct AddMealView: View {
     @State private var searchText    = ""
     @State private var selectedFood: Food? = nil
     @State private var vegFilter: DietmateDataStore.VegFilter = .all
+    @State private var selectedNutrients: Set<String> = []
 
     var body: some View {
         let entry     = dietMateStore.mealEntry(id: mealEntryId)
@@ -510,14 +511,14 @@ struct AddMealView: View {
                 Spacer()
                 Text(entry?.mealType.displayName ?? "Meal").font(.system(size: 20, weight: .semibold))
                 Spacer()
-                VegFilterPicker(selection: $vegFilter)
+                UnifiedFilterMenu(vegFilter: $vegFilter, selectedNutrients: $selectedNutrients)
             }
             .padding(.horizontal, 20).padding(.vertical, 14)
             .background(Color.hcCream)
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
-                    SearchBar(text: $searchText)
+                    SearchBar(text: $searchText, themeColor: mealColor)
 
                     // Hair Nutrient Coverage Panel
                     if let e = entry {
@@ -540,7 +541,7 @@ struct AddMealView: View {
                     }
 
                     SuggestedSection(
-                        foods:       dietMateStore.suggestedFoods(for: entry?.mealType ?? .breakfast, searchText: searchText, vegFilter: vegFilter),
+                        foods:       dietMateStore.suggestedFoods(for: entry?.mealType ?? .breakfast, searchText: searchText, vegFilter: vegFilter, nutrientFilter: selectedNutrients),
                         mealColor:   mealColor,
                         showHeading: searchText.isEmpty,
                         onAdd:       { dietMateStore.addOrIncrementFood($0, to: mealEntryId) },
@@ -584,19 +585,53 @@ private struct HairNutrientCoveragePanel: View {
     }
 }
 
-// MARK: - VegFilterPicker
+// MARK: - UnifiedFilterMenu
 
-private struct VegFilterPicker: View {
-    @Binding var selection: DietmateDataStore.VegFilter
+private struct UnifiedFilterMenu: View {
+    @Binding var vegFilter: DietmateDataStore.VegFilter
+    @Binding var selectedNutrients: Set<String>
+    let nutrients = ["Biotin", "Zinc", "Iron", "Omega-3", "Vitamin A"]
 
     var body: some View {
-        Picker("Filter", selection: $selection) {
-            Text("All").tag(DietmateDataStore.VegFilter.all)
-            Text("Veg").tag(DietmateDataStore.VegFilter.vegOnly)
-            Text("Non-Veg").tag(DietmateDataStore.VegFilter.nonVegOnly)
+        Menu {
+            Section("Dietary Preference") {
+                Picker("Diet", selection: $vegFilter) {
+                    Text("All").tag(DietmateDataStore.VegFilter.all)
+                    Text("Veg").tag(DietmateDataStore.VegFilter.vegOnly)
+                    Text("Non-Veg").tag(DietmateDataStore.VegFilter.nonVegOnly)
+                }
+            }
+            
+            Section("Hair Nutrients") {
+                ForEach(nutrients, id: \.self) { nutrient in
+                    Button {
+                        if selectedNutrients.contains(nutrient) {
+                            selectedNutrients.remove(nutrient)
+                        } else {
+                            selectedNutrients.insert(nutrient)
+                        }
+                    } label: {
+                        if selectedNutrients.contains(nutrient) {
+                            Label(nutrient, systemImage: "checkmark")
+                        } else {
+                            Text(nutrient)
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 20))
+                .foregroundStyle(.primary)
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(Color.hcBrown)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
+                        .opacity((!selectedNutrients.isEmpty || vegFilter != .all) ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.2), value: !selectedNutrients.isEmpty || vegFilter != .all)
+                }
         }
-        .pickerStyle(.menu)
-        .tint(.primary)
     }
 }
 
@@ -604,18 +639,24 @@ private struct VegFilterPicker: View {
 
 private struct SearchBar: View {
     @Binding var text: String
+    var themeColor: Color = .hcBrown
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            Image(systemName: "magnifyingglass").foregroundStyle(themeColor)
             TextField("Search for a meal", text: $text).font(.system(size: 16))
             if !text.isEmpty {
-                Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(themeColor.opacity(0.6)) }
             } else {
-                Image(systemName: "mic.fill").foregroundStyle(.secondary)
+                Image(systemName: "mic.fill").foregroundStyle(themeColor.opacity(0.6))
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(Color(UIColor.systemGray6)).cornerRadius(12)
+        .background(themeColor.opacity(0.08))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(themeColor.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 

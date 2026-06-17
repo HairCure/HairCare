@@ -224,13 +224,20 @@ class DietmateDataStore {
 
     enum VegFilter: Equatable { case all, vegOnly, nonVegOnly }
 
-    func suggestedFoods(for mealType: MealType, searchText: String, vegFilter: VegFilter = .all) -> [Food] {
+    func suggestedFoods(for mealType: MealType, searchText: String, vegFilter: VegFilter = .all, nutrientFilter: Set<String> = []) -> [Food] {
         var all = foods(for: mealType)
         switch vegFilter {
         case .vegOnly:    all = all.filter {  $0.isVegetarian }
         case .nonVegOnly: all = all.filter { !$0.isVegetarian }
         case .all:        break
         }
+        
+        if !nutrientFilter.isEmpty {
+            all = all.filter { food in
+                nutrientFilter.isSubset(of: Set(food.hairNutrients))
+            }
+        }
+        
         return searchText.isEmpty
             ? all
             : all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }

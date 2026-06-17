@@ -326,13 +326,17 @@ struct StandardPickerQuestionView: View {
         
         VStack(spacing: 20) {
             TextField("", text: displayText)
-                .font(.system(size: 17))
+                .font(.system(size: 18, weight: .medium))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(Color.hcInputBg)
-                .cornerRadius(12)
+                .frame(height: 60)
+                .background(Color.white)
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
                 .disabled(true)
             
             Picker("", selection: intCurrent) {
@@ -413,13 +417,17 @@ struct HeightPickerQuestionView: View {
             .padding(.horizontal, 40)
             
             TextField("", text: displayText)
-                .font(.system(size: 17))
+                .font(.system(size: 18, weight: .medium))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(Color.hcInputBg)
-                .cornerRadius(12)
+                .frame(height: 60)
+                .background(Color.white)
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
                 .disabled(true)
             
             if vm.isHeightMetric {
