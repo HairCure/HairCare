@@ -20,12 +20,8 @@ struct NotificationSettingsView: View {
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].waterReminderEnabled) {
-                        Label {
+                       
                             Text("Water Reminders")
-                        } icon: {
-                            Image(systemName: "drop.fill")
-                                .foregroundStyle(Color(red: 0.15, green: 0.55, blue: 0.95))
-                        }
                     }
                     .tint(Color.hcBrown)
                     .onChange(of: store.notificationSettings[idx].waterReminderEnabled) {
@@ -46,20 +42,14 @@ struct NotificationSettingsView: View {
                 }
             } header: {
                 Text("Hydration")
-            } footer: {
-                Text("Reminders between 8 AM – 10 PM")
             }
             
             // ── Meal Reminders ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].mealReminderEnabled) {
-                        Label {
+                        
                             Text("Meal Reminders")
-                        } icon: {
-                            Image(systemName: "fork.knife")
-                                .foregroundStyle(Color(red: 0.93, green: 0.55, blue: 0.20))
-                        }
                     }
                     .tint(Color.hcBrown)
                     .onChange(of: store.notificationSettings[idx].mealReminderEnabled) {
@@ -77,20 +67,13 @@ struct NotificationSettingsView: View {
                 }
             } header: {
                 Text("Meals")
-            } footer: {
-                Text("Get reminded to log your meals on time")
             }
-            
             // ── Bedtime Reminder ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].bedtimeReminderEnabled) {
-                        Label {
+                        
                             Text("Bedtime Reminder")
-                        } icon: {
-                            Image(systemName: "bed.double.fill")
-                                .foregroundStyle(Color(red: 0.42, green: 0.30, blue: 0.80))
-                        }
                     }
                     .tint(Color.hcBrown)
                     .onChange(of: store.notificationSettings[idx].bedtimeReminderEnabled) {
@@ -111,20 +94,13 @@ struct NotificationSettingsView: View {
                 }
             } header: {
                 Text("Sleep")
-            } footer: {
-                Text("Good sleep is essential for hair health. Aim for 7–9 hours.")
             }
             
             // ── Weekly Scan Reminder ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].weeklyScanReminderEnabled) {
-                        Label {
                             Text("Weekly Scan Reminder")
-                        } icon: {
-                            Image(systemName: "camera.fill")
-                                .foregroundStyle(Color.hcBrown)
-                        }
                     }
                     .tint(Color.hcBrown)
                     .onChange(of: store.notificationSettings[idx].weeklyScanReminderEnabled) {
@@ -161,8 +137,6 @@ struct NotificationSettingsView: View {
                 }
             } header: {
                 Text("Scalp Scan")
-            } footer: {
-                Text("Track your hair progress with a weekly scan")
             }
         }
         .listStyle(.insetGrouped)
