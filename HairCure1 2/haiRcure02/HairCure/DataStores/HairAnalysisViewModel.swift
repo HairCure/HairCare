@@ -37,6 +37,7 @@ class HairAnalysisViewModel {
     var showingActionSheet = false
     var showingPicker = false
     var showingCamera = false
+    var showingRegisterSheet = false
     
     var mode: AnalysisMode = .photo
     var manualStageOptionId: UUID? = nil

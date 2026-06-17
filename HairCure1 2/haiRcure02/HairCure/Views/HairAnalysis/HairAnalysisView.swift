@@ -6,6 +6,7 @@ struct HairAnalysisView: View {
     var onBack: (() -> Void)? = nil
 
     @Environment(AppDataStore.self) private var store
+    @Environment(AuthViewModel.self) private var authVM
     @Bindable var viewModel: HairAnalysisViewModel
 
     private let columns = [
@@ -105,6 +106,10 @@ struct HairAnalysisView: View {
             if viewModel.isAnalyzing {
                 HairAnalyzingOverlayView()
             }
+            
+            if authVM.isGuestMode {
+                guestRegisterOverlay
+            }
         }
         .confirmationDialog("Add Photo", isPresented: $viewModel.showingActionSheet, titleVisibility: .visible) {
             Button("Take Photo") { viewModel.showingCamera = true }
@@ -137,6 +142,67 @@ struct HairAnalysisView: View {
             Button("Understood") { onComplete() }
         } message: {
             Text(viewModel.doctorMessage)
+        }
+    }
+
+    private var guestRegisterOverlay: some View {
+        ZStack {
+            Color.hcCream.opacity(0.8)
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                Spacer()
+                
+                VStack(spacing: 20) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.hcCream)
+                            .frame(width: 80, height: 80)
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 36))
+                            .foregroundStyle(Color.hcBrown)
+                    }
+                    .padding(.top, 28)
+                    
+                    VStack(spacing: 10) {
+                        Text("Register to Scan")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.black)
+                        
+                        Text("To analyze your scalp and get your personalized hair plan, you need to create an account first.")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                    }
+                    
+                    Button {
+                        viewModel.showingRegisterSheet = true
+                    } label: {
+                        Text("Create Account")
+                            .hcPrimaryButton()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 28)
+                }
+                .background(Color.white)
+                .cornerRadius(24)
+                .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
+        }
+        .fullScreenCover(isPresented: $viewModel.showingRegisterSheet) {
+            NavigationStack {
+                RegisterView(onProceed: {
+                    viewModel.showingRegisterSheet = false
+                })
+            }
+            .environment(store)
+            .environment(authVM)
         }
     }
 }

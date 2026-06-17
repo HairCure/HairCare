@@ -48,6 +48,7 @@ class AuthViewModel {
                 self.userEmail = session.user.email
                 self.userName = session.user.userMetadata["full_name"]?.stringValue
                 self.isLoggedIn = true
+                self.isGuestMode = false
                 self.isLoading = false
             }
         } catch {
@@ -73,6 +74,7 @@ class AuthViewModel {
                 self.userEmail = response.user.email
                 self.userName = name
                 self.isLoggedIn = true
+                self.isGuestMode = false
                 self.isLoading = false
             }
         } catch {
@@ -97,6 +99,7 @@ class AuthViewModel {
                 self.userEmail = session.user.email
                 self.userName = session.user.userMetadata["full_name"]?.stringValue
                 self.isLoggedIn = true
+                self.isGuestMode = false
                 self.isLoading = false
             }
         } catch {
@@ -113,6 +116,7 @@ class AuthViewModel {
             try await auth.signOut()
             await MainActor.run {
                 self.isLoggedIn = false
+                self.isGuestMode = false
                 self.currentUserId = nil
                 self.userEmail = nil
                 self.userName = nil
@@ -138,6 +142,7 @@ class AuthViewModel {
             
             await MainActor.run {
                 self.isLoggedIn = false
+                self.isGuestMode = false
                 self.currentUserId = nil
                 self.userEmail = nil
                 self.userName = nil
@@ -208,6 +213,7 @@ class AuthViewModel {
             self.userEmail = session.user.email
             self.userName = session.user.userMetadata["full_name"]?.stringValue ?? result.user.profile?.name
             self.isLoggedIn = true
+            self.isGuestMode = false
             self.isLoading = false
             
         } catch {
