@@ -571,7 +571,7 @@ private func socialRow(onAppleTap: @escaping () -> Void, onGoogleTap: @escaping 
             .frame(height: 50)
             .background(Color.white)
             .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.15), lineWidth: 1.5))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.hcBrown, lineWidth: 1.0))
         }
     }
     
