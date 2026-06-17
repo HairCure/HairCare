@@ -168,14 +168,14 @@ struct HairInsightsView: View {
                     userId: store.currentUserId
                 )
             } label: {
-                HStack {
+                HStack(spacing: 8) {
                     Text("Care Tips")
-                        .font(.title3.bold())
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.black)
-                    Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.subheadline.bold())
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.black.opacity(0.5))
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
             }
@@ -220,14 +220,14 @@ struct HairInsightsView: View {
                     userId: store.currentUserId
                 )
             } label: {
-                HStack {
+                HStack(spacing: 8) {
                     Text("Home Remedies")
-                        .font(.title3.bold())
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.black)
-                    Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.subheadline.bold())
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.black.opacity(0.5))
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
             }
@@ -297,6 +297,15 @@ struct RoutineCardView: View {
                     .foregroundStyle(.black)
 
                 Spacer()
+                
+                // Frequency pill
+                Label(routine.applyingFrequency, systemImage: "calendar")
+                    .font(.caption.bold())
+                    .foregroundStyle(Color.hcBrown)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.hcBrown.opacity(0.1))
+                    .clipShape(Capsule())
             }
 
             Text(routine.summary)
@@ -306,15 +315,6 @@ struct RoutineCardView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack {
-                // Frequency pill
-                Label(routine.applyingFrequency, systemImage: "calendar")
-                    .font(.caption.bold())
-                    .foregroundStyle(Color.hcBrown)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.hcBrown.opacity(0.1))
-                    .clipShape(Capsule())
-                
                 Spacer()
                 
                 Image(systemName: "chevron.right")

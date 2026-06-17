@@ -20,7 +20,7 @@ extension Color {
     /// Input field background
     static let hcInputBg     = Color(red: 0.929, green: 0.945, blue: 0.961)   // #EDF1F5
     /// Unselected option background
-    static let hcOptionBg    = Color(red: 0.965, green: 0.961, blue: 0.957)   // #F6F5F4
+    static let hcOptionBg    = Color.white
     /// Progress bar unfilled segment
     static let hcProgressBg  = Color(red: 0.878, green: 0.867, blue: 0.855)   // #E0DDA9 (muted)
 }
@@ -50,7 +50,7 @@ struct HCSecondaryButton: ViewModifier {
             .cornerRadius(14)
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.hcBrown, lineWidth: 1.5)
+                    .stroke(Color.hcBrown, lineWidth: 1.0)
             )
     }
 }
@@ -65,11 +65,16 @@ extension View {
 struct HCInputField: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(.system(size: 16))
-            .padding(.horizontal, 16)
-            .frame(height: 54)
-            .background(Color.hcInputBg)
-            .cornerRadius(12)
+            .font(.system(size: 18, weight: .medium))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 20)
+            .frame(height: 60)
+            .background(Color.white)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            )
     }
 }
 

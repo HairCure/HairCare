@@ -86,36 +86,19 @@ final class MindEaseDataStore {
                   let cat = mindEaseCategories.first(where: { $0.title == categoryTitle })
             else { continue }
             
-            var pool = mindEaseCategoryContents
+            let pool = mindEaseCategoryContents
                 .filter { $0.categoryId == cat.id }
                 .shuffled()
             
-            guard !pool.isEmpty else { continue }
+            guard let recommendedContent = pool.first else { continue }
             
-            var planRemaining = totalMinutes
-            var usedIds       = Set<UUID>()
-            var attempts      = 0
-            
-            while planRemaining > 0 && attempts < pool.count * 3 {
-                if let idx = pool.indices.first(where: { !usedIds.contains(pool[$0].id) }) {
-                    let content     = pool[idx]
-                    let contentMins = max(1, content.durationSeconds / 60)
-                    let assigned    = min(contentMins, planRemaining)
-                    result.append(TodaysPlan(
-                        id: UUID(), userId: userId, planDate: today,
-                        contentId: content.id, categoryId: content.categoryId,
-                        planId: plan.planId,
-                        minutesTarget: assigned, minutesCompleted: 0,
-                        isCompleted: false
-                    ))
-                    usedIds.insert(content.id)
-                    planRemaining -= assigned
-                } else {
-                    pool = pool.shuffled()
-                    usedIds.removeAll()
-                }
-                attempts += 1
-            }
+            result.append(TodaysPlan(
+                id: UUID(), userId: userId, planDate: today,
+                contentId: recommendedContent.id, categoryId: cat.id,
+                planId: plan.planId,
+                minutesTarget: totalMinutes, minutesCompleted: 0,
+                isCompleted: false
+            ))
         }
         
         todaysPlans = result
@@ -242,13 +225,24 @@ final class MindEaseDataStore {
     // MARK: - Plan Update
     
     private func updatePlan(contentId: UUID, minutesCompleted: Int) {
+        guard let content = mindEaseCategoryContents.first(where: { $0.id == contentId }) else { return }
         guard let idx = todaysPlans.firstIndex(where: {
             $0.userId == currentUserId &&
-            $0.contentId == contentId &&
+            $0.categoryId == content.categoryId &&
             Calendar.current.isDateInToday($0.planDate)
         }) else { return }
-        todaysPlans[idx].minutesCompleted = minutesCompleted
-        todaysPlans[idx].isCompleted      = minutesCompleted >= todaysPlans[idx].minutesTarget
+        
+        todaysPlans[idx].minutesCompleted += minutesCompleted
+        let completed = todaysPlans[idx].minutesCompleted >= todaysPlans[idx].minutesTarget
+        todaysPlans[idx].isCompleted = completed
+        
+        // If target is not yet met, cycle recommended session to a different track
+        if !completed {
+            let pool = mindEaseCategoryContents.filter { $0.categoryId == content.categoryId }
+            if let nextContent = pool.filter({ $0.id != contentId }).shuffled().first {
+                todaysPlans[idx].contentId = nextContent.id
+            }
+        }
     }
     
     // MARK: - User Actions

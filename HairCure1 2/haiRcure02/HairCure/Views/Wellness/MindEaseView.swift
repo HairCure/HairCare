@@ -144,7 +144,26 @@ struct MindEaseView: View {
 
                     // Today's plan
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Today's Plan").mindEaseSectionHeader()
+                        HStack(alignment: .center) {
+                            Text("Today's Plan")
+                                .font(.system(size: 22, weight: .bold))
+                            Spacer()
+                            if !mindEaseStore.mindfulSessions.isEmpty {
+                                Button {
+                                    selectedDate = Calendar.current.startOfDay(for: .now)
+                                    sheetDate = selectedDate
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text("View History")
+                                        Image(systemName: "chevron.right")
+                                    }
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(Color.mindEasePurple)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+
                         let plans = mindEaseStore.todayActivePlans()
                         if plans.isEmpty {
                             VStack(spacing: 12) {
@@ -295,16 +314,25 @@ private struct PlanRow: View {
     let plan: TodaysPlan; let content: MindEaseCategoryContent; let store: MindEaseDataStore
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        let categoryName = store.mindEaseCategories.first(where: { $0.id == plan.categoryId })?.title ?? "Session"
+        
+        return HStack(alignment: .center, spacing: 14) {
             MindEaseThumbnail(
                 imageurl: content.thumbnailUrl ?? content.imageurl,
                 size: 68, cornerRadius: 10,
                 placeholder: content.mediaType == .audio ? "waveform" : "play.fill"
             )
-            VStack(alignment: .leading, spacing: 6) {
-                Text(content.title).font(.system(size: 16, weight: .semibold)).lineLimit(1)
-                Text(content.difficultyLevel.capitalized)
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(categoryName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.primary)
+                Text("Recommended: \(content.title)")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text("\(plan.minutesCompleted)/\(plan.minutesTarget) min")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(plan.isCompleted ? Color.mindEasePurple : .secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
