@@ -5,6 +5,8 @@ import SwiftUI
 struct AuthLandingView: View {
     var hideGuestButton: Bool = false
     let onProceed: () -> Void
+    /// Optional closure for guest→authenticated upgrade (receives newUserId, name, email)
+    var guestUpgrade: ((UUID, String, String) -> Void)? = nil
     
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM

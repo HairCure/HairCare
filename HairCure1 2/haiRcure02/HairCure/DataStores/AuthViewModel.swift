@@ -16,7 +16,35 @@ class AuthViewModel {
     var isLoading: Bool = true
     var errorMessage: String? = nil
     
+    /// Date when the guest session was created (persisted in UserDefaults)
+    var guestSessionStartDate: Date? = nil
+    
+    /// Maximum guest session duration — 7 days
+    private static let guestSessionDurationDays = 7
+    
+    // MARK: - UserDefaults Keys
+    private enum GuestKeys {
+        static let isGuestMode = "hc_guest_isGuestMode"
+        static let guestUserId = "hc_guest_userId"
+        static let guestSessionStart = "hc_guest_sessionStart"
+    }
+    
     private let auth = SupabaseManager.shared.auth
+    
+    /// Whether the current guest session has expired (>7 days)
+    var isGuestSessionExpired: Bool {
+        guard let start = guestSessionStartDate else { return false }
+        let expiry = Calendar.current.date(byAdding: .day, value: Self.guestSessionDurationDays, to: start) ?? start
+        return Date() > expiry
+    }
+    
+    /// Days remaining in the guest session
+    var guestDaysRemaining: Int {
+        guard let start = guestSessionStartDate else { return Self.guestSessionDurationDays }
+        let expiry = Calendar.current.date(byAdding: .day, value: Self.guestSessionDurationDays, to: start) ?? start
+        let remaining = Calendar.current.dateComponents([.day], from: Date(), to: expiry).day ?? 0
+        return max(0, remaining)
+    }
     
     // Helper to generate a random nonce for secure authentication
     private func randomNonceString(length: Int = 32) -> String {
@@ -50,11 +78,19 @@ class AuthViewModel {
                 self.isLoggedIn = true
                 self.isGuestMode = false
                 self.isLoading = false
+                // Clear any leftover guest session
+                clearGuestStorage()
             }
         } catch {
             await MainActor.run {
-                self.isLoggedIn = false
-                self.isLoading = false
+                // No auth session — check for a stored guest session
+                if restoreGuestSession() {
+                    // Guest session restored successfully
+                    self.isLoading = false
+                } else {
+                    self.isLoggedIn = false
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -159,10 +195,62 @@ class AuthViewModel {
     // MARK: - Guest Mode
     @MainActor
     func continueAsGuest() {
+        let guestId = UUID().uuidString
         self.isGuestMode = true
-        self.currentUserId = UUID().uuidString
+        self.currentUserId = guestId
         self.isLoggedIn = false
         self.isLoading = false
+        self.guestSessionStartDate = Date()
+        
+        // Persist guest session to UserDefaults
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: GuestKeys.isGuestMode)
+        defaults.set(guestId, forKey: GuestKeys.guestUserId)
+        defaults.set(Date(), forKey: GuestKeys.guestSessionStart)
+    }
+    
+    // MARK: - Guest → Authenticated Upgrade
+    
+    /// Called after a guest successfully signs up or logs in.
+    /// Clears guest persistence so the next launch uses the real auth session.
+    @MainActor
+    func upgradeGuestToUser() {
+        self.isGuestMode = false
+        self.guestSessionStartDate = nil
+        clearGuestStorage()
+    }
+    
+    // MARK: - Guest Session Helpers
+    
+    /// Restores a guest session from UserDefaults. Returns true if restored.
+    @MainActor
+    private func restoreGuestSession() -> Bool {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: GuestKeys.isGuestMode),
+              let storedId = defaults.string(forKey: GuestKeys.guestUserId),
+              let startDate = defaults.object(forKey: GuestKeys.guestSessionStart) as? Date
+        else { return false }
+        
+        // Check expiry (7 days)
+        let expiry = Calendar.current.date(byAdding: .day, value: Self.guestSessionDurationDays, to: startDate) ?? startDate
+        if Date() > expiry {
+            clearGuestStorage()
+            return false
+        }
+        
+        self.isGuestMode = true
+        self.currentUserId = storedId
+        self.isLoggedIn = false
+        self.guestSessionStartDate = startDate
+        return true
+    }
+    
+    /// Removes all guest session data from UserDefaults
+    private func clearGuestStorage() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: GuestKeys.isGuestMode)
+        defaults.removeObject(forKey: GuestKeys.guestUserId)
+        defaults.removeObject(forKey: GuestKeys.guestSessionStart)
     }
     
     // MARK: - Google Sign In

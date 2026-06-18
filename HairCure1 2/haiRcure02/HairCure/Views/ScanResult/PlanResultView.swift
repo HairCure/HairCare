@@ -96,11 +96,7 @@ struct PlanResultsView: View {
     private var navBar: some View {
         HStack {
             HCBackButton {
-                if authVM.isGuestMode {
-                    authVM.isGuestMode = false
-                } else {
-                    onStart()
-                }
+                onStart()
             }
             Spacer()
             Text("Scan Report")
@@ -125,22 +121,23 @@ struct PlanResultsView: View {
     private var scanPhotoRow: some View {
         let scan = store.scalpScans.first { $0.id == report?.scalpScanId }
         
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        let timeString = scan != nil ? formatter.string(from: scan!.scanDate) : "Now"
-
-        let paths = [
-            scan?.frontImageURL,
-            scan?.leftImageURL,
-            scan?.rightImageURL,
-            scan?.backImageURL
-        ].compactMap { $0 }.filter { !$0.isEmpty && !$0.starts(with: "ai_") && !$0.starts(with: "self_") }
+        let photoInfo: [(label: String, url: String)] = [
+            ("Front", scan?.frontImageURL),
+            ("Left", scan?.leftImageURL),
+            ("Right", scan?.rightImageURL),
+            ("Back", scan?.backImageURL)
+        ].compactMap {
+            if let url = $0.1, !url.isEmpty, !url.starts(with: "ai_"), !url.starts(with: "self_") {
+                return ($0.0, url)
+            }
+            return nil
+        }
 
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ForEach(0..<4, id: \.self) { i in
                     VStack(spacing: 6) {
-                        if i < paths.count, let uiImage = UIImage(contentsOfFile: paths[i]) {
+                        if i < photoInfo.count, let uiImage = UIImage(contentsOfFile: photoInfo[i].url) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFill()
@@ -150,6 +147,9 @@ struct PlanResultsView: View {
                                     RoundedRectangle(cornerRadius: 14)
                                         .stroke(Color.hcBrown, lineWidth: 2)
                                 )
+                            Text(photoInfo[i].label)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
                         } else {
                             RoundedRectangle(cornerRadius: 14)
                                 .fill(Color(.systemGray5))
@@ -166,10 +166,9 @@ struct PlanResultsView: View {
                                         .font(.system(size: 22))
                                         .foregroundStyle(Color(.systemGray3))
                                 )
+                            Text(" ") // invisible spacer
+                                .font(.system(size: 11, weight: .medium))
                         }
-                        Text(timeString)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -534,17 +533,30 @@ struct PlanResultsView: View {
                 }
 
                 Button {
-                    if authVM.isGuestMode {
-                        showAuthSheet = true
-                    } else {
-                        onStart()
-                    }
+                    onStart()
                 } label: {
-                    Text(authVM.isGuestMode ? "Create Account to Continue" : "Get Started")
+                    Text("Get Started")
                         .hcPrimaryButton()
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 36)
+                
+                // Gentle nudge for guests — not a hard block
+                if authVM.isGuestMode {
+                    Button {
+                        showAuthSheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.badge.plus")
+                                .font(.system(size: 13, weight: .medium))
+                            Text("Sign up to save your results")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundStyle(Color.hcWarmBrown)
+                    }
+                    .padding(.top, 4)
+                }
+                
+                Color.clear.frame(height: 36)
             }
             .background(Color.hcCream)
         }

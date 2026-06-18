@@ -9,8 +9,12 @@ struct HomeView: View {
 
     @Environment(AppDataStore.self) private var store
     @Environment(HealthKitManager.self) private var healthKit
+    @Environment(AuthViewModel.self) private var authVM
     
     @State private var viewModel = HomeViewModel()
+    @State private var showAuthSheet = false
+    @State private var showGuestGateSheet = false
+    @State private var guestGateConfig: (icon: String, title: String, message: String) = ("lock.shield.fill", "", "")
 
     var body: some View {
         NavigationStack {
@@ -19,6 +23,14 @@ struct HomeView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 20) {
+                        // Guest banner
+                        if authVM.isGuestMode {
+                            GuestBannerView(
+                                daysRemaining: authVM.guestDaysRemaining,
+                                onSignUp: { showAuthSheet = true }
+                            )
+                        }
+                        
                         HomeHeroCardsSectionView(viewModel: viewModel, store: store)
                         HomeFeatureCardsSectionView(viewModel: viewModel, store: store, healthKit: healthKit)
                         Color.clear.frame(height: 20)
@@ -30,11 +42,31 @@ struct HomeView: View {
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(item: $viewModel.pushMealId) { mealId in
-                AddMealView(mealEntryId: mealId)
+                if authVM.isGuestMode {
+                    GuestGateSheetView(
+                        icon: "fork.knife",
+                        title: "Log Your Meals",
+                        message: "Create a free account to track meals, monitor nutrients, and get personalised diet recommendations for healthier hair.",
+                        onSignUp: { showAuthSheet = true },
+                        onDismiss: { viewModel.pushMealId = nil }
+                    )
+                } else {
+                    AddMealView(mealEntryId: mealId)
+                }
             }
             .navigationDestination(isPresented: $viewModel.pushHairProgress) {
-                HairProgressView()
-                    .environment(store)
+                if authVM.isGuestMode {
+                    GuestGateSheetView(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "Track Hair Progress",
+                        message: "Create a free account to track your hair health over time, compare scans, and see your improvement journey.",
+                        onSignUp: { showAuthSheet = true },
+                        onDismiss: { viewModel.pushHairProgress = false }
+                    )
+                } else {
+                    HairProgressView()
+                        .environment(store)
+                }
             }
             .onAppear {
                 Task {
@@ -46,22 +78,55 @@ struct HomeView: View {
             CoachView(viewModel: CoachViewModel())
         }
         .sheet(isPresented: $viewModel.showHydrationSheet) {
-            WaterDetailsSheet(healthKit: healthKit, targetML: store.activeNutritionProfile?.waterTargetML ?? 2500)
-                .presentationDetents([.medium, .large])
-                .presentationCornerRadius(28)
-                .presentationDragIndicator(.visible)
+            if authVM.isGuestMode {
+                GuestGateSheetView(
+                    icon: "drop.fill",
+                    title: "Track Your Water Intake",
+                    message: "Create a free account to log water, track your hydration goals, and get personalised water targets.",
+                    onSignUp: {
+                        viewModel.showHydrationSheet = false
+                        showAuthSheet = true
+                    },
+                    onDismiss: { viewModel.showHydrationSheet = false }
+                )
+            } else {
+                WaterDetailsSheet(healthKit: healthKit, targetML: store.activeNutritionProfile?.waterTargetML ?? 2500)
+                    .presentationDetents([.medium, .large])
+                    .presentationCornerRadius(28)
+                    .presentationDragIndicator(.visible)
+            }
         }
         .sheet(isPresented: $viewModel.showSleepSheet) {
-            SleepDetailsSheet(healthKit: healthKit)
-                .presentationDetents([.medium, .large])
-                .presentationCornerRadius(28)
-                .presentationDragIndicator(.visible)
+            if authVM.isGuestMode {
+                GuestGateSheetView(
+                    icon: "moon.zzz.fill",
+                    title: "Track Your Sleep",
+                    message: "Create a free account to log sleep patterns, set bedtime reminders, and see how sleep affects your hair health.",
+                    onSignUp: {
+                        viewModel.showSleepSheet = false
+                        showAuthSheet = true
+                    },
+                    onDismiss: { viewModel.showSleepSheet = false }
+                )
+            } else {
+                SleepDetailsSheet(healthKit: healthKit)
+                    .presentationDetents([.medium, .large])
+                    .presentationCornerRadius(28)
+                    .presentationDragIndicator(.visible)
+            }
         }
         .sheet(isPresented: $viewModel.showNutrientInfo) {
             NutrientInfoSheet()
                 .presentationDetents([.medium, .large])
                 .presentationCornerRadius(28)
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showAuthSheet) {
+            NavigationStack {
+                AuthLandingView(hideGuestButton: true, onProceed: {
+                    showAuthSheet = false
+                })
+            }
         }
     }
 }

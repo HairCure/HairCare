@@ -5,6 +5,7 @@ import SwiftUI
 
 struct MyProfileView: View {
     @Environment(AppDataStore.self) private var store
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(\.dismiss) private var dismiss
     
     @State private var isEditing = false
@@ -36,8 +37,8 @@ struct MyProfileView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 32)
                 
-                // Save button (edit mode)
-                if isEditing {
+                // Save button (edit mode, non-guest only)
+                if isEditing && !authVM.isGuestMode {
                     Button {
                         saveProfile()
                         withAnimation { isEditing = false }
@@ -60,13 +61,15 @@ struct MyProfileView: View {
         .navigationTitle("My Profile")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(isEditing ? "Done" : "Edit") {
-                    if isEditing { saveProfile() }
-                    withAnimation { isEditing.toggle() }
+            if !authVM.isGuestMode {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(isEditing ? "Done" : "Edit") {
+                        if isEditing { saveProfile() }
+                        withAnimation { isEditing.toggle() }
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.hcBrown)
                 }
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.hcBrown)
             }
         }
         .sheet(isPresented: $showDOBPicker) { dobPickerSheet }
