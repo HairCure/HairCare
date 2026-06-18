@@ -133,29 +133,31 @@ extension AppDataStore {
             if weight > 0 { userProfiles[profileIdx].weightKg = weight }
         }
         
-        // ── Save to Supabase ──
-        let answersToSave = userAnswers.filter { $0.assessmentId == assessment.id }
-        let age    = Int(pickerValue(for: "age",    assessment: assessment, default: 22))
-        let height = pickerValue(for: "height", assessment: assessment, default: 170)
-        let weight = pickerValue(for: "weight", assessment: assessment, default: 70)
-        
-        Task {
-            await BackendService.shared.saveAssessment(
-                assessmentId: assessment.id,
-                userId: currentUserId,
-                completionPercent: 100,
-                completedAt: Date()
-            )
-            await BackendService.shared.saveUserAnswers(
-                answers: answersToSave,
-                userId: currentUserId
-            )
-            await BackendService.shared.updateProfilePhysical(
-                userId: currentUserId,
-                heightCm: height,
-                weightKg: weight,
-                age: age
-            )
+        // ── Save to Supabase (skip for guests — data migrates on sign-up) ──
+        if !isGuestUser {
+            let answersToSave = userAnswers.filter { $0.assessmentId == assessment.id }
+            let age    = Int(pickerValue(for: "age",    assessment: assessment, default: 22))
+            let height = pickerValue(for: "height", assessment: assessment, default: 170)
+            let weight = pickerValue(for: "weight", assessment: assessment, default: 70)
+            
+            Task {
+                await BackendService.shared.saveAssessment(
+                    assessmentId: assessment.id,
+                    userId: currentUserId,
+                    completionPercent: 100,
+                    completedAt: Date()
+                )
+                await BackendService.shared.saveUserAnswers(
+                    answers: answersToSave,
+                    userId: currentUserId
+                )
+                await BackendService.shared.updateProfilePhysical(
+                    userId: currentUserId,
+                    heightCm: height,
+                    weightKg: weight,
+                    age: age
+                )
+            }
         }
         
         return .success(message: "Assessment complete.")
@@ -206,13 +208,15 @@ extension AppDataStore {
             topImageURL: topURL, scanType: scanType
         )
         scalpScans.append(scan)
-        // Save scan to Supabase immediately
-        let userId = currentUserId
-        Task {
-            await BackendService.shared.saveScalpScan(
-                scan: scan,
-                userId: userId
-            )
+        // Save scan to Supabase immediately (skip for guests)
+        if !isGuestUser {
+            let userId = currentUserId
+            Task {
+                await BackendService.shared.saveScalpScan(
+                    scan: scan,
+                    userId: userId
+                )
+            }
         }
         return .success(message: "Scan created.")
     }
@@ -655,39 +659,42 @@ extension AppDataStore {
         if output.userPlan.planId == "refer_doctor" {
             return .referDoctor(message: output.planDescription.doctorReferralMessage ?? "")
         }
-        let scanToSave = scalpScans.last(where: { $0.id == scanId })
-        let reportToSave = scanReports.last(where: { $0.scalpScanId == scanId })
-        let userId = currentUserId
-        
-        Task {
-            // Save scalp scan
-            if let scan = scanToSave {
-                await BackendService.shared.saveScalpScan(
-                    scan: scan,
+        // Save to backend (skip for guests — data migrates on sign-up)
+        if !isGuestUser {
+            let scanToSave = scalpScans.last(where: { $0.id == scanId })
+            let reportToSave = scanReports.last(where: { $0.scalpScanId == scanId })
+            let userId = currentUserId
+            
+            Task {
+                // Save scalp scan
+                if let scan = scanToSave {
+                    await BackendService.shared.saveScalpScan(
+                        scan: scan,
+                        userId: userId
+                    )
+                }
+                
+                // Save scan report
+                if let report = reportToSave {
+                    await BackendService.shared.saveScanReport(
+                        report: report,
+                        userId: userId
+                    )
+                }
+                
+                // Save plan
+                await BackendService.shared.saveUserPlan(
+                    plan: output.userPlan,
                     userId: userId
                 )
-            }
-            
-            // Save scan report
-            if let report = reportToSave {
-                await BackendService.shared.saveScanReport(
-                    report: report,
-                    userId: userId
-                )
-            }
-            
-            // Save plan
-            await BackendService.shared.saveUserPlan(
-                plan: output.userPlan,
-                userId: userId
-            )
-            
-            // Save nutrition
-            if let nutrition = userNutritionProfiles.first(where: { $0.userId == userId }) {
-                await BackendService.shared.saveNutritionProfile(
-                    profile: nutrition,
-                    userId: userId
-                )
+                
+                // Save nutrition
+                if let nutrition = userNutritionProfiles.first(where: { $0.userId == userId }) {
+                    await BackendService.shared.saveNutritionProfile(
+                        profile: nutrition,
+                        userId: userId
+                    )
+                }
             }
         }
         

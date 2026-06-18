@@ -3,7 +3,6 @@ import SwiftUI
 enum AppRoute: Hashable {
     case auth
     case assessment
-    case stageSelection
     case hairAnalysis
     case planResults
     case mainApp
@@ -39,22 +38,32 @@ struct ContentView: View {
                 }
             } else if !authVM.isLoggedIn && !authVM.isGuestMode {
                 AuthLandingView {
-                    // After login — reset stale state then create user in store with real ID
-                    store.resetForLogout()
-                    store.createUser(
-                        name: authVM.userName ?? "User",
-                        email: authVM.userEmail ?? "",
-                        authProvider: .google,
-                        supabaseId: authVM.currentUserId
-                    )
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        // Returning user with a completed scan → skip assessment
-                        if store.latestScanReport != nil {
-                            route = .mainApp
-                        } else {
+                    if authVM.isGuestMode {
+                        // Guest user is already created in AuthLandingView — just navigate
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             route = .assessment
                         }
+                    } else {
+                        // After login — reset stale state then create user in store with real ID
+                        store.resetForLogout()
+                        store.createUser(
+                            name: authVM.userName ?? "User",
+                            email: authVM.userEmail ?? "",
+                            authProvider: .google,
+                            supabaseId: authVM.currentUserId
+                        )
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            // Returning user with a completed scan → skip assessment
+                            if store.latestScanReport != nil {
+                                route = .mainApp
+                            } else {
+                                route = .assessment
+                            }
+                        }
                     }
+                } guestUpgrade: { newUserId, name, email in
+                    // Guest→Authenticated upgrade from within the app
+                    handleGuestUpgrade(newUserId: newUserId, name: name, email: email)
                 }
             } else {
                 // Already logged in — go straight to app
@@ -78,8 +87,6 @@ struct ContentView: View {
                         }
                     }, initialIndex: assessmentInitialIndex)
                     .transition(.opacity)
-                case .stageSelection:
-                    EmptyView()
                 case .hairAnalysis:
                     HairAnalysisView(onComplete: {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -89,6 +96,11 @@ struct ContentView: View {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             assessmentInitialIndex = 7
                             route = .assessment
+                        }
+                    }, onSkipToApp: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 0
+                            route = .mainApp
                         }
                     }, viewModel: analysisViewModel)
                     .transition(.opacity)
@@ -189,9 +201,39 @@ struct ContentView: View {
                         isRouteResolved = true
                     }
                 }
+            } else if authVM.isGuestMode {
+                // Guest session restored — skip backend loads, go to route
+                isRouteResolved = true
+                if route == .auth { route = .assessment }
             } else {
                 // Not logged in — show AuthLandingView immediately
                 isRouteResolved = true
+            }
+        }
+    }
+    
+    // MARK: - Guest → Authenticated Upgrade
+    
+    /// Handles the transition from guest to authenticated user.
+    /// Migrates in-memory data, clears guest flags, and navigates appropriately.
+    private func handleGuestUpgrade(newUserId: UUID, name: String, email: String) {
+        // Migrate all guest data to the new authenticated account
+        store.migrateGuestData(toUserId: newUserId, name: name, email: email)
+        
+        // Clear guest flags
+        authVM.upgradeGuestToUser()
+        authVM.currentUserId = newUserId.uuidString
+        authVM.userName = name
+        authVM.userEmail = email
+        authVM.isLoggedIn = true
+        
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if store.latestScanReport != nil {
+                route = .mainApp
+            } else if store.assessments.contains(where: { $0.userId == newUserId && $0.completedAt != nil }) {
+                route = .hairAnalysis
+            } else {
+                route = .assessment
             }
         }
     }

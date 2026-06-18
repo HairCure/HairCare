@@ -79,17 +79,19 @@ class HairInsightsDataStore {
     
     var userId: UUID = UUID()
     
-    func toggleFavorite(contentId: UUID, userId: UUID) {
+    func toggleFavorite(contentId: UUID, userId: UUID, isGuest: Bool = false) {
         // Routines are read-only — do not allow favouriting them.
         guard !hairCareRoutines.contains(where: { $0.id == contentId }) else { return }
         
         if let idx = userFavorites.firstIndex(where: { $0.contentId == contentId }) {
             userFavorites.remove(at: idx)
-            Task {
-                await BackendService.shared.deleteFavourite(
-                    userId: userId,
-                    contentId: contentId
-                )
+            if !isGuest {
+                Task {
+                    await BackendService.shared.deleteFavourite(
+                        userId: userId,
+                        contentId: contentId
+                    )
+                }
             }
         } else {
             let contentType: String
@@ -106,12 +108,14 @@ class HairInsightsDataStore {
                 contentId: contentId,
                 savedAt: Date()
             ))
-            Task {
-                await BackendService.shared.saveFavourite(
-                    userId: userId,
-                    contentId: contentId,
-                    contentType: contentType
-                )
+            if !isGuest {
+                Task {
+                    await BackendService.shared.saveFavourite(
+                        userId: userId,
+                        contentId: contentId,
+                        contentType: contentType
+                    )
+                }
             }
         }
     }

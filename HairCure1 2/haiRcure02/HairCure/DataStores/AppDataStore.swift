@@ -639,4 +639,137 @@ class AppDataStore {
         dietMateStore        = DietmateDataStore(currentUserId: UUID())
         mindEaseStore        = MindEaseDataStore(currentUserId: UUID())
     }
+    
+    // MARK: - Guest Helpers
+    
+    /// Whether the current user is a guest (not authenticated)
+    var isGuestUser: Bool {
+        currentUser?.authProvider == .guest
+    }
+    
+    /// Migrates all in-memory guest data to a newly authenticated user.
+    /// Re-assigns the guest UUID → real auth UUID across all records,
+    /// then triggers backend sync for the migrated data.
+    func migrateGuestData(toUserId newUserId: UUID, name: String, email: String) {
+        let oldUserId = currentUserId
+        currentUserId = newUserId
+        
+        // Re-assign user records
+        if let idx = users.firstIndex(where: { $0.id == oldUserId }) {
+            // Replace the guest user with the authenticated one
+            users[idx] = User(
+                id: newUserId,
+                name: name,
+                email: email,
+                phoneNumber: users[idx].phoneNumber,
+                authProvider: .google,
+                createdAt: users[idx].createdAt
+            )
+        }
+        
+        // Re-assign user profile
+        if let idx = userProfiles.firstIndex(where: { $0.userId == oldUserId }) {
+            userProfiles[idx].userId = newUserId
+            userProfiles[idx].displayName = name
+            userProfiles[idx].username = name.lowercased().replacingOccurrences(of: " ", with: "")
+        }
+        
+        // Re-assign assessments
+        for i in assessments.indices where assessments[i].userId == oldUserId {
+            assessments[i].userId = newUserId
+        }
+        
+        // Re-assign scalp scans
+        for i in scalpScans.indices where scalpScans[i].userId == oldUserId {
+            scalpScans[i].userId = newUserId
+        }
+        
+        // Re-assign user plans
+        for i in userPlans.indices where userPlans[i].userId == oldUserId {
+            userPlans[i].userId = newUserId
+        }
+        
+        // Re-assign nutrition profiles
+        for i in userNutritionProfiles.indices where userNutritionProfiles[i].userId == oldUserId {
+            userNutritionProfiles[i].userId = newUserId
+        }
+        
+        // Re-assign tracker data
+        for i in sleepRecords.indices where sleepRecords[i].userId == oldUserId {
+            sleepRecords[i].userId = newUserId
+        }
+        for i in waterIntakeLogs.indices where waterIntakeLogs[i].userId == oldUserId {
+            waterIntakeLogs[i].userId = newUserId
+        }
+        
+        // Re-assign preferences
+        for i in appPreferences.indices where appPreferences[i].userId == oldUserId {
+            appPreferences[i].userId = newUserId
+        }
+        for i in notificationSettings.indices where notificationSettings[i].userId == oldUserId {
+            notificationSettings[i].userId = newUserId
+        }
+        
+        // Update sub-stores
+        dietMateStore = DietmateDataStore(currentUserId: newUserId)
+        dietMateStore.parentStore = self
+        Task { await dietMateStore.loadFoodsFromBackend() }
+        dietMateStore.seedDefaultMealEntries(userId: newUserId)
+        
+        mindEaseStore = MindEaseDataStore(currentUserId: newUserId)
+        mindEaseStore.parentStore = self
+        
+        // Sync migrated data to backend
+        Task {
+            // Save profile
+            await BackendService.shared.saveProfile(
+                userId: newUserId, name: name, email: email
+            )
+            
+            // Save assessment if completed
+            if let assessment = assessments.last(where: { $0.userId == newUserId && $0.completedAt != nil }) {
+                await BackendService.shared.saveAssessment(
+                    assessmentId: assessment.id,
+                    userId: newUserId,
+                    completionPercent: assessment.completionPercent,
+                    completedAt: assessment.completedAt
+                )
+                let answers = userAnswers.filter { $0.assessmentId == assessment.id }
+                if !answers.isEmpty {
+                    await BackendService.shared.saveUserAnswers(answers: answers, userId: newUserId)
+                }
+                
+                // Save physical profile from assessment
+                if let profile = userProfiles.first(where: { $0.userId == newUserId }) {
+                    let age = Calendar.current.dateComponents([.year], from: profile.dateOfBirth, to: Date()).year ?? 0
+                    if profile.heightCm > 0 || profile.weightKg > 0 {
+                        await BackendService.shared.updateProfilePhysical(
+                            userId: newUserId,
+                            heightCm: profile.heightCm,
+                            weightKg: profile.weightKg,
+                            age: age
+                        )
+                    }
+                }
+            }
+            
+            // Save scan data
+            for scan in scalpScans.filter({ $0.userId == newUserId }) {
+                await BackendService.shared.saveScalpScan(scan: scan, userId: newUserId)
+            }
+            for report in scanReports {
+                await BackendService.shared.saveScanReport(report: report, userId: newUserId)
+            }
+            
+            // Save plan & nutrition
+            if let plan = userPlans.first(where: { $0.userId == newUserId && $0.isActive }) {
+                await BackendService.shared.saveUserPlan(plan: plan, userId: newUserId)
+            }
+            if let nutrition = userNutritionProfiles.first(where: { $0.userId == newUserId }) {
+                await BackendService.shared.saveNutritionProfile(profile: nutrition, userId: newUserId)
+            }
+            
+            print("Guest data migrated to authenticated user: \(newUserId)")
+        }
+    }
 }

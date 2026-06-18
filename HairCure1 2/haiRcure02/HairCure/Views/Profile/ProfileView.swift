@@ -5,6 +5,8 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(AppDataStore.self) private var store
+    @Environment(AuthViewModel.self) private var authVM
+    @State private var showAuthSheet = false
     
     private var user: User? {
         store.users.first(where: { $0.id == store.currentUserId })
@@ -13,12 +15,25 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Guest upgrade card
+                if authVM.isGuestMode {
+                    Section {
+                        GuestProfileUpgradeCard {
+                            showAuthSheet = true
+                        }
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                
                 Section {
                     ProfileRow(icon: "person.fill", color: Color.hcBrown, title: "My Profile") {
                         MyProfileView()
                     }
-                    ProfileRow(icon: "bell.badge.fill", color: Color.hcBrownLight, title: "Notifications") {
-                        NotificationSettingsView()
+                    if !authVM.isGuestMode {
+                        ProfileRow(icon: "bell.badge.fill", color: Color.hcBrownLight, title: "Notifications") {
+                            NotificationSettingsView()
+                        }
                     }
                     ProfileRow(icon: "gearshape.fill", color: Color.hcWarmBrown, title: "Settings") {
                         SettingsView()
@@ -29,6 +44,13 @@ struct ProfileView: View {
             .scrollContentBackground(.hidden)
             .background(Color.hcCream)
             .navigationTitle("Profile")
+            .sheet(isPresented: $showAuthSheet) {
+                NavigationStack {
+                    AuthLandingView(hideGuestButton: true, onProceed: {
+                        showAuthSheet = false
+                    })
+                }
+            }
         }
     }
 }
@@ -39,6 +61,7 @@ struct SettingsView: View {
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
     @State private var showLogoutAlert = false
+    @State private var showAuthSheet = false
     
     var body: some View {
         List {
@@ -58,24 +81,42 @@ struct SettingsView: View {
             }
             
             Section {
-                Button(role: .destructive) {
-                    showLogoutAlert = true
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Sign Out")
-                            .fontWeight(.semibold)
-                        Spacer()
+                if authVM.isGuestMode {
+                    // Guests see "Sign Up or Log In" instead of "Sign Out"
+                    Button {
+                        showAuthSheet = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Label("Sign Up or Log In", systemImage: "person.badge.plus")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.hcBrown)
+                            Spacer()
+                        }
+                    }
+                } else {
+                    Button(role: .destructive) {
+                        showLogoutAlert = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Sign Out")
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
                     }
                 }
             }
             
-            Section {
-                NavigationLink(destination: DeleteAccountView()) {
-                    HStack(spacing: 14) {
-                        iconBadge(systemName: "trash.fill", color: Color.hcBrown)
-                        Text("Delete Account")
-                            .foregroundStyle(Color.hcBrown)
+            // Hide Delete Account for guests
+            if !authVM.isGuestMode {
+                Section {
+                    NavigationLink(destination: DeleteAccountView()) {
+                        HStack(spacing: 14) {
+                            iconBadge(systemName: "trash.fill", color: Color.hcBrown)
+                            Text("Delete Account")
+                                .foregroundStyle(Color.hcBrown)
+                        }
                     }
                 }
             }
@@ -96,6 +137,13 @@ struct SettingsView: View {
             .foregroundColor(.red)
         } message: {
             Text("Are you sure you want to sign out?")
+        }
+        .sheet(isPresented: $showAuthSheet) {
+            NavigationStack {
+                AuthLandingView(hideGuestButton: true, onProceed: {
+                    showAuthSheet = false
+                })
+            }
         }
     }
     
