@@ -121,23 +121,24 @@ struct PlanResultsView: View {
     private var scanPhotoRow: some View {
         let scan = store.scalpScans.first { $0.id == report?.scalpScanId }
         
-        let photoInfo: [(label: String, url: String)] = [
+        let photoInfo: [(label: String, path: String)] = [
             ("Front", scan?.frontImageURL),
             ("Left", scan?.leftImageURL),
             ("Right", scan?.rightImageURL),
-            ("Back", scan?.backImageURL)
+            ("Back", scan?.backImageURL),
+            ("Top", scan?.topImageURL)
         ].compactMap {
-            if let url = $0.1, !url.isEmpty, !url.starts(with: "ai_"), !url.starts(with: "self_") {
-                return ($0.0, url)
+            guard let url = $0.1, let resolved = url.resolvedLocalImagePath, !resolved.isEmpty else {
+                return nil
             }
-            return nil
+            return ($0.0, resolved)
         }
 
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(0..<4, id: \.self) { i in
+                ForEach(0..<max(4, photoInfo.count), id: \.self) { i in
                     VStack(spacing: 6) {
-                        if i < photoInfo.count, let uiImage = UIImage(contentsOfFile: photoInfo[i].url) {
+                        if i < photoInfo.count, let uiImage = UIImage(contentsOfFile: photoInfo[i].path) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFill()

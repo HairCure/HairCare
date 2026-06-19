@@ -226,7 +226,12 @@ extension AppDataStore {
         stage: HairFallStage,
         scalp: ScalpCondition,
         density: HairDensityLevel,
-        scanType: ScanType = .initial
+        scanType: ScanType = .initial,
+        frontURL: String? = nil,
+        leftURL: String? = nil,
+        rightURL: String? = nil,
+        backURL: String? = nil,
+        topURL: String? = nil
     ) -> ActionResult {
         
         guard let profile    = currentProfile,
@@ -248,9 +253,12 @@ extension AppDataStore {
         let scanId = UUID()
         scalpScans.append(ScalpScan(
             id: scanId, userId: currentUserId, scanDate: Date(),
-            frontImageURL: "self_assessed_front", leftImageURL: "self_assessed_left",
-            rightImageURL: "self_assessed_right", backImageURL: "self_assessed_back",
-            topImageURL: "self_assessed_top", scanType: scanType
+            frontImageURL: frontURL ?? "self_assessed_front",
+            leftImageURL: leftURL ?? "self_assessed_left",
+            rightImageURL: rightURL ?? "self_assessed_right",
+            backImageURL: backURL ?? "self_assessed_back",
+            topImageURL: topURL ?? "self_assessed_top",
+            scanType: scanType
         ))
         
         
@@ -431,7 +439,12 @@ extension AppDataStore {
         stage: HairFallStage,
         scalp: ScalpCondition,
         density: HairDensityLevel,
-        isAIModel: Bool = false
+        isAIModel: Bool = false,
+        frontURL: String? = nil,
+        leftURL: String? = nil,
+        rightURL: String? = nil,
+        backURL: String? = nil,
+        topURL: String? = nil
     ) -> ActionResult {
         
         guard let profile    = currentProfile,
@@ -453,7 +466,10 @@ extension AppDataStore {
             if update.shouldUpdate {
                 let result = submitSelfAssessedStage(
                     stage: stage, scalp: scalp,
-                    density: density, scanType: .monthly
+                    density: density, scanType: .monthly,
+                    frontURL: frontURL, leftURL: leftURL,
+                    rightURL: rightURL, backURL: backURL,
+                    topURL: topURL
                 )
                 if case .success = result {
                     return .planUpdated(
@@ -467,9 +483,12 @@ extension AppDataStore {
                 let scanId = UUID()
                 let scan = ScalpScan(
                     id: scanId, userId: currentUserId, scanDate: Date(),
-                    frontImageURL: "weekly_front", leftImageURL: "weekly_left",
-                    rightImageURL: "weekly_right", backImageURL: "weekly_back",
-                    topImageURL: "monthly_top", scanType: .monthly
+                    frontImageURL: frontURL ?? "weekly_front",
+                    leftImageURL: leftURL ?? "weekly_left",
+                    rightImageURL: rightURL ?? "weekly_right",
+                    backImageURL: backURL ?? "weekly_back",
+                    topImageURL: topURL ?? "monthly_top",
+                    scanType: .monthly
                 )
                 scalpScans.append(scan)
                 
@@ -506,7 +525,10 @@ extension AppDataStore {
             }
         }
         
-        return submitSelfAssessedStage(stage: stage, scalp: scalp, density: density, scanType: .monthly)
+        return submitSelfAssessedStage(
+            stage: stage, scalp: scalp, density: density, scanType: .monthly,
+            frontURL: frontURL, leftURL: leftURL, rightURL: rightURL, backURL: backURL, topURL: topURL
+        )
     }
     
     // MARK: 8 — Profile & Settings Updates

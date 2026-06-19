@@ -5,9 +5,14 @@ import SwiftUI
 
 struct HairInsightsView: View {
     
-    @Environment(AppDataStore.self) private var store
+    @Environment(AppDataStore.self)  private var store
+    @Environment(AuthViewModel.self) private var authVM
     
     @State private var routineScrollPosition = ScrollPosition(idType: Int.self)
+    
+    @State private var pushGuestGate  = false
+    @State private var showAuthSheet  = false
+    @State private var guestGateConfig: GuestGateConfig = GuestGateConfig(icon: "", title: "", message: "")
     
     private var insightStore: HairInsightsDataStore { store.hairInsightsStore }
     private var userPlan: UserPlan? { store.activePlan }
@@ -54,6 +59,25 @@ struct HairInsightsView: View {
             .task {
                 await insightStore.loadContent(hairType: detectedHairType)
             }
+            .navigationDestination(isPresented: $pushGuestGate) {
+                GuestGatePage(
+                    config: guestGateConfig,
+                    onSignUp: {
+                        pushGuestGate = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showAuthSheet = true
+                        }
+                    },
+                    onDismiss: { pushGuestGate = false }
+                )
+            }
+        }
+        .sheet(isPresented: $showAuthSheet) {
+            NavigationStack {
+                AuthLandingView(hideGuestButton: true, onProceed: {
+                    showAuthSheet = false
+                })
+            }
         }
     }
     
@@ -84,16 +108,32 @@ struct HairInsightsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(routineCards.indices, id: \.self) { i in
-                            NavigationLink {
-                                HairCareRoutineDetailView(
-                                    routine: routineCards[i],
-                                    insightStore: insightStore,
-                                    userId: store.currentUserId
-                                )
-                            } label: {
-                                RoutineCardView(routine: routineCards[i])
-                                    .containerRelativeFrame(.horizontal, count: 1, spacing: 0)
-                                    .id(i)
+                            if authVM.isGuestMode {
+                                Button {
+                                    guestGateConfig = GuestGateConfig(
+                                        icon: "sparkles",
+                                        title: "Personalised Routines",
+                                        message: "Create a free account to get personalised hair care routines for your hair type."
+                                    )
+                                    pushGuestGate = true
+                                } label: {
+                                    RoutineCardView(routine: routineCards[i])
+                                        .containerRelativeFrame(.horizontal, count: 1, spacing: 0)
+                                        .id(i)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink {
+                                    HairCareRoutineDetailView(
+                                        routine: routineCards[i],
+                                        insightStore: insightStore,
+                                        userId: store.currentUserId
+                                    )
+                                } label: {
+                                    RoutineCardView(routine: routineCards[i])
+                                        .containerRelativeFrame(.horizontal, count: 1, spacing: 0)
+                                        .id(i)
+                                }
                             }
                         }
                     }
@@ -125,27 +165,62 @@ struct HairInsightsView: View {
         if !allFavourites.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 
-                NavigationLink {
-                    FavouritesListView(insightStore: insightStore, userPlan: userPlan, userId: store.currentUserId)
-                } label: {
-                    HStack {
-                        Text("Your Favourites")
-                            .font(.title3.bold())
-                            .foregroundStyle(.black)
-                        Image(systemName: "chevron.right")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.black.opacity(0.5))
+                if authVM.isGuestMode {
+                    Button {
+                        guestGateConfig = GuestGateConfig(
+                            icon: "heart.fill",
+                            title: "Save Your Favourites",
+                            message: "Create a free account to save routines, tips, and remedies to your favourites."
+                        )
+                        pushGuestGate = true
+                    } label: {
+                        HStack {
+                            Text("Your Favourites")
+                                .font(.title3.bold())
+                                .foregroundStyle(.black)
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.black.opacity(0.5))
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal, 20)
+                } else {
+                    NavigationLink {
+                        FavouritesListView(insightStore: insightStore, userPlan: userPlan, userId: store.currentUserId)
+                    } label: {
+                        HStack {
+                            Text("Your Favourites")
+                                .font(.title3.bold())
+                                .foregroundStyle(.black)
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.black.opacity(0.5))
+                        }
+                        .padding(.horizontal, 20)
+                    }
                 }
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(allFavourites) { item in
-                            NavigationLink {
-                                destinationView(for: item)
-                            } label: {
-                                FavouriteCardView(item: item)
+                            if authVM.isGuestMode {
+                                Button {
+                                    guestGateConfig = GuestGateConfig(
+                                        icon: "heart.fill",
+                                        title: "Save Your Favourites",
+                                        message: "Create a free account to save routines, tips, and remedies to your favourites."
+                                    )
+                                    pushGuestGate = true
+                                } label: {
+                                    FavouriteCardView(item: item)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink {
+                                    destinationView(for: item)
+                                } label: {
+                                    FavouriteCardView(item: item)
+                                }
                             }
                         }
                     }
@@ -161,23 +236,45 @@ struct HairInsightsView: View {
     private var careTipsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
            
-            NavigationLink {
-                CareTipsListView(
-                    insightStore: insightStore,
-                    hairType: detectedHairType,
-                    userId: store.currentUserId
-                )
-            } label: {
-                HStack(spacing: 8) {
-                    Text("Care Tips")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.black)
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.black.opacity(0.5))
-                    Spacer()
+            if authVM.isGuestMode {
+                Button {
+                    guestGateConfig = GuestGateConfig(
+                        icon: "lightbulb.fill",
+                        title: "Personalised Care Tips",
+                        message: "Create a free account to get expert care tips tailored to your hair type."
+                    )
+                    pushGuestGate = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Care Tips")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.black)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.5))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
+            } else {
+                NavigationLink {
+                    CareTipsListView(
+                        insightStore: insightStore,
+                        hairType: detectedHairType,
+                        userId: store.currentUserId
+                    )
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Care Tips")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.black)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.5))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                }
             }
 
             if personalizedTips.isEmpty {
@@ -190,14 +287,32 @@ struct HairInsightsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(personalizedTips) { tip in
-                            NavigationLink {
-                                CareTipDetailView(tip: tip, insightStore: insightStore, userId: store.currentUserId)
-                            } label: {
-                                InsightMediaCardView(
-                                    title: tip.title,
-                                    mediaURL: tip.mediaURL,
-                                    hairTypeBadge: tip.hairTypes.isEmpty ? nil : tip.hairTypes.first?.capitalized
-                                )
+                            if authVM.isGuestMode {
+                                Button {
+                                    guestGateConfig = GuestGateConfig(
+                                        icon: "lightbulb.fill",
+                                        title: "Personalised Care Tips",
+                                        message: "Create a free account to get expert care tips tailored to your hair type."
+                                    )
+                                    pushGuestGate = true
+                                } label: {
+                                    InsightMediaCardView(
+                                        title: tip.title,
+                                        mediaURL: tip.mediaURL,
+                                        hairTypeBadge: tip.hairTypes.isEmpty ? nil : tip.hairTypes.first?.capitalized
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink {
+                                    CareTipDetailView(tip: tip, insightStore: insightStore, userId: store.currentUserId)
+                                } label: {
+                                    InsightMediaCardView(
+                                        title: tip.title,
+                                        mediaURL: tip.mediaURL,
+                                        hairTypeBadge: tip.hairTypes.isEmpty ? nil : tip.hairTypes.first?.capitalized
+                                    )
+                                }
                             }
                         }
                     }
@@ -213,23 +328,45 @@ struct HairInsightsView: View {
     private var homeRemediesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             
-            NavigationLink {
-                HomeRemediesListView(
-                    insightStore: insightStore,
-                    hairType: detectedHairType,
-                    userId: store.currentUserId
-                )
-            } label: {
-                HStack(spacing: 8) {
-                    Text("Home Remedies")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.black)
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.black.opacity(0.5))
-                    Spacer()
+            if authVM.isGuestMode {
+                Button {
+                    guestGateConfig = GuestGateConfig(
+                        icon: "leaf.fill",
+                        title: "Natural Home Remedies",
+                        message: "Create a free account to discover natural home remedies for your hair health."
+                    )
+                    pushGuestGate = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Home Remedies")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.black)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.5))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
+            } else {
+                NavigationLink {
+                    HomeRemediesListView(
+                        insightStore: insightStore,
+                        hairType: detectedHairType,
+                        userId: store.currentUserId
+                    )
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Home Remedies")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.black)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.5))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                }
             }
 
             if personalizedRemedies.isEmpty {
@@ -242,14 +379,32 @@ struct HairInsightsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(personalizedRemedies) { remedy in
-                            NavigationLink {
-                                HomeRemedyDetailView(remedy: remedy, insightStore: insightStore, userId: store.currentUserId)
-                            } label: {
-                                InsightMediaCardView(
-                                    title: remedy.title,
-                                    mediaURL: remedy.mediaURL,
-                                    hairTypeBadge: remedy.hairTypes.isEmpty ? nil : remedy.hairTypes.first?.capitalized
-                                )
+                            if authVM.isGuestMode {
+                                Button {
+                                    guestGateConfig = GuestGateConfig(
+                                        icon: "leaf.fill",
+                                        title: "Natural Home Remedies",
+                                        message: "Create a free account to discover natural home remedies for your hair health."
+                                    )
+                                    pushGuestGate = true
+                                } label: {
+                                    InsightMediaCardView(
+                                        title: remedy.title,
+                                        mediaURL: remedy.mediaURL,
+                                        hairTypeBadge: remedy.hairTypes.isEmpty ? nil : remedy.hairTypes.first?.capitalized
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink {
+                                    HomeRemedyDetailView(remedy: remedy, insightStore: insightStore, userId: store.currentUserId)
+                                } label: {
+                                    InsightMediaCardView(
+                                        title: remedy.title,
+                                        mediaURL: remedy.mediaURL,
+                                        hairTypeBadge: remedy.hairTypes.isEmpty ? nil : remedy.hairTypes.first?.capitalized
+                                    )
+                                }
                             }
                         }
                     }

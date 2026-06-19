@@ -210,5 +210,21 @@ struct ScanReport: Identifiable {
     var sleepScore: Float
     var hairCareScore: Float
     var recommendedPlan: String
+
 }
 
+extension String {
+    var resolvedLocalImagePath: String? {
+        if self.isEmpty { return nil }
+        // Handle legacy absolute paths or remote URLs
+        if self.starts(with: "/") || self.contains("://") {
+            return self
+        }
+        // Avoid placeholder strings
+        if self.starts(with: "self_assessed_") || self.starts(with: "weekly_") || self.starts(with: "monthly_") || self.starts(with: "ai_") {
+            return nil
+        }
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent(self).path
+    }
+}

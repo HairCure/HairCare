@@ -48,6 +48,9 @@ extension View {
 struct MindEaseView: View {
     @Environment(AppDataStore.self)      private var store
     @Environment(MindEaseDataStore.self) private var mindEaseStore
+    @Environment(AuthViewModel.self)     private var authVM
+
+    let onGuestTap: () -> Void
 
     @State private var sheetDate:         Date? = nil
     @State private var selectedDate:      Date  = Calendar.current.startOfDay(for: .now)
@@ -69,7 +72,10 @@ struct MindEaseView: View {
                     Text("Today, \(Date().mindEaseFormatted("d MMM yyyy"))")
                         .font(.system(size: 20, weight: .bold))
                     Spacer()
-                    Button { showCalendarSheet = true } label: {
+                    Button {
+                        if authVM.isGuestMode { onGuestTap() }
+                        else { showCalendarSheet = true }
+                    } label: {
                         Image(systemName: "calendar")
                             .font(.system(size: 20, weight: .medium))
                             .foregroundStyle(Color.mindEasePurple)
@@ -88,9 +94,13 @@ struct MindEaseView: View {
                             minutes: mindEaseStore.mindfulMinutes(for: date),
                             isSelected: Calendar.current.startOfDay(for: date) == selectedDate,
                             onTap: {
-                                let day = Calendar.current.startOfDay(for: date)
-                                selectedDate = day
-                                sheetDate    = day
+                                if authVM.isGuestMode {
+                                    onGuestTap()
+                                } else {
+                                    let day = Calendar.current.startOfDay(for: date)
+                                    selectedDate = day
+                                    sheetDate    = day
+                                }
                             }
                         )
                     }
@@ -131,11 +141,21 @@ struct MindEaseView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
                                 ForEach(mindEaseStore.mindEaseCategories) { cat in
-                                    NavigationLink(value: cat) { CategoryCard(category: cat) }
+                                    if authVM.isGuestMode {
+                                        Button { onGuestTap() } label: {
+                                            CategoryCard(category: cat)
+                                        }
                                         .buttonStyle(.plain)
                                         .scrollTransition(.animated.threshold(.visible(0.05))) { c, p in
                                             c.opacity(p.isIdentity ? 1 : 0).scaleEffect(p.isIdentity ? 1 : 0.88)
                                         }
+                                    } else {
+                                        NavigationLink(value: cat) { CategoryCard(category: cat) }
+                                            .buttonStyle(.plain)
+                                            .scrollTransition(.animated.threshold(.visible(0.05))) { c, p in
+                                                c.opacity(p.isIdentity ? 1 : 0).scaleEffect(p.isIdentity ? 1 : 0.88)
+                                            }
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20).padding(.bottom, 4)
@@ -150,8 +170,12 @@ struct MindEaseView: View {
                             Spacer()
                             if !mindEaseStore.mindfulSessions.isEmpty {
                                 Button {
-                                    selectedDate = Calendar.current.startOfDay(for: .now)
-                                    sheetDate = selectedDate
+                                    if authVM.isGuestMode {
+                                        onGuestTap()
+                                    } else {
+                                        selectedDate = Calendar.current.startOfDay(for: .now)
+                                        sheetDate = selectedDate
+                                    }
                                 } label: {
                                     HStack(spacing: 4) {
                                         Text("View History")
@@ -187,12 +211,19 @@ struct MindEaseView: View {
                                 ForEach(Array(plans.enumerated()), id: \.element.id) { idx, plan in
                                     if let content = mindEaseStore.mindEaseCategoryContents
                                         .first(where: { $0.id == plan.contentId }) {
-                                        NavigationLink(value: content) {
-                                            PlanRow(plan: plan, content: content, store: mindEaseStore)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .scrollTransition(.animated.threshold(.visible(0.1))) { c, p in
-                                            c.opacity(p.isIdentity ? 1 : 0).offset(y: p.isIdentity ? 0 : 22)
+                                        if authVM.isGuestMode {
+                                            Button { onGuestTap() } label: {
+                                                PlanRow(plan: plan, content: content, store: mindEaseStore)
+                                            }
+                                            .buttonStyle(.plain)
+                                        } else {
+                                            NavigationLink(value: content) {
+                                                PlanRow(plan: plan, content: content, store: mindEaseStore)
+                                            }
+                                            .buttonStyle(.plain)
+                                            .scrollTransition(.animated.threshold(.visible(0.1))) { c, p in
+                                                c.opacity(p.isIdentity ? 1 : 0).offset(y: p.isIdentity ? 0 : 22)
+                                            }
                                         }
                                         if idx < plans.count - 1 { Divider().padding(.leading, 96) }
                                     }
@@ -210,7 +241,7 @@ struct MindEaseView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .mindEasePageBackground()
-        .navigationDestination(for: MindEaseCategory.self)        { MindEaseCategoryListView(category: $0) }
+        .navigationDestination(for: MindEaseCategory.self)        { MindEaseCategoryListView(category: $0, onGuestTap: onGuestTap) }
         .navigationDestination(for: MindEaseCategoryContent.self) { MindEasePlayerView(content: $0) }
         .sheet(item: $sheetDate) { DayDetailSheet(date: $0) }
         .sheet(isPresented: $showCalendarSheet) { CalendarPickerSheet() }
@@ -597,7 +628,9 @@ private struct SessionRow: View {
 
 struct MindEaseCategoryListView: View {
     let category: MindEaseCategory
+    let onGuestTap: () -> Void
     @Environment(MindEaseDataStore.self) private var mindEaseStore
+    @Environment(AuthViewModel.self)     private var authVM
 
     var body: some View {
         let contents = mindEaseStore.mindEaseCategoryContents.filter { $0.categoryId == category.id }
@@ -605,11 +638,18 @@ struct MindEaseCategoryListView: View {
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
                     ForEach(Array(contents.enumerated()), id: \.element.id) { idx, content in
-                        NavigationLink(value: content) { ContentRow(content: content, store: mindEaseStore) }
-                            .buttonStyle(.plain)
-                            .scrollTransition(.animated.threshold(.visible(0.05))) { c, p in
-                                c.opacity(p.isIdentity ? 1 : 0).offset(x: p.isIdentity ? 0 : 24)
+                        if authVM.isGuestMode {
+                            Button { onGuestTap() } label: {
+                                ContentRow(content: content, store: mindEaseStore)
                             }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(value: content) { ContentRow(content: content, store: mindEaseStore) }
+                                .buttonStyle(.plain)
+                                .scrollTransition(.animated.threshold(.visible(0.05))) { c, p in
+                                    c.opacity(p.isIdentity ? 1 : 0).offset(x: p.isIdentity ? 0 : 24)
+                                }
+                        }
                         if idx < contents.count - 1 { Divider().padding(.leading, 100) }
                     }
                 }
@@ -981,7 +1021,7 @@ struct MindEaseThumbnail: View {
 
 #Preview("Home") {
     NavigationStack {
-        MindEaseView()
+        MindEaseView(onGuestTap: {})
             .environment(AppDataStore())
             .environment(MindEaseDataStore(currentUserId: UUID()))
     }
