@@ -75,11 +75,21 @@ class WeeklyScanViewModel {
         case 40..<60: newLevel = .low
         default:      newLevel = .veryLow
         }
+
+        let topPath = photo1.map { saveImageLocally($0, prefix: "top") } ?? ""
+        let frontPath = photo2.map { saveImageLocally($0, prefix: "front") } ?? ""
+        let sidePath = photo3.map { saveImageLocally($0, prefix: "side") } ?? ""
         
         store.submitWeeklyScan(
             stage:   baseStage,
             scalp:   baseScalp,
-            density: newLevel
+            density: newLevel,
+            isAIModel: false,
+            frontURL: frontPath,
+            leftURL: sidePath,
+            rightURL: sidePath,
+            backURL: "",
+            topURL: topPath
         )
         
         return store.latestScanReport ?? ScanReport(
@@ -90,6 +100,15 @@ class WeeklyScanViewModel {
             lifestyleScore: 5, dietScore: 5, stressScore: 5,
             sleepScore: 5, hairCareScore: 5, recommendedPlan: ""
         )
+    }
+
+    private func saveImageLocally(_ image: UIImage, prefix: String) -> String {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return "" }
+        let filename = "\(prefix)_\(UUID().uuidString).jpg"
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let url = docs.appendingPathComponent(filename)
+        try? data.write(to: url)
+        return filename
     }
     
     private func loadPhoto(from item: PhotosPickerItem?, slot: PhotoSlot) {

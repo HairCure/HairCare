@@ -152,9 +152,10 @@ class HairAnalysisViewModel {
     
     private func saveImageLocally(_ image: UIImage, prefix: String) -> String {
         guard let data = image.jpegData(compressionQuality: 0.8) else { return "" }
+        let filename = "\(prefix)_\(UUID().uuidString).jpg"
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let url = docs.appendingPathComponent("\(prefix)_\(UUID().uuidString).jpg")
+        let url = docs.appendingPathComponent(filename)
         try? data.write(to: url)
-        return url.path
+        return filename
     }
 }

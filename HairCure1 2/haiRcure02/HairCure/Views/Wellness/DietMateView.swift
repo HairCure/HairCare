@@ -150,6 +150,9 @@ private struct FoodImageView: View {
 struct DietMateView: View {
     @Environment(AppDataStore.self)      private var store
     @Environment(DietmateDataStore.self) private var dietMateStore
+    @Environment(AuthViewModel.self)     private var authVM
+
+    let onGuestTap: () -> Void
 
     @State private var selectedDate  = Calendar.current.startOfDay(for: Date())
     @State private var showCalendar  = false
@@ -178,7 +181,10 @@ struct DietMateView: View {
                 }
                 MealListSection(
                     selectedDate: selectedDate, store: dietMateStore,
-                    onAdd: { pushMealId = $0 }, onFoodTap: { selectedFood = $0 }
+                    isGuest: authVM.isGuestMode,
+                    onAdd: { pushMealId = $0 },
+                    onFoodTap: { selectedFood = $0 },
+                    onGuestTap: onGuestTap
                 )
                 Spacer(minLength: 24)
             }
@@ -331,7 +337,9 @@ private struct SectionHeading: View {
 
 private struct MealListSection: View {
     let selectedDate: Date; let store: DietmateDataStore
+    let isGuest: Bool
     let onAdd: (UUID) -> Void; let onFoodTap: (Food) -> Void
+    let onGuestTap: () -> Void
 
     var body: some View {
         let entries = store.mealEntries(for: selectedDate)
@@ -346,12 +354,17 @@ private struct MealListSection: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 40)
             } else {
                 ForEach(entries) { entry in
-                    MealCard(entry: entry, isPast: isPast, onAdd: { onAdd(entry.id) }, onFoodTap: onFoodTap)
-                        .scrollTransition(.animated.threshold(.visible(0.1))) { content, phase in
-                            content.opacity(phase.isIdentity ? 1 : 0)
-                                .scaleEffect(phase.isIdentity ? 1 : 0.96)
-                                .offset(y: phase.isIdentity ? 0 : 24)
-                        }
+                    MealCard(
+                        entry: entry, isPast: isPast, isGuest: isGuest,
+                        onAdd: { onAdd(entry.id) },
+                        onFoodTap: onFoodTap,
+                        onGuestTap: onGuestTap
+                    )
+                    .scrollTransition(.animated.threshold(.visible(0.1))) { content, phase in
+                        content.opacity(phase.isIdentity ? 1 : 0)
+                            .scaleEffect(phase.isIdentity ? 1 : 0.96)
+                            .offset(y: phase.isIdentity ? 0 : 24)
+                    }
                 }
             }
         }
@@ -365,7 +378,9 @@ private struct MealListSection: View {
 
 private struct MealCard: View {
     @Environment(DietmateDataStore.self) private var store
-    let entry: MealEntry; let isPast: Bool; let onAdd: () -> Void; let onFoodTap: (Food) -> Void
+    let entry: MealEntry; let isPast: Bool; let isGuest: Bool
+    let onAdd: () -> Void; let onFoodTap: (Food) -> Void
+    let onGuestTap: () -> Void
 
     var body: some View {
         let loggedFoods = store.linkedFoods(for: entry.id)
@@ -387,7 +402,7 @@ private struct MealCard: View {
                 }
                 Spacer()
                 if hasFoods {
-                    Button(action: onAdd) {
+                    Button(action: isGuest ? onGuestTap : onAdd) {
                         Image(systemName: "square.and.pencil")
                             .font(.system(size: 18))
                             .foregroundStyle(accentColor)
@@ -425,7 +440,7 @@ private struct MealCard: View {
 
             } else if !isPast {
                 // ── Add button ──
-                Button(action: onAdd) {
+                Button(action: isGuest ? onGuestTap : onAdd) {
                     Text("Add \(entry.mealType.displayName)")
                         .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
                         .frame(maxWidth: .infinity).frame(height: 48)
@@ -942,7 +957,7 @@ private struct HairNutrientsDetailCard: View {
     let appStore      = AppDataStore()
     let dietMateStore = DietmateDataStore(currentUserId: appStore.currentUserId)
     return NavigationStack {
-        DietMateView()
+        DietMateView(onGuestTap: {})
             .environment(appStore)
             .environment(dietMateStore)
     }

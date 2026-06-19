@@ -170,3 +170,93 @@ struct GuestGateSheetView: View {
         .background(Color.hcCream.opacity(0.95).ignoresSafeArea())
     }
 }
+
+// MARK: - Shared Guest Gate Configurations and Views
+
+struct GuestGateConfig {
+    let icon: String
+    let title: String
+    let message: String
+}
+
+// MARK: - GuestGatePage
+// Full navigation-destination page that keeps the tab bar + back button visible.
+
+struct GuestGatePage: View {
+    let config:    GuestGateConfig
+    let onSignUp:  () -> Void
+    let onDismiss: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color.hcCream.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                VStack(spacing: 20) {
+                    // Icon circle
+                    ZStack {
+                        Circle()
+                            .fill(Color.hcBrown.opacity(0.10))
+                            .frame(width: 80, height: 80)
+                        Image(systemName: config.icon)
+                            .font(.system(size: 34, weight: .medium))
+                            .foregroundStyle(Color.hcBrown)
+                    }
+
+                    // Title & message
+                    VStack(spacing: 10) {
+                        Text(config.title)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+
+                        Text(config.message)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                    }
+
+                    // CTAs
+                    VStack(spacing: 14) {
+                        Button(action: onSignUp) {
+                            Text("Create Free Account")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(Color.hcBrown)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+
+                        Button {
+                            onDismiss()
+                            dismiss()
+                        } label: {
+                            Text("Maybe Later")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.hcWarmBrown)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                }
+                .padding(.vertical, 32)
+                .padding(.horizontal, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(Color.white)
+                        .shadow(color: .black.opacity(0.07), radius: 20, x: 0, y: 8)
+                )
+                .padding(.horizontal, 20)
+
+                Spacer()
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

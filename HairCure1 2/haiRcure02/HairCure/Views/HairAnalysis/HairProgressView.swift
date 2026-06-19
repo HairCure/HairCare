@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: 1 — Hair Progress View
 
@@ -9,6 +10,7 @@ struct HairProgressView: View {
     @State private var showMonthlyAssessment = false
     @State private var showNotDueAlert       = false
     @State private var notDueDaysLeft        = 0
+    @State private var showComparisonView    = false
 
     // Post scan navigation (stored as UUID to avoid Hashable requirement on ScanReport)
     @State private var pushToReportId: UUID? = nil
@@ -31,10 +33,32 @@ struct HairProgressView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
 
-                    Text("Hair Journey")
-                        .font(.system(size: 22, weight: .bold))
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                    HStack {
+                        Text("Hair Journey")
+                            .font(.system(size: 22, weight: .bold))
+                        Spacer()
+                        if store.scanReports.filter({ r in
+                            store.scalpScans.contains { $0.id == r.scalpScanId && $0.userId == store.currentUserId }
+                        }).count >= 2 {
+                            Button {
+                                showComparisonView = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.left.and.right.righttriangle.left.and.righttriangle.right")
+                                        .font(.system(size: 11))
+                                    Text("Compare")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.hcBrown)
+                                .clipShape(Capsule())
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
 
                     if recentScans.isEmpty {
                         emptyJourneyState
@@ -98,6 +122,10 @@ struct HairProgressView: View {
                 "Your next scan is due in \(notDueDaysLeft) day\(notDueDaysLeft == 1 ? "" : "s"). "
               + "Keep following your plan until then!"
             )
+        }
+        .sheet(isPresented: $showComparisonView) {
+            HairProgressComparisonView()
+                .environment(store)
         }
     }
 
@@ -184,6 +212,7 @@ struct HairProgressAllScansView: View {
 
     @State private var selectedMonth:        Date = Date()
     @State private var showMonthPicker       = false
+    @State private var showComparisonView    = false
 
     // ── Scan flow state ──
     @State private var showMonthlyAssessment = false
@@ -217,6 +246,20 @@ struct HairProgressAllScansView: View {
                         Text("Monthly reports")
                             .font(.system(size: 22, weight: .bold))
                         Spacer()
+                        if store.scanReports.filter({ r in
+                            store.scalpScans.contains { $0.id == r.scalpScanId && $0.userId == store.currentUserId }
+                        }).count >= 2 {
+                            Button {
+                                showComparisonView = true
+                            } label: {
+                                Image(systemName: "arrow.left.and.right.righttriangle.left.and.righttriangle.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(10)
+                                    .background(Color.hcBrown)
+                                    .clipShape(Circle())
+                            }
+                        }
                         Button { showMonthPicker.toggle() } label: {
                             HStack(spacing: 6) {
                                 Text(monthLabel(selectedMonth))
@@ -281,6 +324,10 @@ struct HairProgressAllScansView: View {
             Text(
                 "Your next scan is due in \(notDueDaysLeft) day\(notDueDaysLeft == 1 ? "" : "s")."
             )
+        }
+        .sheet(isPresented: $showComparisonView) {
+            HairProgressComparisonView()
+                .environment(store)
         }
     }
 
@@ -444,7 +491,7 @@ struct HairProgressCard: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemGray6).opacity(0.6))
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
@@ -515,21 +562,32 @@ struct HairProgressDetailView: View {
                          doneOn: Self.dateFormatter.string(from: report.createdAt))
                 .padding(.horizontal, 20)
 
-            // Analysis rows
-            VStack(spacing: 10) {
+            // Scalp Photos
+            scalpPhotosSection(report: report)
+
+            // Analysis Card
+            VStack(spacing: 0) {
                 analysisRow(title: "Hair Density Level",
                             value: densityLevelLabel(report.hairDensityPercent),
                             color: densityColor(report.hairDensityPercent))
+                Divider()
+                    .padding(.horizontal, 16)
                 analysisRow(title: "Growth Stage",
                             value: "Stage \(report.hairFallStage.intValue)",
                             color: stageColor(report.hairFallStage.intValue))
+                Divider()
+                    .padding(.horizontal, 16)
                 analysisRow(title: "Hair Type",
                             value: report.hairType?.capitalized ?? "N/A",
                             color: Color.blue.opacity(0.85))
+                Divider()
+                    .padding(.horizontal, 16)
                 analysisRow(title: "Scan Type",
                             value: scanTypeLabel(report),
                             color: .primary)
             }
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .padding(.horizontal, 20)
 
             // Lifestyle scores
@@ -543,6 +601,57 @@ struct HairProgressDetailView: View {
             Spacer(minLength: 40)
         }
         .padding(.top, 16)
+    }
+
+    private func scalpPhotosSection(report: ScanReport) -> some View {
+        let scan = store.scalpScans.first { $0.id == report.scalpScanId }
+        let photoInfo: [(label: String, path: String)] = [
+            ("Front", scan?.frontImageURL),
+            ("Left", scan?.leftImageURL),
+            ("Right", scan?.rightImageURL),
+            ("Back", scan?.backImageURL),
+            ("Top", scan?.topImageURL)
+        ].compactMap {
+            guard let url = $0.1, let resolved = url.resolvedLocalImagePath, !resolved.isEmpty else {
+                return nil
+            }
+            return ($0.0, resolved)
+        }
+        
+        return Group {
+            if !photoInfo.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Scalp Photos")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(photoInfo, id: \.path) { photo in
+                                VStack(spacing: 6) {
+                                    if let uiImage = UIImage(contentsOfFile: photo.path) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 95, height: 95)
+                                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 14)
+                                                    .stroke(Color.hcBrown, lineWidth: 2)
+                                            )
+                                        Text(photo.label)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: Sub-views
@@ -576,7 +685,7 @@ struct HairProgressDetailView: View {
                 .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity)
-        .background(Color(UIColor.systemGray6).opacity(0.6))
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -590,10 +699,8 @@ struct HairProgressDetailView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(color)
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .padding(.horizontal, 16)
-        .background(Color(UIColor.systemGray6).opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func lifestyleScoresCard(report: ScanReport) -> some View {
@@ -618,7 +725,7 @@ struct HairProgressDetailView: View {
             }
         }
         .padding(16)
-        .background(Color(UIColor.systemGray6).opacity(0.6))
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -688,7 +795,7 @@ struct HairProgressDetailView: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .background(Color(UIColor.systemGray6).opacity(0.6))
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -732,3 +839,538 @@ struct HairProgressDetailView: View {
     }
     .environment(AppDataStore())
 }
+
+// MARK: 7 — Comparison View (Swift Charts Enhanced)
+
+struct HairProgressComparisonView: View {
+    @Environment(AppDataStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedReportIdA: UUID?
+    @State private var selectedReportIdB: UUID?
+    @State private var animateCharts = false
+
+    // ── Data models for charts ──────────────────────────────────
+
+    struct DensityPoint: Identifiable {
+        let id: UUID
+        let date: Date
+        let density: Double
+        let tag: String?        // "A", "B", or nil
+    }
+
+    struct LifestyleBar: Identifiable {
+        let id = UUID()
+        let dimension: String
+        let scan: String        // "Scan A" or "Scan B"
+        let value: Double
+    }
+
+    // ── Sorted reports for this user ────────────────────────────
+
+    private var allUserReports: [ScanReport] {
+        store.scanReports
+            .filter { r in
+                store.scalpScans.contains { $0.id == r.scalpScanId && $0.userId == store.currentUserId }
+            }
+            .sorted { $0.createdAt < $1.createdAt }   // oldest → newest for charts
+    }
+
+    private var reportA: ScanReport? { store.scanReports.first { $0.id == selectedReportIdA } }
+    private var reportB: ScanReport? { store.scanReports.first { $0.id == selectedReportIdB } }
+
+    // ── Chart data builders ─────────────────────────────────────
+
+    private var densityPoints: [DensityPoint] {
+        allUserReports.map { r in
+            let tag: String?
+            if r.id == selectedReportIdA { tag = "A" }
+            else if r.id == selectedReportIdB { tag = "B" }
+            else { tag = nil }
+            return DensityPoint(id: r.id, date: r.createdAt,
+                                density: Double(r.hairDensityPercent), tag: tag)
+        }
+    }
+
+    private var lifestyleBars: [LifestyleBar] {
+        guard let a = reportA, let b = reportB else { return [] }
+        let dims = [("Sleep", a.sleepScore, b.sleepScore),
+                    ("Stress", a.stressScore, b.stressScore),
+                    ("Diet", a.dietScore, b.dietScore),
+                    ("Hair Care", a.hairCareScore, b.hairCareScore)]
+        return dims.flatMap { (name, va, vb) in [
+            LifestyleBar(dimension: name, scan: "Scan A", value: Double(va)),
+            LifestyleBar(dimension: name, scan: "Scan B", value: Double(vb))
+        ]}
+    }
+
+    // ── Date formatter ──────────────────────────────────────────
+
+    private static let shortDate: DateFormatter = {
+        let df = DateFormatter(); df.dateFormat = "dd MMM, yyyy"; return df
+    }()
+
+    private static let axisDate: DateFormatter = {
+        let df = DateFormatter(); df.dateFormat = "MMM yy"; return df
+    }()
+
+    // ── Body ────────────────────────────────────────────────────
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.hcCream.ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+
+                        // ─── Scan Selectors ───────────────────
+                        scanSelectors
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+
+                        // ─── Density Trend Chart ──────────────
+                        densityTrendCard
+                            .padding(.horizontal, 20)
+
+                        if reportA != nil && reportB != nil {
+
+                            // ─── Delta Badge ──────────────────
+                            deltaBadgeCard
+                                .padding(.horizontal, 20)
+
+                            // ─── Lifestyle Bar Chart ──────────
+                            lifestyleChartCard
+                                .padding(.horizontal, 20)
+
+                            // ─── Side-by-side Photos ──────────
+                            photoComparisonSection
+                        }
+
+                        Spacer(minLength: 40)
+                    }
+                }
+            }
+            .navigationTitle("Compare Scans")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Close") { dismiss() }.foregroundStyle(Color.hcBrown)
+                }
+            }
+            .onAppear {
+                let reports = allUserReports.reversed()   // newest first for default pick
+                if let first = reports.first { selectedReportIdA = first.id }
+                if reports.count > 1 { selectedReportIdB = reports[reports.index(reports.startIndex, offsetBy: 1)].id }
+                withAnimation(.easeOut(duration: 0.9).delay(0.25)) { animateCharts = true }
+            }
+        }
+    }
+
+    // MARK: – Scan Selectors
+
+    private var scanSelectors: some View {
+        HStack(spacing: 12) {
+            selectorMenu(label: "Scan A", selectedId: $selectedReportIdA,
+                         accentColor: Color.hcBrown)
+            selectorMenu(label: "Scan B", selectedId: $selectedReportIdB,
+                         accentColor: Color(hue: 0.07, saturation: 0.55, brightness: 0.75))
+        }
+    }
+
+    @ViewBuilder
+    private func selectorMenu(label: String, selectedId: Binding<UUID?>, accentColor: Color) -> some View {
+        let selected = store.scanReports.first { $0.id == selectedId.wrappedValue }
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                Circle().fill(accentColor).frame(width: 8, height: 8)
+                Text(label).font(.system(size: 12, weight: .semibold)).foregroundStyle(accentColor)
+            }
+            Menu {
+                ForEach(allUserReports.reversed()) { r in
+                    Button(Self.shortDate.string(from: r.createdAt)) { selectedId.wrappedValue = r.id }
+                }
+            } label: {
+                HStack {
+                    Text(selected.map { Self.shortDate.string(from: $0.createdAt) } ?? "Select Scan")
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down").font(.system(size: 11))
+                }
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(accentColor.opacity(0.35), lineWidth: 1.5))
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: – Density Trend Chart
+
+    private var densityTrendCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Density Trend")
+                    .font(.system(size: 17, weight: .bold))
+                Text("Hair density % across all your scans")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+
+            if densityPoints.count < 2 {
+                Text("Need at least 2 scans to show a trend.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
+            } else {
+                Chart {
+                    // Gradient area under the line
+                    ForEach(densityPoints) { pt in
+                        AreaMark(
+                            x: .value("Date", pt.date),
+                            y: .value("Density", animateCharts ? pt.density : 0)
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.hcBrown.opacity(0.22), Color.hcBrown.opacity(0.00)],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.catmullRom)
+                    }
+
+                    // Main line
+                    ForEach(densityPoints) { pt in
+                        LineMark(
+                            x: .value("Date", pt.date),
+                            y: .value("Density", animateCharts ? pt.density : 0)
+                        )
+                        .foregroundStyle(Color.hcBrown)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                        .interpolationMethod(.catmullRom)
+                    }
+
+                    // Plain data points
+                    ForEach(densityPoints.filter { $0.tag == nil }) { pt in
+                        PointMark(
+                            x: .value("Date", pt.date),
+                            y: .value("Density", animateCharts ? pt.density : 0)
+                        )
+                        .foregroundStyle(Color.hcBrown)
+                        .symbolSize(40)
+                    }
+
+                    // Scan A highlight
+                    ForEach(densityPoints.filter { $0.tag == "A" }) { pt in
+                        PointMark(
+                            x: .value("Date", pt.date),
+                            y: .value("Density", animateCharts ? pt.density : 0)
+                        )
+                        .foregroundStyle(Color.hcBrown)
+                        .symbolSize(110)
+                        .annotation(position: .top, spacing: 5) {
+                            Text("A")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.hcBrown)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    // Scan B highlight
+                    ForEach(densityPoints.filter { $0.tag == "B" }) { pt in
+                        PointMark(
+                            x: .value("Date", pt.date),
+                            y: .value("Density", animateCharts ? pt.density : 0)
+                        )
+                        .foregroundStyle(Color(hue: 0.07, saturation: 0.55, brightness: 0.75))
+                        .symbolSize(110)
+                        .annotation(position: .top, spacing: 5) {
+                            Text("B")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color(hue: 0.07, saturation: 0.55, brightness: 0.75))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(values: .stride(by: 20)) { v in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
+                            .foregroundStyle(Color.secondary.opacity(0.2))
+                        AxisValueLabel {
+                            if let val = v.as(Double.self) {
+                                Text("\(Int(val))%").font(.system(size: 10)).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 4)) { v in
+                        AxisGridLine().foregroundStyle(Color.clear)
+                        AxisValueLabel {
+                            if let d = v.as(Date.self) {
+                                Text(Self.axisDate.string(from: d))
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .chartYScale(domain: 0...100)
+                .frame(height: 180)
+                .animation(.easeOut(duration: 0.9), value: animateCharts)
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: – Delta Badge
+
+    @ViewBuilder
+    private var deltaBadgeCard: some View {
+        if let a = reportA, let b = reportB {
+            let delta = Double(b.hairDensityPercent) - Double(a.hairDensityPercent)
+            let improved = delta >= 0
+            let deltaText = String(format: "%+.1f%%", delta)
+            let arrow = improved ? "arrow.up.right" : "arrow.down.right"
+            let arrowColor: Color = improved ? .green : .red
+
+            HStack(spacing: 0) {
+                // Scan A
+                VStack(spacing: 4) {
+                    Text("\(Int(a.hairDensityPercent))%")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(Color.hcBrown)
+                    Text("Scan A")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(Self.shortDate.string(from: a.createdAt))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+
+                // Delta
+                VStack(spacing: 6) {
+                    Image(systemName: arrow)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(arrowColor)
+                    Text(deltaText)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(arrowColor)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(arrowColor.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                // Scan B
+                VStack(spacing: 4) {
+                    Text("\(Int(b.hairDensityPercent))%")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(Color(hue: 0.07, saturation: 0.55, brightness: 0.75))
+                    Text("Scan B")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(Self.shortDate.string(from: b.createdAt))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 20)
+            .padding(.horizontal, 12)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    // MARK: – Lifestyle Bar Chart
+
+    private var lifestyleChartCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Lifestyle Comparison")
+                    .font(.system(size: 17, weight: .bold))
+                Text("How your habits compared between scans")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+
+            // Legend
+            HStack(spacing: 16) {
+                legendDot(color: Color.hcBrown, label: "Scan A")
+                legendDot(color: Color(hue: 0.07, saturation: 0.55, brightness: 0.75), label: "Scan B")
+            }
+
+            if lifestyleBars.isEmpty {
+                Text("Select both scans to see lifestyle comparison.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
+            } else {
+                Chart(lifestyleBars) { bar in
+                    BarMark(
+                        x: .value("Dimension", bar.dimension),
+                        y: .value("Score", animateCharts ? bar.value : 0),
+                        width: .ratio(0.38)
+                    )
+                    .foregroundStyle(
+                        bar.scan == "Scan A"
+                            ? Color.hcBrown
+                            : Color(hue: 0.07, saturation: 0.55, brightness: 0.75)
+                    )
+                    .position(by: .value("Scan", bar.scan))
+                    .cornerRadius(5)
+                    .annotation(position: .top, spacing: 3) {
+                        Text(String(format: "%.1f", animateCharts ? bar.value : 0))
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .chartYScale(domain: 0...10)
+                .chartYAxis {
+                    AxisMarks(values: [0, 5, 10]) { v in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
+                            .foregroundStyle(Color.secondary.opacity(0.2))
+                        AxisValueLabel {
+                            if let val = v.as(Double.self) {
+                                Text(String(format: "%.0f", val))
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks { v in
+                        AxisValueLabel {
+                            if let str = v.as(String.self) {
+                                Text(str)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 180)
+                .animation(.easeOut(duration: 0.9), value: animateCharts)
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 9, height: 9)
+            Text(label).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: – Photo Comparison
+
+    @ViewBuilder
+    private var photoComparisonSection: some View {
+        if let repA = reportA, let repB = reportB {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Scalp Photos")
+                    .font(.system(size: 17, weight: .bold))
+                    .padding(.horizontal, 20)
+
+                let scanA = store.scalpScans.first { $0.id == repA.scalpScanId }
+                let scanB = store.scalpScans.first { $0.id == repB.scalpScanId }
+
+                let pairs: [(label: String, pathA: String?, pathB: String?)] = [
+                    ("Front",       scanA?.frontImageURL.resolvedLocalImagePath, scanB?.frontImageURL.resolvedLocalImagePath),
+                    ("Left Side",   scanA?.leftImageURL.resolvedLocalImagePath,  scanB?.leftImageURL.resolvedLocalImagePath),
+                    ("Right Side",  scanA?.rightImageURL.resolvedLocalImagePath, scanB?.rightImageURL.resolvedLocalImagePath),
+                    ("Back / Crown",scanA?.backImageURL.resolvedLocalImagePath,  scanB?.backImageURL.resolvedLocalImagePath),
+                    ("Top",         scanA?.topImageURL.resolvedLocalImagePath,   scanB?.topImageURL.resolvedLocalImagePath)
+                ].filter { ($0.pathA != nil && !$0.pathA!.isEmpty) || ($0.pathB != nil && !$0.pathB!.isEmpty) }
+
+                if pairs.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.secondary.opacity(0.35))
+                        Text("No scalp photos available to compare.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 36)
+                } else {
+                    ForEach(pairs, id: \.label) { pair in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(pair.label)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 20)
+
+                            HStack(spacing: 12) {
+                                photoCell(path: pair.pathA, scanLabel: "Scan A",
+                                          accentColor: Color.hcBrown)
+                                photoCell(path: pair.pathB, scanLabel: "Scan B",
+                                          accentColor: Color(hue: 0.07, saturation: 0.55, brightness: 0.75))
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func photoCell(path: String?, scanLabel: String, accentColor: Color) -> some View {
+        VStack(spacing: 5) {
+            if let p = path, let img = UIImage(contentsOfFile: p) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 145)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(accentColor, lineWidth: 1.5)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.systemGray6))
+                    .frame(height: 145)
+                    .overlay(
+                        VStack(spacing: 6) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.secondary.opacity(0.4))
+                            Text("N/A")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                    )
+            }
+            HStack(spacing: 4) {
+                Circle().fill(accentColor).frame(width: 7, height: 7)
+                Text(scanLabel)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
