@@ -203,6 +203,12 @@ struct ContentView: View {
                 }
             } else if authVM.isGuestMode {
                 // Guest session restored — skip backend loads, go to route
+                store.createUser(
+                    name: "Guest",
+                    email: "",
+                    authProvider: .guest,
+                    supabaseId: authVM.currentUserId
+                )
                 isRouteResolved = true
                 if route == .auth { route = .assessment }
             } else {
