@@ -2,15 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>processing</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take photos of your scalp for AI analysis.</string>
-	<key>GIDClientID</key>
-	<string>$(GOOGLE_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -20,11 +11,18 @@
 			</array>
 		</dict>
 	</array>
-	<key>SUPABASE_URL</key>
-	<string>$(SUPABASE_URL)</string>
-	<key>SUPABASE_ANON_KEY</key>
-	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_CLIENT_ID)</string>
 	<key>OPENROUTER_API_KEY</key>
 	<string>$(OPENROUTER_API_KEY)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

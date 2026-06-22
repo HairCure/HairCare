@@ -6,8 +6,10 @@ import UIKit
 import GoogleSignIn
 #endif
 import CryptoKit
+import AuthenticationServices
+
 @Observable
-class AuthViewModel {
+class AuthViewModel: NSObject {
     var isLoggedIn: Bool = false
     var isGuestMode: Bool = false
     var currentUserId: String? = nil
@@ -15,6 +17,8 @@ class AuthViewModel {
     var userName: String? = nil
     var isLoading: Bool = true
     var errorMessage: String? = nil
+    var successMessage: String? = nil
+    var isResetEmailSent: Bool = false
     
     /// Date when the guest session was created (persisted in UserDefaults)
     var guestSessionStartDate: Date? = nil
@@ -61,7 +65,12 @@ class AuthViewModel {
         return String(nonce)
     }
     
-    init() {
+    // MARK: - Current Apple Nonce
+    private var currentNonce: String?
+    private var appleSignInContinuation: CheckedContinuation<Void, Error>?
+    
+    override init() {
+        super.init()
         Task { await checkSession() }
     }
     
@@ -192,6 +201,56 @@ class AuthViewModel {
         }
     }
     
+    // MARK: - Reset Password
+    func resetPassword(email: String) async {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        isResetEmailSent = false
+        do {
+            try await auth.resetPasswordForEmail(email)
+            await MainActor.run {
+                self.isLoading = false
+                self.successMessage = "A reset code has been sent to your email."
+                self.isResetEmailSent = true
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
+            }
+        }
+    }
+    
+    // MARK: - Verify OTP & Update Password
+    func verifyOTPAndResetPassword(email: String, token: String, newPassword: String) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        do {
+            // 1. Verify the 6-digit code
+            _ = try await auth.verifyOTP(email: email, token: token, type: .recovery)
+            
+            // 2. The user is now temporarily logged in. We update the password.
+            try await auth.update(user: UserAttributes(password: newPassword))
+            
+            // 3. Sign them out so they have to manually log in with the new password
+            try? await auth.signOut()
+            
+            await MainActor.run {
+                self.isLoading = false
+                self.isResetEmailSent = false
+                self.successMessage = "Password updated successfully! Please log in."
+            }
+            return true
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Invalid code or failed to update password. Please try again."
+                self.isLoading = false
+            }
+            return false
+        }
+    }
+    
     // MARK: - Guest Mode
     @MainActor
     func continueAsGuest() {
@@ -311,5 +370,111 @@ class AuthViewModel {
         #else
         self.errorMessage = "GoogleSignIn SDK not installed yet."
         #endif
+    }
+    
+    // MARK: - Apple Sign In
+    @MainActor
+    func signInWithApple() async {
+        self.isLoading = true
+        self.errorMessage = nil
+        
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                self.appleSignInContinuation = continuation
+                
+                let nonce = randomNonceString()
+                self.currentNonce = nonce
+                let hashedNonce = sha256(nonce)
+                
+                let appleIDProvider = ASAuthorizationAppleIDProvider()
+                let request = appleIDProvider.createRequest()
+                request.requestedScopes = [.fullName, .email]
+                request.nonce = hashedNonce
+                
+                let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+                authorizationController.delegate = self
+                authorizationController.presentationContextProvider = self
+                authorizationController.performRequests()
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+            self.isLoading = false
+        }
+    }
+    
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// MARK: - ASAuthorizationControllerDelegate
+extension AuthViewModel: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+            return UIWindow()
+        }
+        return window
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let nonce = currentNonce,
+              let appleIDToken = appleIDCredential.identityToken,
+              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+            Task { @MainActor in
+                let error = NSError(domain: "AuthViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to fetch identity token"])
+                self.appleSignInContinuation?.resume(throwing: error)
+                self.appleSignInContinuation = nil
+            }
+            return
+        }
+        
+        let name = [appleIDCredential.fullName?.givenName, appleIDCredential.fullName?.familyName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        
+        Task {
+            do {
+                let session = try await auth.signInWithIdToken(credentials: .init(
+                    provider: .apple,
+                    idToken: idTokenString,
+                    nonce: nonce
+                ))
+                
+                await MainActor.run {
+                    self.currentUserId = session.user.id.uuidString
+                    self.userEmail = session.user.email
+                    self.userName = name.isEmpty ? (session.user.userMetadata["full_name"]?.stringValue ?? "User") : name
+                    self.isLoggedIn = true
+                    self.isGuestMode = false
+                    self.isLoading = false
+                    self.appleSignInContinuation?.resume(returning: ())
+                    self.appleSignInContinuation = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.appleSignInContinuation?.resume(throwing: error)
+                    self.appleSignInContinuation = nil
+                }
+            }
+        }
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        Task { @MainActor in
+            // Handle cancellation silently
+            if let asError = error as? ASAuthorizationError, asError.code == .canceled {
+                self.isLoading = false
+                self.appleSignInContinuation?.resume(returning: ())
+                self.appleSignInContinuation = nil
+                return
+            }
+            self.appleSignInContinuation?.resume(throwing: error)
+            self.appleSignInContinuation = nil
+        }
     }
 }
