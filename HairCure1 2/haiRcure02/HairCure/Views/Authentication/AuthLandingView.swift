@@ -86,6 +86,7 @@ struct LoginView: View {
     @State private var email        = ""
     @State private var password     = ""
     @State private var showPassword = false
+    @State private var showOTPView  = false
     
     var canSubmit: Bool { !email.isEmpty && !password.isEmpty && !authVM.isLoading }
     
@@ -176,9 +177,22 @@ struct LoginView: View {
                                 Label(err, systemImage: "exclamationmark.circle.fill")
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.red)
+                            } else if let success = authVM.successMessage {
+                                Label(success, systemImage: "checkmark.circle.fill")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.green)
                             }
                             Spacer()
-                            Button("Forgot Password?") {}
+                            Button("Forgot Password?") {
+                                if !email.isEmpty {
+                                    Task {
+                                        await authVM.resetPassword(email: email)
+                                    }
+                                } else {
+                                    authVM.errorMessage = "Please enter your email address first."
+                                    authVM.successMessage = nil
+                                }
+                            }
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(Color.hcBrown.opacity(0.8))
                         }
@@ -220,7 +234,20 @@ struct LoginView: View {
                                 .padding(.vertical, 4)
                             
                             socialRow(
-                                onAppleTap: { onProceed() },
+                                onAppleTap: {
+                                    Task {
+                                        await authVM.signInWithApple()
+                                        if authVM.isLoggedIn {
+                                            store.createUser(
+                                                name: authVM.userName ?? "User",
+                                                email: authVM.userEmail ?? "",
+                                                authProvider: .apple,
+                                                supabaseId: authVM.currentUserId
+                                            )
+                                            onProceed()
+                                        }
+                                    }
+                                },
                                 onGoogleTap: {
                                     Task {
                                         await authVM.signInWithGoogle()
@@ -268,6 +295,14 @@ struct LoginView: View {
                 .safeAreaPadding(.top, 0)
         }
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showOTPView) {
+            OTPResetPasswordView(email: email)
+        }
+        .onChange(of: authVM.isResetEmailSent) { _, isSent in
+            if isSent {
+                showOTPView = true
+            }
+        }
     }
 }
 
@@ -396,7 +431,20 @@ struct RegisterView: View {
                                 .padding(.vertical, 4)
                             
                             socialRow(
-                                onAppleTap: { onProceed() },
+                                onAppleTap: {
+                                    Task {
+                                        await authVM.signInWithApple()
+                                        if authVM.isLoggedIn {
+                                            store.createUser(
+                                                name: authVM.userName ?? "User",
+                                                email: authVM.userEmail ?? "",
+                                                authProvider: .apple,
+                                                supabaseId: authVM.currentUserId
+                                            )
+                                            onProceed()
+                                        }
+                                    }
+                                },
                                 onGoogleTap: {
                                     Task {
                                         await authVM.signInWithGoogle()

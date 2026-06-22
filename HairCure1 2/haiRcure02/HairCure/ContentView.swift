@@ -21,6 +21,8 @@ struct ContentView: View {
     @State private var assessmentInitialIndex = 0
 
     var body: some View {
+        @Bindable var bindableAuthVM = authVM
+        
         Group {
             if (authVM.isLoading && isInitialLoad) || (authVM.isLoggedIn && !isRouteResolved) {
                 // Splash / loading screen — also shown while we resolve the route
@@ -52,14 +54,9 @@ struct ContentView: View {
                             authProvider: .google,
                             supabaseId: authVM.currentUserId
                         )
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            // Returning user with a completed scan → skip assessment
-                            if store.latestScanReport != nil {
-                                route = .mainApp
-                            } else {
-                                route = .assessment
-                            }
-                        }
+                        // Force the loading screen to appear while we fetch the user's data
+                        // The .onChange(of: authVM.isLoading) will handle the final routing
+                        isRouteResolved = false
                     }
                 } guestUpgrade: { newUserId, name, email in
                     // Guest→Authenticated upgrade from within the app
@@ -179,27 +176,32 @@ struct ContentView: View {
                     print("store.currentUserId: \(store.currentUserId)")
                     print("authVM.currentUserId: \(userIdString)")
 
-                    // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
-                    await store.loadScanReports()
-                    // Run scalpScans + profile/nutrition restore in parallel (both need currentUserId)
-                    async let scalpTask: () = store.loadScalpScans()
-                    async let userDataTask: () = store.loadUserData()
-                    await (scalpTask, userDataTask)
-
-                    // Step 2: Load favourites and check assessment in parallel (no userId dependency on store)
-                    async let favTask: () = store.hairInsightsStore.loadFavourites(userId: userId)
-                    async let assessmentTask = BackendService.shared.fetchAssessment(userId: userId)
-                    let (_, hasAssessment) = await (favTask, assessmentTask)
-                    print("Has assessment: \(hasAssessment)")
-
-                    let hairType = store.latestScanReport?.hairType
-                    await store.hairInsightsStore.loadContent(hairType: hairType)
-
+                    // 1. Instantly check if they need the assessment to unblock the UI
+                    let hasAssessment = await BackendService.shared.fetchAssessment(userId: userId)
                     await MainActor.run {
-                        // Navigate directly to the right place — no flash
+                        // Navigate directly to the right place immediately
                         route = hasAssessment ? .mainApp : .assessment
                         isRouteResolved = true
                     }
+                }
+                
+                // 2. Fire off all heavy data fetching in the background without making the user wait
+                Task {
+                    guard let userIdString = authVM.currentUserId,
+                          let userId = UUID(uuidString: userIdString) else { return }
+                    
+                    // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
+                    await store.loadScanReports()
+                    
+                    // Run scalpScans + profile/nutrition restore + favourites in parallel
+                    async let scalpTask: () = store.loadScalpScans()
+                    async let userDataTask: () = store.loadUserData()
+                    async let favTask: () = store.hairInsightsStore.loadFavourites(userId: userId)
+                    await (scalpTask, userDataTask, favTask)
+
+                    // Step 2: Load hair insights content based on the user's hair type
+                    let hairType = store.latestScanReport?.hairType
+                    await store.hairInsightsStore.loadContent(hairType: hairType)
                 }
             } else if authVM.isGuestMode {
                 // Guest session restored — skip backend loads, go to route

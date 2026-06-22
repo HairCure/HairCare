@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password | HairCure</title>
+    <!-- Use Inter font for a premium, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #FDFBF7; /* hcCream */
+            --text-primary: #1F1F1F;
+            --text-secondary: #6B7280;
+            --primary-button: #5A4033; /* hcBrown */
+            --primary-button-hover: #4A3429;
+            --input-border: #E5E7EB;
+            --input-focus: #5A4033;
+            --success-color: #10B981;
+            --error-color: #EF4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top right, rgba(90, 64, 51, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(90, 64, 51, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-button);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            outline: none;
+            background: #FAFAFA;
+        }
+
+        .input-group input:focus {
+            border-color: var(--input-focus);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(90, 64, 51, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-button);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            background-color: var(--primary-button-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background-color: #D1D5DB;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.error {
+            color: var(--error-color);
+            display: block;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .message.success {
+            color: var(--success-color);
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-text {
+            display: inline-block;
+        }
+        
+        .loading .spinner { display: block; }
+        .loading .button-text { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="mainContainer">
+        <div class="logo">HairCure</div>
+        <h1 class="title">Reset Password</h1>
+        <p class="subtitle">Please enter your new password below to regain access to your account.</p>
+
+        <form id="resetForm">
+            <div class="input-group">
+                <label for="password">New Password</label>
+                <input type="password" id="password" required placeholder="••••••••" minlength="6">
+            </div>
+            
+            <div class="input-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" required placeholder="••••••••" minlength="6">
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span class="button-text">Update Password</span>
+                <div class="spinner"></div>
+            </button>
+            
+            <div id="statusMessage" class="message"></div>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

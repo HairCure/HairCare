@@ -28,13 +28,15 @@ extension Color {
 // MARK: - Shared Button Styles
 
 struct HCPrimaryButton: ViewModifier {
+    @Environment(\.isEnabled) var isEnabled
+    
     func body(content: Content) -> some View {
         content
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .background(Color.hcBrown)
+            .background(isEnabled ? Color.hcBrown : Color.hcBrown.opacity(0.5))
             .cornerRadius(14)
     }
 }

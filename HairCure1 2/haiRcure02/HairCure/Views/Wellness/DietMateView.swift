@@ -508,6 +508,7 @@ struct AddMealView: View {
 
     @State private var searchText    = ""
     @State private var selectedFood: Food? = nil
+    @State private var showCustomFoodSheet = false
     @State private var vegFilter: DietmateDataStore.VegFilter = .all
     @State private var selectedNutrients: Set<String> = []
 
@@ -560,7 +561,8 @@ struct AddMealView: View {
                         mealColor:   mealColor,
                         showHeading: searchText.isEmpty,
                         onAdd:       { dietMateStore.addOrIncrementFood($0, to: mealEntryId) },
-                        onTap:       { selectedFood = $0 }
+                        onTap:       { selectedFood = $0 },
+                        onCustomAdd: !searchText.isEmpty ? { showCustomFoodSheet = true } : nil
                     )
 
                     Spacer(minLength: 32)
@@ -572,6 +574,19 @@ struct AddMealView: View {
         .background(Color.hcCream.ignoresSafeArea())
         .navigationBarHidden(true)
         .sheet(item: $selectedFood) { FoodDetailView(food: $0) }
+        .sheet(isPresented: $showCustomFoodSheet) {
+            if let entry = entry {
+                CustomFoodSheet(
+                    initialSearchText: searchText,
+                    mealType: entry.mealType,
+                    onSave: { newFood in
+                        dietMateStore.foods.append(newFood)
+                        dietMateStore.addOrIncrementFood(newFood, to: mealEntryId)
+                        searchText = ""
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -726,6 +741,7 @@ private struct SuggestedSection: View {
     let foods: [Food]; let mealColor: Color
     let showHeading: Bool
     let onAdd: (Food) -> Void; let onTap: (Food) -> Void
+    var onCustomAdd: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -733,7 +749,22 @@ private struct SuggestedSection: View {
                 Text("Suggested Meals").font(.system(size: 20, weight: .bold))
             }
             if foods.isEmpty {
-                Text("No meals found").foregroundStyle(.secondary).font(.system(size: 15))
+                VStack(spacing: 12) {
+                    Text("No meals found").foregroundStyle(.secondary).font(.system(size: 15))
+                    if let onCustomAdd = onCustomAdd {
+                        Button(action: onCustomAdd) {
+                            Text("Create Custom Meal")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(mealColor)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(mealColor.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 20)
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                     ForEach(foods) { food in
@@ -742,6 +773,21 @@ private struct SuggestedSection: View {
                                 content.opacity(phase.isIdentity ? 1 : 0).scaleEffect(phase.isIdentity ? 1 : 0.88)
                             }
                     }
+                }
+                if let onCustomAdd = onCustomAdd {
+                    Button(action: onCustomAdd) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Can't find it? Add Custom Meal")
+                        }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(mealColor)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(mealColor.opacity(0.08))
+                        .cornerRadius(12)
+                    }
+                    .padding(.top, 10)
                 }
             }
         }
@@ -947,6 +993,108 @@ private struct HairNutrientsDetailCard: View {
             .cornerRadius(14)
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.2), lineWidth: 1))
             .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+        }
+    }
+}
+
+// MARK: - CustomFoodSheet
+
+private struct CustomFoodSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    let initialSearchText: String
+    let mealType: MealType
+    let onSave: (Food) -> Void
+    
+    @State private var name: String = ""
+    @State private var calories: String = ""
+    @State private var isVeg: Bool = true
+    
+    // Optional Macros
+    @State private var protein: String = ""
+    @State private var carbs: String = ""
+    @State private var fat: String = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Meal Info")) {
+                    TextField("Meal Name", text: $name)
+                    Toggle("Is Vegetarian", isOn: $isVeg)
+                }
+                
+                Section(header: Text("Nutrition (Optional)"), footer: Text("Approximate values per serving")) {
+                    HStack {
+                        Text("Calories")
+                        Spacer()
+                        TextField("kcal", text: $calories)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    HStack {
+                        Text("Protein")
+                        Spacer()
+                        TextField("g", text: $protein)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    HStack {
+                        Text("Carbs")
+                        Spacer()
+                        TextField("g", text: $carbs)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    HStack {
+                        Text("Fat")
+                        Spacer()
+                        TextField("g", text: $fat)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Custom Meal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let newFood = Food(
+                            id: Int.random(in: 100000...999999),
+                            name: name.isEmpty ? "Custom Meal" : name,
+                            description: "Custom meal added by you",
+                            imageURL: nil,
+                            category: mealType,
+                            isVegetarian: isVeg,
+                            hairBenefit: nil,
+                            dataSource: "User Custom",
+                            caloriesKcal: Float(calories) ?? 0,
+                            totalProteinsInGm: Float(protein) ?? 0,
+                            totalCarbsInGm: Float(carbs) ?? 0,
+                            totalFatInGm: Float(fat) ?? 0,
+                            ironMg: 0,
+                            vitaminDIU: 0,
+                            vitaminCMg: 0,
+                            zincMg: 0,
+                            omega3G: 0,
+                            vitaminB12Mcg: 0,
+                            biotinMcg: 0,
+                            vitaminEMg: 0,
+                            seleniumMcg: 0,
+                            niacinMg: 0
+                        )
+                        onSave(newFood)
+                        dismiss()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .onAppear {
+                name = initialSearchText
+            }
         }
     }
 }
