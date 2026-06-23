@@ -85,16 +85,9 @@ struct HairInsightsView: View {
     
     private var routineSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Recommended")
-                    .font(.title3.bold())
-                    .foregroundStyle(.black)
-                HStack(spacing: 8) {
-                    Text(detectedHairType.map { "\($0.capitalized) Hair Care Routine" } ?? "Hair Care Routine")
-                        .font(.subheadline)
-                        .foregroundStyle(.black.opacity(0.55))
-                }
-            }
+            Text("Recommended")
+                .font(.title3.bold())
+                .foregroundStyle(.black)
             .padding(.horizontal, 20)
             .padding(.top, 16)
             
@@ -436,46 +429,55 @@ struct RoutineCardView: View {
     let routine: HairCareRoutine
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+
+            // Row: Icon | VStack(Title Row & Tag Row)
             HStack(alignment: .center, spacing: 12) {
+
+                // Icon
                 ZStack {
                     Circle()
                         .fill(Color.hcBrown.opacity(0.14))
-                        .frame(width: 46, height: 46)
+                        .frame(width: 44, height: 44)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 19, weight: .medium))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.hcBrown)
                 }
 
-                Text(routine.cardHeading)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.black)
+                // Text Stack: Balance Line (Title) + Chevron on top row, and Tag below it
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center) {
+                        // Balance line (Title)
+                        Text(routine.cardHeading)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
 
-                Spacer()
-                
-                // Frequency pill
-                Label(routine.applyingFrequency, systemImage: "calendar")
-                    .font(.caption.bold())
-                    .foregroundStyle(Color.hcBrown)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.hcBrown.opacity(0.1))
-                    .clipShape(Capsule())
+                        Spacer()
+
+                        // Chevron beside the balance line to its right
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.hcBrown.opacity(0.55))
+                    }
+
+                    // Tag (Frequency pill) just below the balance line
+                    Label(routine.applyingFrequency, systemImage: "calendar")
+                        .font(.caption.bold())
+                        .foregroundStyle(Color.hcBrown)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.hcBrown.opacity(0.1))
+                        .clipShape(Capsule())
+                }
             }
 
+            // Description
             Text(routine.summary)
                 .font(.system(size: 13))
                 .foregroundStyle(.black.opacity(0.55))
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
-
-            HStack {
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.hcBrown.opacity(0.45))
-            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -495,7 +497,13 @@ struct InsightMediaCardView: View {
     let mediaURL: String?
     var hairTypeBadge: String? = nil   // nil = universal (no badge shown)
     
-    private let cardWidth: CGFloat = 160
+    /// Shows only the first three words so the label is always clean with no truncation dots.
+    private var shortTitle: String {
+        let words = title.split(separator: " ", omittingEmptySubsequences: true)
+        return words.prefix(3).joined(separator: " ")
+    }
+    
+    private let cardWidth: CGFloat = 180
     private let imageHeight: CGFloat = 140
     
     var body: some View {
@@ -544,17 +552,17 @@ struct InsightMediaCardView: View {
                 }
             }
             
-            Text(title)
+            Text(shortTitle)
                 .font(.subheadline.bold())
                 .foregroundStyle(.black)
-                .lineLimit(2)
+                .lineLimit(1)
                 .multilineTextAlignment(.leading)
                 .frame(height: 36)
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
                 .padding(.bottom, 10)
         }
-        .frame(width: cardWidth)
+        .frame(width: cardWidth, alignment: .leading)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.07), radius: 6, x: 0, y: 2)

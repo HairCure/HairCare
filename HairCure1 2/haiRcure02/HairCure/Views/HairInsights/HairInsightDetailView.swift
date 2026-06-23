@@ -136,8 +136,17 @@ struct HomeRemedyDetailView: View {
                 
                 VStack(alignment: .leading, spacing: 0) {
                     
-                    // MARK: Favourite row
-                    HStack {
+                    // MARK: Favourite row + Frequency badge on same line
+                    HStack(alignment: .center) {
+                        if let freq = remedy.frequency {
+                            Label(freq, systemImage: "calendar")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.hcBrown)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.hcBrown.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
                         Spacer()
                         Button {
                             insightStore.toggleFavorite(contentId: remedy.id, userId: userId)
@@ -174,19 +183,6 @@ struct HomeRemedyDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
-                    
-                    // Frequency badge
-                    if let freq = remedy.frequency {
-                        Label(freq, systemImage: "calendar")
-                            .font(.caption.bold())
-                            .foregroundStyle(Color.hcBrown)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.hcBrown.opacity(0.1))
-                            .clipShape(Capsule())
-                            .padding(.horizontal, 20)
-                            .padding(.top, 12)
-                    }
                     
                     // MARK: Title & Benefits
                     Text(remedy.title)
@@ -358,8 +354,17 @@ struct CareTipDetailView: View {
                 
                 VStack(alignment: .leading, spacing: 12) {
                     
-                    // Fav row
-                    HStack {
+                    // Fav row + Frequency badge on same line
+                    HStack(alignment: .center) {
+                        if let freq = tip.frequency {
+                            Label(freq, systemImage: "calendar")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.hcBrown)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.hcBrown.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
                         Spacer()
                         Button {
                             insightStore.toggleFavorite(contentId: tip.id, userId: userId)
@@ -370,17 +375,6 @@ struct CareTipDetailView: View {
                         }
                     }
                     .padding(.top, 12)
-                    
-                    // Frequency badge
-                    if let freq = tip.frequency {
-                        Label(freq, systemImage: "calendar")
-                            .font(.caption.bold())
-                            .foregroundStyle(Color.hcBrown)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.hcBrown.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
                     
                     Text(tip.title)
                         .font(.title3.bold())
