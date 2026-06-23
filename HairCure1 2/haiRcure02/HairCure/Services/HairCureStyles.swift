@@ -9,7 +9,7 @@ extension View {
 
 extension Color {
     /// Dark brown — primary button fill, selected option, progress bar fill
-    static let hcBrown       = Color(red: 0.239, green: 0.102, blue: 0.102)   // #3D1A1A
+    static let hcBrown       = Color(red: 0.32, green: 0.15, blue: 0.15)   // Lighter than #3D1A1A, but not too light
     /// Slightly lighter brown — used on pressed states / borders
     static let hcBrownLight  = Color(red: 0.361, green: 0.176, blue: 0.176)   // #5C2D2D
     /// Teal — link colour, "Continue as guest"

@@ -195,31 +195,31 @@ struct HomeHairHealthCardView: View {
             return formatter.string(from: date)
         }()
         
-        return VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                LinearGradient(
-                    stops: [
-                        .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
-                        .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+        return ZStack(alignment: .topLeading) {
+            LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
+                    .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
 
-                RadialGradient(
-                    colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.14), .clear],
-                    center: .init(x: 0.75, y: 0.25),
-                    startRadius: 10,
-                    endRadius: 160
-                )
+            RadialGradient(
+                colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.14), .clear],
+                center: .init(x: 0.75, y: 0.25),
+                startRadius: 10,
+                endRadius: 160
+            )
 
-                RadialGradient(
-                    colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
-                    center: .init(x: 0.15, y: 0.80),
-                    startRadius: 5,
-                    endRadius: 120
-                )
+            RadialGradient(
+                colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
+                center: .init(x: 0.15, y: 0.80),
+                startRadius: 5,
+                endRadius: 120
+            )
 
+            VStack(spacing: 0) {
                 VStack(spacing: 12) {
                     // Top Row: Title & Severity Badge
                     HStack(alignment: .center) {
@@ -310,55 +310,49 @@ struct HomeHairHealthCardView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 16)
-            }
-            .frame(height: heroCardHeight - 50)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 18, bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0, topTrailingRadius: 18
-            ))
+                .frame(height: heroCardHeight - 50)
+                
+                Rectangle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(height: 1)
 
-            Button {
-                viewModel.pushHairProgress = true
-            } label: {
-                HStack(spacing: 13) {
-                    Image(systemName: "waveform.path.ecg")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color(red: 0.28, green: 0.14, blue: 0.08))
-                        .frame(width: 26)
-                    
-                    Text("View Hair Progress")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    
-                    Spacer()
-                    
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.18, green: 0.08, blue: 0.05))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 13, weight: .bold))
+                Button {
+                    viewModel.pushHairProgress = true
+                } label: {
+                    HStack(spacing: 13) {
+                        Image(systemName: "waveform.path.ecg")
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(.white)
+                            .frame(width: 26)
+                        
+                        Text("View Hair Progress")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                        
+                        Spacer()
+                        
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(Color.hcBrown)
+                        }
                     }
+                    .padding(.horizontal, 18)
+                    .frame(height: 49)
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 18)
-                .frame(height: 50)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .background(Color.hcCream)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 0, bottomLeadingRadius: 18,
-                bottomTrailingRadius: 18, topTrailingRadius: 0
-            ))
         }
         .frame(height: heroCardHeight)
-        .background(Color.hcCream)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
     }
 }
@@ -367,31 +361,31 @@ struct HomeAICoachCardView: View {
     var viewModel: HomeViewModel
     
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                LinearGradient(
-                    stops: [
-                        .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
-                        .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+        return ZStack(alignment: .topLeading) {
+            LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
+                    .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
 
-                RadialGradient(
-                    colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.14), .clear],
-                    center: .init(x: 0.75, y: 0.25),
-                    startRadius: 10,
-                    endRadius: 160
-                )
+            RadialGradient(
+                colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.14), .clear],
+                center: .init(x: 0.75, y: 0.25),
+                startRadius: 10,
+                endRadius: 160
+            )
 
-                RadialGradient(
-                    colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
-                    center: .init(x: 0.15, y: 0.80),
-                    startRadius: 5,
-                    endRadius: 120
-                )
+            RadialGradient(
+                colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
+                center: .init(x: 0.15, y: 0.80),
+                startRadius: 5,
+                endRadius: 120
+            )
 
+            VStack(spacing: 0) {
                 HStack(alignment: .center, spacing: 20) {
                     ZStack {
                         Circle()
@@ -445,53 +439,47 @@ struct HomeAICoachCardView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 22)
-            }
-            .frame(height: heroCardHeight - 50)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 18, bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0, topTrailingRadius: 18
-            ))
+                .frame(height: heroCardHeight - 50)
+                
+                Rectangle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(height: 1)
 
-            Button { viewModel.showCoach = true } label: {
-                HStack(spacing: 13) {
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color(red: 0.28, green: 0.14, blue: 0.08))
-                        .frame(width: 26)
-
-                    Text("Start Session")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.18, green: 0.08, blue: 0.05))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 13, weight: .bold))
+                Button { viewModel.showCoach = true } label: {
+                    HStack(spacing: 13) {
+                        Image(systemName: "brain.head.profile")
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(.white)
+                            .frame(width: 26)
+
+                        Text("Start Session")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(Color.hcBrown)
+                        }
                     }
+                    .padding(.horizontal, 18)
+                    .frame(height: 49)
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 18)
-                .frame(height: 50)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .background(Color.hcCream)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 0, bottomLeadingRadius: 18,
-                bottomTrailingRadius: 18, topTrailingRadius: 0
-            ))
         }
         .frame(height: heroCardHeight)
-        .background(Color.hcCream)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
     }
 }
