@@ -19,6 +19,7 @@ class AuthViewModel: NSObject {
     var errorMessage: String? = nil
     var successMessage: String? = nil
     var isResetEmailSent: Bool = false
+    var isSignupEmailSent: Bool = false
     
     /// Date when the guest session was created (persisted in UserDefaults)
     var guestSessionStartDate: Date? = nil
@@ -104,22 +105,31 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Sign Up with Email
+    // MARK: - Sign Up
     func signUp(email: String, password: String, name: String) async {
         isLoading = true
         errorMessage = nil
+        isSignupEmailSent = false
         do {
             let response = try await auth.signUp(
                 email: email,
                 password: password,
                 data: ["full_name": .string(name)]
             )
+            
             await MainActor.run {
-                self.currentUserId = response.user.id.uuidString
-                self.userEmail = response.user.email
-                self.userName = name
-                self.isLoggedIn = true
-                self.isGuestMode = false
+                if let session = response.session {
+                    // Confirm email is OFF - logged in immediately
+                    self.currentUserId = session.user.id.uuidString
+                    self.userEmail = session.user.email
+                    self.userName = name
+                    self.isLoggedIn = true
+                    self.isGuestMode = false
+                } else {
+                    // Confirm email is ON - session is nil, user needs to verify OTP
+                    self.isSignupEmailSent = true
+                    self.successMessage = "Please check your email for the confirmation code."
+                }
                 self.isLoading = false
             }
         } catch {
@@ -245,6 +255,33 @@ class AuthViewModel: NSObject {
         } catch {
             await MainActor.run {
                 self.errorMessage = "Invalid code or failed to update password. Please try again."
+                self.isLoading = false
+            }
+            return false
+        }
+    }
+    
+    // MARK: - Verify Signup OTP
+    func verifySignupOTP(email: String, token: String) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let session = try await auth.verifyOTP(email: email, token: token, type: .signup)
+            
+            await MainActor.run {
+                self.currentUserId = session.user.id.uuidString
+                self.userEmail = session.user.email
+                self.userName = session.user.userMetadata["full_name"]?.stringValue
+                self.isLoggedIn = true
+                self.isGuestMode = false
+                self.isLoading = false
+                self.isSignupEmailSent = false
+                self.successMessage = "Email verified successfully!"
+            }
+            return true
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Invalid verification code. Please try again."
                 self.isLoading = false
             }
             return false

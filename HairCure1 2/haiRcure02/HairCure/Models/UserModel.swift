@@ -5,6 +5,7 @@ import Foundation
 enum AuthProvider: String, Codable {
     case apple
     case google
+    case email
     case guest
 }
 

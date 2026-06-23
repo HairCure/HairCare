@@ -114,17 +114,23 @@ struct AssessmentView: View {
                     .foregroundStyle(.primary)
                 
                 GeometryReader { geo in
+                    let progressWidth = geo.size.width * CGFloat(viewModel.currentIndex + 1) / CGFloat(totalCount)
                     ZStack(alignment: .leading) {
                         Capsule()
                             .fill(Color.hcProgressBg)
                             .frame(height: 6)
                         Capsule()
                             .fill(Color.hcBrown)
-                            .frame(width: geo.size.width * CGFloat(viewModel.currentIndex + 1) / CGFloat(totalCount), height: 6)
+                            .frame(width: progressWidth, height: 6)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: viewModel.currentIndex)
+                        
+                        HairFolliclePointer()
+                            .offset(x: progressWidth - 12)
                             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: viewModel.currentIndex)
                     }
+                    .frame(height: 24) // accommodate the pointer height
                 }
-                .frame(width: 140, height: 6)
+                .frame(width: 140, height: 24)
             }
         }
         .padding(.horizontal, 20)
@@ -542,5 +548,33 @@ struct FreeTextQuestionView: View {
             set: { viewModel.saveFreeText(questionId: q.id, text: $0) }
         )
         TextField("Your answer", text: binding).hcInputField()
+    }
+}
+
+// MARK: - Hair Follicle Pointer
+
+struct HairFolliclePointer: View {
+    var body: some View {
+        ZStack {
+            // Shadow / background
+            Circle()
+                .fill(Color.white)
+                .frame(width: 24, height: 24)
+                .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
+            
+            // The follicle root bulb
+            Path { path in
+                path.addArc(center: CGPoint(x: 12, y: 16), radius: 3.5, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
+            }
+            .fill(Color.hcBrown)
+            
+            // The hair shaft
+            Path { path in
+                path.move(to: CGPoint(x: 12, y: 14))
+                path.addCurve(to: CGPoint(x: 14, y: 5), control1: CGPoint(x: 10, y: 9), control2: CGPoint(x: 16, y: 8))
+            }
+            .stroke(Color.hcBrown, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+        }
+        .frame(width: 24, height: 24)
     }
 }

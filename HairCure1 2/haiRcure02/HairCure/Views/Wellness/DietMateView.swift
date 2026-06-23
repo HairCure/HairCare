@@ -209,8 +209,8 @@ private struct DateHeader: View {
             Spacer()
             Button(action: onCalendarTap) {
                 Image(systemName: "calendar")
-                    .font(.system(size: 20, weight: .medium)).foregroundStyle(.green)
-                    .padding(8).background(Color.green.opacity(0.10)).clipShape(RoundedRectangle(cornerRadius: 10))
+                    .font(.system(size: 20, weight: .medium)).foregroundStyle(Color.hcBrown)
+                    .padding(8).background(Color.hcBrown.opacity(0.10)).clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
         .padding(.horizontal, 20)
@@ -278,7 +278,7 @@ private struct WeekDayCell: View {
 
         VStack(spacing: 6) {
             ZStack {
-                if isToday { Circle().fill(Color.green).frame(width: 28, height: 28) }
+                if isToday { Circle().fill(Color.hcBrown).frame(width: 28, height: 28) }
                 Text(letters[idx])
                     .font(.system(size: 13, weight: isToday ? .semibold : .regular))
                     .foregroundStyle(isToday ? .white : (isSelected ? .primary : .secondary))
@@ -398,7 +398,7 @@ private struct MealCard: View {
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(hasFoods ? accentColor : .primary)
                     Text(entry.mealType.recommendedPortionText)
-                        .font(.system(size: 13)).foregroundStyle(.secondary)
+                        .font(.system(size: 15)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if hasFoods {
@@ -443,12 +443,13 @@ private struct MealCard: View {
                 Button(action: isGuest ? onGuestTap : onAdd) {
                     Text("Add \(entry.mealType.displayName)")
                         .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).frame(height: 48)
-                        .background(Color.hcBrown).cornerRadius(12)
+                        .frame(maxWidth: .infinity).frame(height: 54) // increased button height slightly
+                        .background(Color.hcBrown)
+                        .cornerRadius(12)
                 }
             }
         }
-        .padding(16)
+        .padding(24) // increased padding to make the card larger
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
         .cornerRadius(16)

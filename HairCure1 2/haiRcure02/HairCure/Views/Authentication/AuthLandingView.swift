@@ -212,7 +212,7 @@ struct LoginView: View {
                                         store.createUser(
                                             name: authVM.userName ?? "User",
                                             email: authVM.userEmail ?? "",
-                                            authProvider: .google,
+                                            authProvider: .email,
                                             supabaseId: authVM.currentUserId
                                         )
                                         onProceed()
@@ -320,6 +320,7 @@ struct RegisterView: View {
     @State private var email           = ""
     @State private var password        = ""
     @State private var confirmPassword = ""
+    @State private var showOTPSignupView = false
     
     var passwordsMatch: Bool { password == confirmPassword }
     var canSubmit: Bool {
@@ -409,7 +410,7 @@ struct RegisterView: View {
                                         store.createUser(
                                             name: authVM.userName ?? "User",
                                             email: authVM.userEmail ?? "",
-                                            authProvider: .google,
+                                            authProvider: .email,
                                             supabaseId: authVM.currentUserId
                                         )
                                         onProceed()
@@ -491,6 +492,14 @@ struct RegisterView: View {
                 .safeAreaPadding(.top, 0)
         }
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showOTPSignupView) {
+            OTPSignupConfirmationView(email: email, onProceed: onProceed)
+        }
+        .onChange(of: authVM.isSignupEmailSent) { _, isSent in
+            if isSent {
+                showOTPSignupView = true
+            }
+        }
     }
     
 

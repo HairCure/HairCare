@@ -78,9 +78,9 @@ struct MindEaseView: View {
                     } label: {
                         Image(systemName: "calendar")
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(Color.mindEasePurple)
+                            .foregroundStyle(Color.hcBrown)
                             .padding(8)
-                            .background(Color.mindEasePurple.opacity(0.10))
+                            .background(Color.hcBrown.opacity(0.10))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
@@ -283,7 +283,7 @@ private struct WeekDayCell: View {
             VStack(spacing: 6) {
                 ZStack {
                     if isToday {
-                        Circle().fill(Color.mindEasePurple).frame(width: 28, height: 28)
+                        Circle().fill(Color.hcBrown).frame(width: 28, height: 28)
                     }
                     Text(letter)
                         .font(.system(size: 13, weight: isToday ? .semibold : .regular))
@@ -299,7 +299,7 @@ private struct WeekDayCell: View {
                         .rotationEffect(.degrees(-90))
                         .animation(.easeInOut(duration: 0.4), value: progress)
                     if isSelected && !isToday {
-                        Circle().fill(Color.mindEasePurple).frame(width: 6, height: 6)
+                        Circle().fill(Color.hcBrown).frame(width: 6, height: 6)
                     }
                 }
                 .frame(width: 34, height: 34)
@@ -463,7 +463,7 @@ struct MindEaseProgressView: View {
                     Spacer()
                     Button { showDatePicker = true } label: {
                         Image(systemName: "calendar")
-                            .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.mindEasePurple)
+                            .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.hcBrown)
                             .padding(.trailing, 20)
                     }
                     .sheet(isPresented: $showDatePicker) { CalendarPickerSheet() }
