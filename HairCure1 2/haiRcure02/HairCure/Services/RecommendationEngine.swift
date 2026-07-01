@@ -1,4 +1,3 @@
-
 import Foundation
 import HealthKit
 // MARK: - Engine Input
@@ -900,7 +899,117 @@ struct RecommendationEngine {
         these remain important while you receive professional treatment.
         """
     }
+
+    // MARK: - Clean Shelf Ingredient Evaluator
+
+    static let ingredientRules: [IngredientRule] = [
+        IngredientRule(
+            name: "Sulfate Surfactants",
+            synonyms: ["sodium lauryl sulfate", "sodium laureth sulfate", "ammonium lauryl sulfate", "olefin sulfonate", "sls", "sles", "als", "sodium c14-16 olefin sulfonate", "sodium dodecyl sulfate", "dodecyl sulfate"],
+            hazardProfile: [
+                .dry: .hazard,
+                .inflamed: .hazard,
+                .oily: .caution,
+                .dandruff: .caution,
+                .normal: .caution,
+                .notAssessed: .caution
+            ],
+            explanation: "Sulfate surfactants are extremely stripping. They disrupt the scalp's compromised lipid barrier, worsen dryness, and exacerbate inflammation."
+        ),
+        IngredientRule(
+            name: "Drying Alcohols",
+            synonyms: ["isopropyl alcohol", "alcohol denat", "ethanol", "propyl alcohol", "denatured alcohol", "rubbing alcohol", "sd alcohol"],
+            hazardProfile: [
+                .dry: .hazard,
+                .inflamed: .hazard,
+                .oily: .caution,
+                .dandruff: .caution,
+                .normal: .caution,
+                .notAssessed: .caution
+            ],
+            explanation: "Drying alcohols dehydrate skin cells, causing tight, itchy, and flaking scalps, and can trigger reactive sebum production."
+        ),
+        IngredientRule(
+            name: "Heavy Silicones",
+            synonyms: ["dimethicone", "amodimethicone", "cyclopentasiloxane", "dimethiconol", "phenyl trimethicone", "cyclomethicone"],
+            hazardProfile: [
+                .oily: .hazard,
+                .dandruff: .hazard,
+                .dry: .caution,
+                .inflamed: .caution,
+                .normal: .caution,
+                .notAssessed: .caution
+            ],
+            explanation: "Non-soluble silicones form an occlusive barrier on the scalp, trapping sebum, dust, and yeast (Malassezia), which worsens dandruff."
+        ),
+        IngredientRule(
+            name: "Synthetic Fragrances & Parabens",
+            synonyms: ["fragrance", "parfum", "methylparaben", "propylparaben", "butylparaben", "ethylparaben", "synthetic fragrance"],
+            hazardProfile: [
+                .dry: .hazard,
+                .inflamed: .hazard,
+                .normal: .caution,
+                .oily: .caution,
+                .dandruff: .caution,
+                .notAssessed: .caution
+            ],
+            explanation: "Synthetic fragrances and parabens are highly sensitizing, common contact allergens that can trigger contact dermatitis."
+        ),
+        IngredientRule(
+            name: "Natural Lipids & Calming Agents",
+            synonyms: ["rosemary oil", "peppermint oil", "aloe vera", "tea tree oil", "argan oil", "jojoba oil", "rosemary leaf oil", "peppermint leaf oil", "aloe barbadensis leaf juice", "tea tree leaf oil", "argania spinosa kernel oil", "simmondsia chinensis seed oil"],
+            hazardProfile: [
+                .dry: .safe,
+                .inflamed: .safe,
+                .oily: .safe,
+                .dandruff: .safe,
+                .normal: .safe,
+                .notAssessed: .safe
+            ],
+            explanation: "Natural oils and botanical extracts help soothe inflammation, replenish missing lipids, and regulate sebum production naturally."
+        )
+    ]
+
+    static func evaluateProduct(ingredients: [String], against scalp: ScalpCondition) -> (rating: CompatibilityRating, flaggedIngredients: [FlaggedIngredient]) {
+        var flagged: [FlaggedIngredient] = []
+
+        for rule in ingredientRules {
+            for rawIngredient in ingredients {
+                let cleaned = rawIngredient.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !cleaned.isEmpty else { continue }
+                
+                // Match raw ingredients against synonyms
+                let matched = rule.synonyms.contains { synonym in
+                    cleaned == synonym || (synonym.count > 3 && (cleaned.contains(synonym) || synonym.contains(cleaned)))
+                }
+                
+                if matched {
+                    let rating = rule.hazardProfile[scalp] ?? .caution
+                    // Check if already flagged under this rule/ingredient name to avoid duplicate lists
+                    if !flagged.contains(where: { $0.name.lowercased() == cleaned }) {
+                        flagged.append(FlaggedIngredient(
+                            name: rawIngredient,
+                            rule: rule,
+                            rating: rating,
+                            explanation: rule.explanation
+                        ))
+                    }
+                }
+            }
+        }
+
+        // Determine product level rating
+        var finalRating = CompatibilityRating.safe
+        if flagged.contains(where: { $0.rating == .hazard }) {
+            finalRating = .hazard
+        } else if flagged.contains(where: { $0.rating == .caution }) {
+            finalRating = .caution
+        }
+
+        return (finalRating, flagged)
+    }
 }
+
 
 // MARK: - Comparable Float Extension
 

@@ -54,8 +54,7 @@ struct ContentView: View {
                             authProvider: .google,
                             supabaseId: authVM.currentUserId
                         )
-                        // Force the loading screen to appear while we fetch the user's data
-                        // The .onChange(of: authVM.isLoading) will handle the final routing
+                        
                         isRouteResolved = false
                     }
                 } guestUpgrade: { newUserId, name, email in
@@ -193,11 +192,12 @@ struct ContentView: View {
                     // Step 1: Load scan records FIRST (sequential — needs currentUserId set above)
                     await store.loadScanReports()
                     
-                    // Run scalpScans + profile/nutrition restore + favourites in parallel
+                    // Run scalpScans + profile/nutrition restore + favourites + products in parallel
                     async let scalpTask: () = store.loadScalpScans()
                     async let userDataTask: () = store.loadUserData()
                     async let favTask: () = store.hairInsightsStore.loadFavourites(userId: userId)
-                    await (scalpTask, userDataTask, favTask)
+                    async let productTask: () = store.loadUserProducts()
+                    await (scalpTask, userDataTask, favTask, productTask)
 
                     // Step 2: Load hair insights content based on the user's hair type
                     let hairType = store.latestScanReport?.hairType
