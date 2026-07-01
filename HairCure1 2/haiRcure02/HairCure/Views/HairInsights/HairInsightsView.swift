@@ -46,6 +46,7 @@ struct HairInsightsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    cleanShelfBannerSection
                     routineSection
                     favouritesSection
                     careTipsSection
@@ -56,6 +57,7 @@ struct HairInsightsView: View {
             .background(Color.hcCream.ignoresSafeArea())
             .navigationTitle("Hair Insights")
             .navigationBarTitleDisplayMode(.large)
+
             .task {
                 await insightStore.loadContent(hairType: detectedHairType)
             }
@@ -78,6 +80,59 @@ struct HairInsightsView: View {
                     showAuthSheet = false
                 })
             }
+        }
+    }
+    
+    // MARK: - Clean Shelf Section
+    
+    private var cleanShelfBannerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Product Compatibility")
+                .font(.title3.bold())
+                .foregroundStyle(.black)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+            
+            NavigationLink(destination: MyShelfView()) {
+                HStack(spacing: 16) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(LinearGradient(
+                                colors: [Color.hcBrown, Color.hcBrownLight],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 52, height: 52)
+                        
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Clean Shelf Analyzer")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.black)
+                        
+                        Text("Scan ingredients to check compatibility with your \(store.latestScanReport?.scalpCondition.rawValue.capitalized ?? "normal") scalp.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.secondary.opacity(0.6))
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(18)
+                .shadow(color: .black.opacity(0.02), radius: 5, x: 0, y: 3)
+                .padding(.horizontal, 20)
+            }
+            .buttonStyle(.plain)
         }
     }
     

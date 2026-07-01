@@ -24,5 +24,7 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to scan product ingredient lists and analyze compatibility with your scalp.</string>
 </dict>
 </plist>

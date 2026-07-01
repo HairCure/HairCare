@@ -20,7 +20,7 @@ extension Date {
     }
 }
 
-extension Date: Identifiable {
+extension Date: @retroactive Identifiable {
     public var id: Date { self }
 }
 

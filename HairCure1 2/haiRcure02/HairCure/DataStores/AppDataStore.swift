@@ -40,6 +40,8 @@ class AppDataStore {
     // MARK: - Settings
     var appPreferences: [AppPreferences] = []
     var notificationSettings: [NotificationSettings] = []
+    var userProducts: [Product] = []
+
     
     // MARK: - Init
     
@@ -635,10 +637,41 @@ class AppDataStore {
         waterIntakeLogs      = []
         appPreferences       = []
         notificationSettings = []
+        userProducts         = []
         hairInsightsStore    = HairInsightsDataStore()
         dietMateStore        = DietmateDataStore(currentUserId: UUID())
         mindEaseStore        = MindEaseDataStore(currentUserId: UUID())
     }
+
+    // MARK: - Product Management
+
+    func loadUserProducts() async {
+        guard currentUserId != UUID() else { return }
+        let products = await BackendService.shared.fetchUserProducts(userId: currentUserId)
+        await MainActor.run {
+            self.userProducts = products
+        }
+    }
+
+    func addProduct(_ product: Product) {
+        userProducts.insert(product, at: 0)
+        // Only save to backend if user is not a guest
+        if !isGuestUser {
+            Task {
+                await BackendService.shared.saveProduct(product: product, userId: currentUserId)
+            }
+        }
+    }
+
+    func removeProduct(_ product: Product) {
+        userProducts.removeAll(where: { $0.id == product.id })
+        if !isGuestUser {
+            Task {
+                await BackendService.shared.deleteProduct(productId: product.id, userId: currentUserId)
+            }
+        }
+    }
+
     
     // MARK: - Guest Helpers
     
@@ -767,6 +800,11 @@ class AppDataStore {
             }
             if let nutrition = userNutritionProfiles.first(where: { $0.userId == newUserId }) {
                 await BackendService.shared.saveNutritionProfile(profile: nutrition, userId: newUserId)
+            }
+            
+            // Sync user products scanned during guest session
+            if !userProducts.isEmpty {
+                await BackendService.shared.bulkSaveProducts(products: userProducts, userId: newUserId)
             }
             
             print("Guest data migrated to authenticated user: \(newUserId)")

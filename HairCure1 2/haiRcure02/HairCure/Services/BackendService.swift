@@ -785,4 +785,114 @@ class BackendService {
         default:          return nil
         }
     }
+
+    // MARK: - Clean Shelf Products Database Operations
+
+    func fetchUserProducts(userId: UUID) async -> [Product] {
+        do {
+            let response = try await db
+                .from("user_products")
+                .select()
+                .eq("user_id", value: userId.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+
+            let decoded = try JSONSerialization.jsonObject(
+                with: response.data
+            ) as? [[String: Any]] ?? []
+
+            let isoFull = ISO8601DateFormatter()
+            isoFull.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let isoBasic = ISO8601DateFormatter()
+
+            return decoded.compactMap { row -> Product? in
+                guard
+                    let idStr          = row["id"] as? String, let id = UUID(uuidString: idStr),
+                    let name           = row["name"] as? String,
+                    let brand          = row["brand"] as? String,
+                    let ingredients    = row["ingredients"] as? [String],
+                    let ratingRaw      = row["compatibility_rating"] as? String,
+                    let rating         = CompatibilityRating(rawValue: ratingRaw),
+                    let dateStr        = row["created_at"] as? String,
+                    let date           = isoFull.date(from: dateStr) ?? isoBasic.date(from: dateStr)
+                else { return nil }
+
+                let categoryRaw    = row["category"] as? String ?? "shampoo"
+                let category       = ProductCategory(rawValue: categoryRaw) ?? .shampoo
+
+                let notes = row["notes"] as? String
+
+                return Product(
+                    id: id,
+                    name: name,
+                    brand: brand,
+                    ingredients: ingredients,
+                    compatibility: rating,
+                    category: category,
+                    scannedAt: date,
+                    notes: notes
+                )
+            }
+        } catch {
+            print("Fetch user products error: \(error)")
+            return []
+        }
+    }
+
+    func saveProduct(product: Product, userId: UUID) async {
+        do {
+            let data: [String: AnyJSON] = [
+                "id": .string(product.id.uuidString),
+                "user_id": .string(userId.uuidString),
+                "name": .string(product.name),
+                "brand": .string(product.brand),
+                "ingredients": .array(product.ingredients.map { .string($0) }),
+                "compatibility_rating": .string(product.compatibility.rawValue),
+                "category": .string(product.category.rawValue),
+                "created_at": .string(ISO8601DateFormatter().string(from: product.scannedAt)),
+                "notes": product.notes.map { .string($0) } ?? .null
+            ]
+            try await db.from("user_products").upsert(data).execute()
+            print("Product \(product.name) saved to database")
+        } catch {
+            print("Save product error: \(error)")
+        }
+    }
+
+    func deleteProduct(productId: UUID, userId: UUID) async {
+        do {
+            try await db.from("user_products")
+                .delete()
+                .eq("id", value: productId.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+            print("Deleted product: \(productId)")
+        } catch {
+            print("Delete product error: \(error)")
+        }
+    }
+
+    func bulkSaveProducts(products: [Product], userId: UUID) async {
+        guard !products.isEmpty else { return }
+        do {
+            let rows: [[String: AnyJSON]] = products.map { product in
+                [
+                    "id": .string(product.id.uuidString),
+                    "user_id": .string(userId.uuidString),
+                    "name": .string(product.name),
+                    "brand": .string(product.brand),
+                    "ingredients": .array(product.ingredients.map { .string($0) }),
+                    "compatibility_rating": .string(product.compatibility.rawValue),
+                    "category": .string(product.category.rawValue),
+                    "created_at": .string(ISO8601DateFormatter().string(from: product.scannedAt)),
+                    "notes": product.notes.map { .string($0) } ?? .null
+                ]
+            }
+            try await db.from("user_products").upsert(rows).execute()
+            print("Bulk saved \(products.count) products")
+        } catch {
+            print("Bulk save products error: \(error)")
+        }
+    }
 }
+
