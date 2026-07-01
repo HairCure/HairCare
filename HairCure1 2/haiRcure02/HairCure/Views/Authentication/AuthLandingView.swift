@@ -28,16 +28,38 @@ struct AuthLandingView: View {
                     
                     Spacer()
                     
-                    VStack(spacing: 14) {
-                        NavigationLink(destination: LoginView(onProceed: onProceed)) {
-                            Text("Login")
-                                .hcPrimaryButton()
-                        }
+                    VStack(spacing: 16) {
+                        socialRow(
+                            onAppleTap: {
+                                Task {
+                                    await authVM.signInWithApple()
+                                    if authVM.isLoggedIn {
+                                        store.createUser(
+                                            name: authVM.userName ?? "User",
+                                            email: authVM.userEmail ?? "",
+                                            authProvider: .apple,
+                                            supabaseId: authVM.currentUserId
+                                        )
+                                        onProceed()
+                                    }
+                                }
+                            },
+                            onGoogleTap: {
+                                Task {
+                                    await authVM.signInWithGoogle()
+                                    if authVM.isLoggedIn {
+                                        store.createUser(
+                                            name: authVM.userName ?? "User",
+                                            email: authVM.userEmail ?? "",
+                                            authProvider: .google,
+                                            supabaseId: authVM.currentUserId
+                                        )
+                                        onProceed()
+                                    }
+                                }
+                            }
+                        )
                         
-                        NavigationLink(destination: RegisterView(onProceed: onProceed)) {
-                            Text("Register")
-                                .hcSecondaryButton()
-                        }
                         if !hideGuestButton {
                             Button("Continue as a guest") {
                                 authVM.continueAsGuest()
@@ -51,7 +73,15 @@ struct AuthLandingView: View {
                             }
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.hcWarmBrown)
-                            .padding(.top, 4)
+                            .padding(.top, 8)
+                        }
+                        
+                        if let err = authVM.errorMessage {
+                            Text(err)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 8)
                         }
                     }
                     .padding(.horizontal, 24)
@@ -74,527 +104,7 @@ struct AuthLandingView: View {
     }
 }
 
-// MARK: 2 — Login
-
-struct LoginView: View {
-    let onProceed: () -> Void
-    
-    @Environment(AppDataStore.self) private var store
-    @Environment(AuthViewModel.self) private var authVM
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var email        = ""
-    @State private var password     = ""
-    @State private var showPassword = false
-    @State private var showOTPView  = false
-    
-    var canSubmit: Bool { !email.isEmpty && !password.isEmpty && !authVM.isLoading }
-    
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.hcCream.ignoresSafeArea()
-            
-            GeometryReader { geometry in
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        
-                        // Space for the manual back button
-                        Spacer().frame(height: 72)
-                        
-
-                        
-                        // ── Header ──────────────────────────────
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Welcome back!")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundStyle(.primary)
-                            Text("Sign in to continue your hair journey")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        
-                        // Flexible space to distribute layout naturally
-                        Spacer()
-                            .frame(minHeight: 32)
-                        
-                        // ── Form Card ───────────────────────────
-                        VStack(spacing: 0) {
-                            // Email row
-                            HStack(spacing: 14) {
-                                Image(systemName: "envelope")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(Color.hcBrown.opacity(0.8))
-                                    .frame(width: 24)
-                                    .padding(.leading, 18)
-                                TextField("Email", text: $email)
-                                    .keyboardType(.emailAddress)
-                                    .autocapitalization(.none)
-                                    .font(.system(size: 16))
-                                    .padding(.vertical, 18)
-                                Spacer()
-                            }
-                            .padding(.trailing, 16)
-                            
-                            Divider().padding(.leading, 56)
-                            
-                            // Password row with eye toggle
-                            HStack(spacing: 14) {
-                                Image(systemName: "lock")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(Color.hcBrown.opacity(0.8))
-                                    .frame(width: 24)
-                                    .padding(.leading, 18)
-                                Group {
-                                    if showPassword {
-                                        TextField("Password", text: $password)
-                                    } else {
-                                        SecureField("Password", text: $password)
-                                    }
-                                }
-                                .font(.system(size: 16))
-                                .padding(.vertical, 18)
-                                Button {
-                                    showPassword.toggle()
-                                } label: {
-                                    Image(systemName: showPassword ? "eye" : "eye.slash")
-//                                        .foregroundStyle(.secondary)
-                                        .foregroundStyle(Color.hcBrown.opacity(0.8))
-                                        .font(.system(size: 15))
-                                }
-                                .padding(.trailing, 18)
-                            }
-                        }
-                        .background(Color(UIColor.systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 24)
-                        
-                        // ── Forgot + inline error ───────────────
-                        HStack {
-                            if let err = authVM.errorMessage {
-                                Label(err, systemImage: "exclamationmark.circle.fill")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.red)
-                            } else if let success = authVM.successMessage {
-                                Label(success, systemImage: "checkmark.circle.fill")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.green)
-                            }
-                            Spacer()
-                            Button("Forgot Password?") {
-                                if !email.isEmpty {
-                                    Task {
-                                        await authVM.resetPassword(email: email)
-                                    }
-                                } else {
-                                    authVM.errorMessage = "Please enter your email address first."
-                                    authVM.successMessage = nil
-                                }
-                            }
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color.hcBrown.opacity(0.8))
-                        }
-                        .padding(.horizontal, 28)
-                        .padding(.top, 12)
-                        
-                        // Flexible space before CTA
-                        Spacer()
-                            .frame(minHeight: 32)
-                        
-                        // ── CTA ─────────────────────────────────
-                        VStack(spacing: 20) {
-                            Button {
-                                Task {
-                                    await authVM.signIn(email: email, password: password)
-                                    if authVM.isLoggedIn {
-                                        store.createUser(
-                                            name: authVM.userName ?? "User",
-                                            email: authVM.userEmail ?? "",
-                                            authProvider: .email,
-                                            supabaseId: authVM.currentUserId
-                                        )
-                                        onProceed()
-                                    }
-                                }
-                            } label: {
-                                Group {
-                                    if authVM.isLoading {
-                                        ProgressView().tint(.white)
-                                    } else {
-                                        Text("Log In")
-                                    }
-                                }
-                                .hcPrimaryButton()
-                            }
-                            .disabled(!canSubmit)
-                            
-                            dividerRow(label: "Or continue with")
-                                .padding(.vertical, 4)
-                            
-                            socialRow(
-                                onAppleTap: {
-                                    Task {
-                                        await authVM.signInWithApple()
-                                        if authVM.isLoggedIn {
-                                            store.createUser(
-                                                name: authVM.userName ?? "User",
-                                                email: authVM.userEmail ?? "",
-                                                authProvider: .apple,
-                                                supabaseId: authVM.currentUserId
-                                            )
-                                            onProceed()
-                                        }
-                                    }
-                                },
-                                onGoogleTap: {
-                                    Task {
-                                        await authVM.signInWithGoogle()
-                                        if authVM.isLoggedIn {
-                                            store.createUser(
-                                                name: authVM.userName ?? "User",
-                                                email: authVM.userEmail ?? "",
-                                                authProvider: .google,
-                                                supabaseId: authVM.currentUserId
-                                            )
-                                            onProceed()
-                                        }
-                                    }
-                                }
-                            )
-                            
-                            HStack(spacing: 4) {
-                                Text("Don't have an account?")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.secondary)
-                                NavigationLink(destination: RegisterView(onProceed: onProceed)) {
-                                    Text("Register")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.hcWarmBrown)
-                                }
-                            }
-                            .padding(.top, 8)
-                        }
-                        .padding(.horizontal, 24)
-                        
-                        // Flexible space before bottom decorative text
-                        Spacer()
-                            .frame(minHeight: 40)
-                        
-                       
-                    }
-                    .frame(minHeight: geometry.size.height)
-                }
-            }
-            
-            // ── Single back button — pinned to safe area top-left ──
-            HCBackButton { dismiss() }
-                .padding(.leading, 16)
-                .padding(.top, 8)
-                .safeAreaPadding(.top, 0)
-        }
-        .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showOTPView) {
-            OTPResetPasswordView(email: email)
-        }
-        .onChange(of: authVM.isResetEmailSent) { _, isSent in
-            if isSent {
-                showOTPView = true
-            }
-        }
-    }
-}
-
-
-// MARK: 3 — Register
-
-struct RegisterView: View {
-    let onProceed: () -> Void
-    
-    @Environment(AppDataStore.self) private var store
-    @Environment(AuthViewModel.self) private var authVM
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var name            = ""
-    @State private var email           = ""
-    @State private var password        = ""
-    @State private var confirmPassword = ""
-    @State private var showOTPSignupView = false
-    
-    var passwordsMatch: Bool { password == confirmPassword }
-    var canSubmit: Bool {
-        !email.isEmpty && !password.isEmpty && passwordsMatch && !authVM.isLoading
-    }
-    
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.hcCream.ignoresSafeArea()
-            
-            GeometryReader { geometry in
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        
-                        // Space for the manual back button
-                        Spacer().frame(height: 72)
-                        
-
-                        
-                        // ── Header ──────────────────────────────
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Create Account")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundStyle(.primary)
-                            Text("Start your personalised hair journey")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        
-                        Spacer()
-                            .frame(minHeight: 24)
-                        
-                        // ── Form Card ───────────────────────────
-                        VStack(spacing: 0) {
-                            inputRow(icon: "person", placeholder: "Full name", text: $name, keyboard: .default, isSecure: false)
-                            Divider().padding(.leading, 56)
-                            inputRow(icon: "envelope", placeholder: "Email", text: $email, keyboard: .emailAddress, isSecure: false, autoCapitalize: false)
-                            Divider().padding(.leading, 56)
-                            PasswordRowView(icon: "lock", placeholder: "Password", text: $password)
-                            Divider().padding(.leading, 56)
-                            PasswordRowView(icon: "lock", placeholder: "Confirm password", text: $confirmPassword)
-                        }
-                        .background(Color(UIColor.systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 24)
-                        
-                        // ── Inline validation ───────────────────
-                        Group {
-                            if !confirmPassword.isEmpty && !passwordsMatch {
-                                Label("Passwords don't match", systemImage: "xmark.circle.fill")
-                                    .foregroundColor(.red)
-                            } else if let err = authVM.errorMessage {
-                                Label(err, systemImage: "exclamationmark.circle.fill")
-                                    .foregroundColor(.red)
-                            } else {
-                                Color.clear.frame(height: 20)
-                            }
-                        }
-                        .font(.system(size: 12, weight: .medium))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 28)
-                        .padding(.top, 12)
-                        
-                        Spacer()
-                            .frame(minHeight: 24)
-                            
-
-                        
-                        Spacer()
-                            .frame(minHeight: 24)
-                        
-                        // ── CTA ─────────────────────────────────
-                        VStack(spacing: 20) {
-                            Button {
-                                Task {
-                                    await authVM.signUp(
-                                        email: email,
-                                        password: password,
-                                        name: name.isEmpty
-                                        ? email.components(separatedBy: "@").first ?? "User"
-                                        : name
-                                    )
-                                    if authVM.isLoggedIn {
-                                        store.createUser(
-                                            name: authVM.userName ?? "User",
-                                            email: authVM.userEmail ?? "",
-                                            authProvider: .email,
-                                            supabaseId: authVM.currentUserId
-                                        )
-                                        onProceed()
-                                    }
-                                }
-                            } label: {
-                                Group {
-                                    if authVM.isLoading {
-                                        ProgressView().tint(.white)
-                                    } else {
-                                        Text("Create Account")
-                                    }
-                                }
-                                .hcPrimaryButton()
-                            }
-                            .disabled(!canSubmit)
-                            
-                            dividerRow(label: "Or continue with")
-                                .padding(.vertical, 4)
-                            
-                            socialRow(
-                                onAppleTap: {
-                                    Task {
-                                        await authVM.signInWithApple()
-                                        if authVM.isLoggedIn {
-                                            store.createUser(
-                                                name: authVM.userName ?? "User",
-                                                email: authVM.userEmail ?? "",
-                                                authProvider: .apple,
-                                                supabaseId: authVM.currentUserId
-                                            )
-                                            onProceed()
-                                        }
-                                    }
-                                },
-                                onGoogleTap: {
-                                    Task {
-                                        await authVM.signInWithGoogle()
-                                        if authVM.isLoggedIn {
-                                            store.createUser(
-                                                name: authVM.userName ?? "User",
-                                                email: authVM.userEmail ?? "",
-                                                authProvider: .google,
-                                                supabaseId: authVM.currentUserId
-                                            )
-                                            onProceed()
-                                        }
-                                    }
-                                }
-                            )
-                            
-                            HStack(spacing: 4) {
-                                Text("Already have an account?")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.secondary)
-                                NavigationLink(destination: LoginView(onProceed: onProceed)) {
-                                    Text("Log In")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.hcWarmBrown)
-                                }
-                            }
-                            .padding(.top, 8)
-                        }
-                        .padding(.horizontal, 24)
-                        
-                        Spacer()
-                            .frame(minHeight: 40)
-                            
-                        
-                    }
-                    .frame(minHeight: geometry.size.height)
-                }
-            }
-            
-            // ── Single back button — pinned to safe area top-left ──
-            HCBackButton { dismiss() }
-                .padding(.leading, 16)
-                .padding(.top, 8)
-                .safeAreaPadding(.top, 0)
-        }
-        .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showOTPSignupView) {
-            OTPSignupConfirmationView(email: email, onProceed: onProceed)
-        }
-        .onChange(of: authVM.isSignupEmailSent) { _, isSent in
-            if isSent {
-                showOTPSignupView = true
-            }
-        }
-    }
-    
-
-    
-    // ── Grouped input row (icon + field) ────────────────────────────────────
-    @ViewBuilder
-    private func inputRow(
-        icon: String,
-        placeholder: String,
-        text: Binding<String>,
-        keyboard: UIKeyboardType,
-        isSecure: Bool,
-        autoCapitalize: Bool = true
-    ) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.hcBrown.opacity(0.8))
-                .frame(width: 24)
-                .padding(.leading, 18)
-            
-            if isSecure {
-                SecureField(placeholder, text: text)
-                    .font(.system(size: 16))
-                    .padding(.vertical, 18)
-            } else {
-                TextField(placeholder, text: text)
-                    .keyboardType(keyboard)
-                    .autocapitalization(autoCapitalize ? .words : .none)
-                    .font(.system(size: 16))
-                    .padding(.vertical, 18)
-            }
-        }
-        .padding(.trailing, 18)
-    }
-}
-
-// MARK: - PasswordRowView
-
-struct PasswordRowView: View {
-    let icon: String
-    let placeholder: String
-    @Binding var text: String
-    @State private var showPassword = false
-    
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.hcBrown.opacity(0.8))
-                .frame(width: 24)
-                .padding(.leading, 18)
-            
-            Group {
-                if showPassword {
-                    TextField(placeholder, text: $text)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                } else {
-                    SecureField(placeholder, text: $text)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                }
-            }
-            .font(.system(size: 16))
-            .padding(.vertical, 18)
-            
-            Button {
-                showPassword.toggle()
-            } label: {
-                Image(systemName: showPassword ? "eye" : "eye.slash")
-                    .foregroundStyle(Color.hcBrown.opacity(0.8))
-                    .font(.system(size: 15))
-            }
-            .padding(.trailing, 18)
-        }
-    }
-}
-
 // MARK: Shared Auth Sub-views
-
-private func dividerRow(label: String) -> some View {
-    HStack {
-        Rectangle()
-            .fill(Color(.systemGray4))
-            .frame(height: 1)
-        Text(label)
-            .font(.system(size: 13))
-            .foregroundStyle(.secondary)
-            .fixedSize()
-        Rectangle()
-            .fill(Color(.systemGray4))
-            .frame(height: 1)
-    }
-}
 
 private func socialRow(onAppleTap: @escaping () -> Void, onGoogleTap: @escaping () -> Void) -> some View {
     VStack(spacing: 12) {
@@ -633,5 +143,4 @@ private func socialRow(onAppleTap: @escaping () -> Void, onGoogleTap: @escaping 
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.hcBrown, lineWidth: 1.0))
         }
     }
-    
 }

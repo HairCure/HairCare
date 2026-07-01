@@ -516,14 +516,11 @@ struct HomeTodaySectionView: View {
 
                 HomeFitnessCardView(
                     title: "MindEase", icon: "figure.mind.and.body",
-                    iconColor: Color(red: 0.58, green: 0.48, blue: 0.92),
-                    gradientColors: [Color(red: 0.90, green: 0.87, blue: 1.0),
-                                     Color(red: 0.82, green: 0.78, blue: 0.98)],
+                    iconColor: Color.hcBrown,
                     current: Double(store.todaysMindfulMinutes()),
                     target:  Double(max(store.dailyMindfulTarget, 20)),
-                    ringColor: Color(red: 0.50, green: 0.38, blue: 0.85),
-                    unitSuffix: "min",
-                    darkText: true
+                    ringColor: Color.hcBrown,
+                    unitSuffix: "min"
                 )
                 .buttonStyle(.plain)
             }
@@ -535,19 +532,14 @@ struct HomeFitnessCardView: View {
     let title: String
     let icon: String
     let iconColor: Color
-    let gradientColors: [Color]
     let current: Double
     let target: Double
     let ringColor: Color
     let unitSuffix: String
-    var darkText: Bool = false
     
     var body: some View {
         let progress = min(current / max(target, 1), 1.0)
         let pct      = Int(progress * 100)
-        let textPrimary   = darkText ? Color(red: 0.15, green: 0.12, blue: 0.10) : Color.white
-        let textSecondary = darkText ? Color(red: 0.35, green: 0.30, blue: 0.25) : Color.white.opacity(0.55)
-        let titleOpacity  = darkText ? Color(red: 0.30, green: 0.25, blue: 0.20) : Color.white.opacity(0.75)
         
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
@@ -556,14 +548,14 @@ struct HomeFitnessCardView: View {
                     .foregroundStyle(iconColor)
                 Text(title)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(titleOpacity)
+                    .foregroundStyle(iconColor)
                 Spacer()
             }
             .padding(.bottom, 14)
 
             ZStack {
                 Circle()
-                    .stroke(ringColor.opacity(0.18), lineWidth: 10)
+                    .stroke(Color.black.opacity(0.06), lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: CGFloat(progress))
                     .stroke(ringColor, style: StrokeStyle(lineWidth: 10, lineCap: .round))
@@ -571,11 +563,11 @@ struct HomeFitnessCardView: View {
                     .animation(.easeOut(duration: 0.7), value: progress)
                 VStack(spacing: 1) {
                     Text("\(pct)%")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(textPrimary)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.hcBrown)
                     Text("of goal")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(textSecondary)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(Color.hcBrown.opacity(0.70))
                 }
             }
             .frame(width: 72, height: 72)
@@ -587,19 +579,21 @@ struct HomeFitnessCardView: View {
                      ? "\(Int(current)) \(unitSuffix)"
                      : String(format: "%.0f \(unitSuffix)", current))
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(textPrimary)
+                    .foregroundStyle(Color.hcBrown)
                 Text("Goal \(Int(target)) \(unitSuffix)")
                     .font(.system(size: 11))
-                    .foregroundStyle(textSecondary)
+                    .foregroundStyle(Color.hcBrown.opacity(0.70))
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(colors: gradientColors,
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
+        .background(Color.white)
         .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(.systemGray6), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 }
 
@@ -624,15 +618,15 @@ struct HomeHairNutrientsCardView: View {
             HStack {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(red: 0.55, green: 0.38, blue: 0.22))
+                    .foregroundStyle(Color.hcBrown)
                 Text("Hair Nutrients")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color(red: 0.30, green: 0.22, blue: 0.15))
+                    .foregroundStyle(Color.hcBrown)
                 Spacer()
                 Button { viewModel.showNutrientInfo = true } label: {
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color(red: 0.55, green: 0.38, blue: 0.22).opacity(0.75))
+                        .foregroundStyle(Color.hcBrown.opacity(0.75))
                 }
                 .buttonStyle(.plain)
             }
@@ -646,7 +640,7 @@ struct HomeHairNutrientsCardView: View {
                     Circle()
                         .trim(from: from, to: to)
                         .stroke(
-                            isCovered ? nutrient.color : nutrient.color.opacity(0.38),
+                            isCovered ? nutrient.color : Color.black.opacity(0.06),
                             style: StrokeStyle(lineWidth: 11, lineCap: .butt)
                         )
                         .rotationEffect(.degrees(-90))
@@ -656,10 +650,10 @@ struct HomeHairNutrientsCardView: View {
                 VStack(spacing: 1) {
                     Text("\(coveredCount)/5")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(red: 0.15, green: 0.12, blue: 0.10))
+                        .foregroundStyle(Color.hcBrown)
                     Text("covered")
                         .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.35, green: 0.28, blue: 0.22).opacity(0.70))
+                        .foregroundStyle(Color.hcBrown.opacity(0.70))
                         .kerning(0.8)
                 }
             }
@@ -674,14 +668,12 @@ struct HomeHairNutrientsCardView: View {
                         let isCovered = covered.contains(nutrient.name)
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(isCovered ? nutrient.color : nutrient.color.opacity(0.45))
+                                .fill(isCovered ? nutrient.color : Color.black.opacity(0.06))
                                 .frame(width: 5, height: 5)
                             Text(nutrient.name == "Vitamin A" ? "Vit A" : nutrient.name)
                                 .font(.system(size: 9, weight: isCovered ? .semibold : .regular))
                                 .foregroundStyle(
-                                    isCovered
-                                        ? Color(red: 0.15, green: 0.12, blue: 0.10)
-                                        : Color(red: 0.50, green: 0.42, blue: 0.34)
+                                    isCovered ? Color.hcBrown : Color.secondary
                                 )
                         }
                     }
@@ -693,14 +685,12 @@ struct HomeHairNutrientsCardView: View {
                         let isCovered = covered.contains(nutrient.name)
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(isCovered ? nutrient.color : nutrient.color.opacity(0.45))
+                                .fill(isCovered ? nutrient.color : Color.black.opacity(0.06))
                                 .frame(width: 5, height: 5)
                             Text(nutrient.name)
                                 .font(.system(size: 9, weight: isCovered ? .semibold : .regular))
                                 .foregroundStyle(
-                                    isCovered
-                                        ? Color(red: 0.15, green: 0.12, blue: 0.10)
-                                        : Color(red: 0.50, green: 0.42, blue: 0.34)
+                                    isCovered ? Color.hcBrown : Color.secondary
                                 )
                         }
                     }
@@ -709,14 +699,13 @@ struct HomeHairNutrientsCardView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(
-                colors: [Color(red: 0.94, green: 0.85, blue: 0.68),
-                         Color(red: 0.88, green: 0.76, blue: 0.54)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        )
+        .background(Color.white)
         .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(.systemGray6), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 }
 

@@ -77,12 +77,10 @@ struct PlanResultsView: View {
             AllReferencesView()
         }
         .fullScreenCover(isPresented: $showAuthSheet) {
-            NavigationStack {
-                RegisterView(onProceed: {
-                    showAuthSheet = false
-                    onStart()
-                })
-            }
+            AuthLandingView(hideGuestButton: true, onProceed: {
+                showAuthSheet = false
+                onStart()
+            })
         }
         .sheet(isPresented: $showNorwoodSheet) {
             NorwoodInfoSheet()
