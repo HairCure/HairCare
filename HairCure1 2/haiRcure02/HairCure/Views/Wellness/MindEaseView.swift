@@ -55,6 +55,16 @@ struct MindEaseView: View {
     @State private var sheetDate:         Date? = nil
     @State private var selectedDate:      Date  = Calendar.current.startOfDay(for: .now)
     @State private var showCalendarSheet        = false
+    
+    @State private var showAssessmentSheet      = false
+    @State private var selectedMood: String?    = nil
+    
+    private let moods = [
+        ("calm_anim", "Calm"),
+        ("stressed_anim", "Stressed"),
+        ("tired_anim", "Tired"),
+        ("anxious_anim", "Anxious")
+    ]
 
     private var weekDates: [Date] {
         let cal    = Calendar.current
@@ -67,46 +77,7 @@ struct MindEaseView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
 
-                // Date header
-                HStack(spacing: 8) {
-                    Text("Today, \(Date().mindEaseFormatted("d MMM yyyy"))")
-                        .font(.system(size: 20, weight: .bold))
-                    Spacer()
-                    Button {
-                        if authVM.isGuestMode { onGuestTap() }
-                        else { showCalendarSheet = true }
-                    } label: {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(Color.hcBrown)
-                            .padding(8)
-                            .background(Color.hcBrown.opacity(0.10))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                }
-                .padding(.horizontal, 20)
-
-                HStack(spacing: 0) {
-                    ForEach(weekDates, id: \.self) { date in
-                        WeekDayCell(
-                            date: date,
-                            dailyTarget: mindEaseStore.dailyMindfulTarget,
-                            minutes: mindEaseStore.mindfulMinutes(for: date),
-                            isSelected: Calendar.current.startOfDay(for: date) == selectedDate,
-                            onTap: {
-                                if authVM.isGuestMode {
-                                    onGuestTap()
-                                } else {
-                                    let day = Calendar.current.startOfDay(for: date)
-                                    selectedDate = day
-                                    sheetDate    = day
-                                }
-                            }
-                        )
-                    }
-                }
-                .padding(.horizontal, 20)
-
+                // Date header relocated to Mood Check-In section
                 // Loading / error states
                 if mindEaseStore.isLoadingContent {
                     HStack { Spacer(); ProgressView().padding(.vertical, 24); Spacer() }
@@ -135,9 +106,68 @@ struct MindEaseView: View {
                     .padding(.vertical, 48)
                 } else {
 
-                    // Categories
+                    // 1. Mood Check-In
+                    VStack(alignment: .center, spacing: 14) {
+                        ZStack(alignment: .trailing) {
+                            Text("What is your mood?")
+                                .font(.system(size: 24, weight: .bold))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                
+                            Button {
+                                if authVM.isGuestMode { onGuestTap() }
+                                else { showCalendarSheet = true }
+                            } label: {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundStyle(Color.hcBrown)
+                                    .padding(8)
+                                    .background(Color.hcBrown.opacity(0.10))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        
+                        MoodSliderView(selectedMood: $selectedMood, moods: moods)
+                            .frame(height: 260)
+                            .padding(.bottom, 8)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // 2. Recommended for your mood (if a mood is selected)
+                    if let mood = selectedMood {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Recommended for \(mood)")
+                                .font(.system(size: 22, weight: .bold))
+                                .padding(.horizontal, 20)
+                                
+                            let finalRecs = recommendedContent(for: mood)
+                            
+                            VStack(spacing: 0) {
+                                ForEach(Array(finalRecs.enumerated()), id: \.element.id) { idx, content in
+                                    if authVM.isGuestMode {
+                                        Button { onGuestTap() } label: {
+                                            MoodRecommendationRow(content: content, store: mindEaseStore)
+                                        }
+                                        .buttonStyle(.plain)
+                                    } else {
+                                        NavigationLink(value: content) {
+                                            MoodRecommendationRow(content: content, store: mindEaseStore)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    if idx < finalRecs.count - 1 { Divider().padding(.leading, 96) }
+                                }
+                            }
+                            .mindEaseCard(cornerRadius: 16)
+                            .padding(.horizontal, 20)
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    // 3. Categories (Renamed to Explore Library)
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Categories").mindEaseSectionHeader()
+                        Text("Explore Library").mindEaseSectionHeader()
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
                                 ForEach(mindEaseStore.mindEaseCategories) { cat in
@@ -161,78 +191,6 @@ struct MindEaseView: View {
                             .padding(.horizontal, 20).padding(.bottom, 4)
                         }
                     }
-
-                    // Today's plan
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(alignment: .center) {
-                            Text("Today's Plan")
-                                .font(.system(size: 22, weight: .bold))
-                            Spacer()
-                            if !mindEaseStore.mindfulSessions.isEmpty {
-                                Button {
-                                    if authVM.isGuestMode {
-                                        onGuestTap()
-                                    } else {
-                                        selectedDate = Calendar.current.startOfDay(for: .now)
-                                        sheetDate = selectedDate
-                                    }
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Text("View History")
-                                        Image(systemName: "chevron.right")
-                                    }
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(Color.mindEasePurple)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 20)
-
-                        let plans = mindEaseStore.todayActivePlans()
-                        if plans.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "brain.head.profile")
-                                    .font(.system(size: 36, weight: .ultraLight))
-                                    .foregroundStyle(Color.mindEasePurple.opacity(0.5))
-                                Text(store.userPlans.isEmpty
-                                     ? "Complete your assessment to get a personalised plan"
-                                     : "Your plan is being prepared…")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 24)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 32)
-                            .mindEaseCard(cornerRadius: 16)
-                            .padding(.horizontal, 20)
-                        } else {
-                            VStack(spacing: 0) {
-                                ForEach(Array(plans.enumerated()), id: \.element.id) { idx, plan in
-                                    if let content = mindEaseStore.mindEaseCategoryContents
-                                        .first(where: { $0.id == plan.contentId }) {
-                                        if authVM.isGuestMode {
-                                            Button { onGuestTap() } label: {
-                                                PlanRow(plan: plan, content: content, store: mindEaseStore)
-                                            }
-                                            .buttonStyle(.plain)
-                                        } else {
-                                            NavigationLink(value: content) {
-                                                PlanRow(plan: plan, content: content, store: mindEaseStore)
-                                            }
-                                            .buttonStyle(.plain)
-                                            .scrollTransition(.animated.threshold(.visible(0.1))) { c, p in
-                                                c.opacity(p.isIdentity ? 1 : 0).offset(y: p.isIdentity ? 0 : 22)
-                                            }
-                                        }
-                                        if idx < plans.count - 1 { Divider().padding(.leading, 96) }
-                                    }
-                                }
-                            }
-                            .mindEaseCard(cornerRadius: 16)
-                            .padding(.horizontal, 20)
-                        }
-                    }
                 }
 
                 Spacer(minLength: 32)
@@ -245,6 +203,9 @@ struct MindEaseView: View {
         .navigationDestination(for: MindEaseCategoryContent.self) { MindEasePlayerView(content: $0) }
         .sheet(item: $sheetDate) { DayDetailSheet(date: $0) }
         .sheet(isPresented: $showCalendarSheet) { CalendarPickerSheet() }
+        .fullScreenCover(isPresented: $showAssessmentSheet) {
+            AssessmentView(onComplete: { showAssessmentSheet = false }, onBack: { showAssessmentSheet = false })
+        }
         .task {
             if mindEaseStore.mindEaseCategories.isEmpty {
                 await mindEaseStore.loadFromBackend()
@@ -253,6 +214,41 @@ struct MindEaseView: View {
                 // Categories already cached but plan was seeded before content loaded — re-seed.
                 mindEaseStore.addAll(userId: store.currentUserId, userPlans: store.userPlans)
             }
+        }
+    }
+    
+    private func recommendedContent(for mood: String) -> [MindEaseCategoryContent] {
+        // Smart filtering: match exact mood or broader related terms
+        let recommended = mindEaseStore.mindEaseCategoryContents.filter {
+            let t = $0.title.lowercased()
+            let c = $0.caption.lowercased()
+            let m = mood.lowercased()
+            
+            if t.contains(m) || c.contains(m) { return true }
+            
+            // Broader keyword mapping
+            if m == "calm" && (t.contains("meditation") || t.contains("breath") || c.contains("focus")) { return true }
+            if m == "stressed" && (t.contains("yoga") || t.contains("relax") || c.contains("stress")) { return true }
+            if m == "tired" && (t.contains("sleep") || t.contains("sound") || c.contains("rest")) { return true }
+            if m == "anxious" && (t.contains("meditation") || t.contains("breath") || t.contains("yoga")) { return true }
+            
+            return false
+        }
+        
+        // Fallback to a deterministic shuffle based on the mood if not enough exact matches
+        if recommended.count >= 2 {
+            return Array(recommended.prefix(2))
+        } else {
+            let fallback = mindEaseStore.mindEaseCategoryContents.sorted {
+                let hash0 = abs($0.id.hashValue ^ mood.hashValue)
+                let hash1 = abs($1.id.hashValue ^ mood.hashValue)
+                return hash0 < hash1
+            }
+            // Combine any matches we did find with the fallback to guarantee 2 items
+            let combined = (recommended + fallback).reduce(into: [MindEaseCategoryContent]()) { result, item in
+                if !result.contains(where: { $0.id == item.id }) { result.append(item) }
+            }
+            return Array(combined.prefix(2))
         }
     }
 }
@@ -339,13 +335,15 @@ private struct CategoryCard: View {
     }
 }
 
-// MARK: - Plan Row
 
-private struct PlanRow: View {
-    let plan: TodaysPlan; let content: MindEaseCategoryContent; let store: MindEaseDataStore
+// MARK: - Mood Recommendation Row
+
+private struct MoodRecommendationRow: View {
+    let content: MindEaseCategoryContent
+    let store: MindEaseDataStore
 
     var body: some View {
-        let categoryName = store.mindEaseCategories.first(where: { $0.id == plan.categoryId })?.title ?? "Session"
+        let categoryName = store.mindEaseCategories.first(where: { $0.id == content.categoryId })?.title ?? "Session"
         
         return HStack(alignment: .center, spacing: 14) {
             MindEaseThumbnail(
@@ -355,27 +353,21 @@ private struct PlanRow: View {
             )
             VStack(alignment: .leading, spacing: 4) {
                 Text(categoryName)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.mindEasePurple)
+                Text(content.title)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.primary)
-                Text("Recommended: \(content.title)")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
                     .lineLimit(1)
-                Text("\(plan.minutesCompleted)/\(plan.minutesTarget) min")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(plan.isCompleted ? Color.mindEasePurple : .secondary)
+                Text(store.durationFormatted(for: content))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if plan.isCompleted {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 28)).foregroundStyle(Color.mindEasePurple)
-            } else {
-                Text("Start")
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 22).padding(.vertical, 10)
-                    .background(Color.mindEasePurple).clipShape(Capsule())
-            }
+            Image(systemName: "play.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(Color.mindEasePurple)
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
     }
@@ -700,6 +692,7 @@ struct MindEasePlayerView: View {
     @State private var realDuration:   Double   = 0.0   // actual media duration (auto-detected from file)
     @State private var timeObserver:   Any?     = nil
     @State private var loadError:      Bool     = false
+    @State private var playbackSpeed:  Float    = 1.0
 
     private var elapsed:   Int { Int(currentSeconds) }
     private var remaining: Int { max(0, Int(realDuration) - elapsed) }
@@ -775,7 +768,7 @@ struct MindEasePlayerView: View {
                             if content.mediaType == .audio {
                                 Label("Audio", systemImage: "waveform")
                                     .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(Color.mindEasePurple)
+                                    .foregroundStyle(Color.hcBrown)
                             }
                         }
                         Spacer()
@@ -792,38 +785,60 @@ struct MindEasePlayerView: View {
                             player.seek(to: CMTime(seconds: currentSeconds, preferredTimescale: 600))
                         }
                     }
-                    .tint(Color.mindEasePurple)
+                    .tint(Color.hcBrown)
                     .padding(.top, 16)
 
                     HStack {
-                        Text(timeLabel(elapsed))
+                        Text(realDuration == 0 ? "-- : --" : timeLabel(elapsed))
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(timeLabel(remaining))
+                        Text(realDuration == 0 ? "-- : --" : timeLabel(remaining))
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
 
                     HStack(spacing: 0) {
+                        Button { cyclePlaybackSpeed() } label: {
+                            Text(String(format: "%gX", playbackSpeed))
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .frame(width: 44, height: 44)
+                                .background(Color.hcBrown.opacity(0.12))
+                                .clipShape(Circle())
+                                .foregroundStyle(Color.hcBrown)
+                        }
+                        
+                        Spacer()
+
                         Button { seekRelative(seconds: -10) } label: {
                             Image(systemName: "gobackward.10").font(.system(size: 24))
-                        }.frame(maxWidth: .infinity)
+                                .foregroundStyle(Color.hcBrown)
+                        }
+
+                        Spacer()
 
                         Button {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.65)) { togglePlayback() }
                         } label: {
                             ZStack {
-                                Circle().fill(Color.mindEasePurple).frame(width: 64, height: 64)
+                                Circle().fill(Color.hcBrown).frame(width: 64, height: 64)
                                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                                     .font(.system(size: 24)).foregroundStyle(.white)
                                     .contentTransition(.symbolEffect(.replace))
                             }
-                        }.frame(maxWidth: .infinity)
+                        }
+
+                        Spacer()
 
                         Button { seekRelative(seconds: 10) } label: {
                             Image(systemName: "goforward.10").font(.system(size: 24))
-                        }.frame(maxWidth: .infinity)
+                                .foregroundStyle(Color.hcBrown)
+                        }
+                        
+                        Spacer()
+                        
+                        // Placeholder for layout symmetry
+                        Color.clear.frame(width: 44, height: 44)
                     }
                     .padding(.top, 12)
                 }
@@ -920,8 +935,24 @@ struct MindEasePlayerView: View {
 
     private func togglePlayback() {
         guard let player else { return }
-        if isPlaying { player.pause() } else { player.play() }
+        if isPlaying { 
+            player.pause() 
+        } else { 
+            player.play()
+            player.rate = playbackSpeed
+        }
         isPlaying.toggle()
+    }
+
+    private func cyclePlaybackSpeed() {
+        if playbackSpeed == 1.0 { playbackSpeed = 1.25 }
+        else if playbackSpeed == 1.25 { playbackSpeed = 1.5 }
+        else if playbackSpeed == 1.5 { playbackSpeed = 2.0 }
+        else { playbackSpeed = 1.0 }
+        
+        if isPlaying {
+            player?.rate = playbackSpeed
+        }
     }
 
     private func seekRelative(seconds: Double) {
