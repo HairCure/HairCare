@@ -15,6 +15,10 @@ class ScannerViewModel: NSObject {
     var showManualInput = false
     var parsedProduct: Product? = nil
     
+    var isAnalyzing = false
+    var processedCount = 0
+    var totalCount = 0
+    
     private let captureSession = AVCaptureSession()
     private var videoDataOutput = AVCaptureVideoDataOutput()
     private let sessionQueue = DispatchQueue(label: "com.haircure.scanner.queue")
@@ -118,7 +122,7 @@ class ScannerViewModel: NSObject {
         captureSession.commitConfiguration()
     }
     
-    func processParsedText(_ text: String, activeScalp: ScalpCondition) {
+    func processParsedText(_ text: String, activeScalp: ScalpCondition) async {
         // Split ingredients by commas, semicolons or periods
         let rawItems = text.components(separatedBy: CharacterSet(charactersIn: ",;.\n"))
         var cleanedItems: [String] = []
@@ -132,9 +136,24 @@ class ScannerViewModel: NSObject {
         
         guard !cleanedItems.isEmpty else { return }
         
-        let evaluation = RecommendationEngine.evaluateProduct(ingredients: cleanedItems, against: activeScalp)
+        self.isAnalyzing = true
+        self.processedCount = 0
+        self.totalCount = cleanedItems.count
         
-        parsedProduct = Product(
+        var analyzed: [FlaggedIngredient] = []
+        for item in cleanedItems {
+            let result = await PubChemService.shared.analyzeIngredient(item, against: activeScalp)
+            analyzed.append(result)
+            self.processedCount += 1
+        }
+        
+        let evaluation = RecommendationEngine.evaluateProduct(
+            ingredients: cleanedItems,
+            analyzedIngredients: analyzed,
+            against: activeScalp
+        )
+        
+        self.parsedProduct = Product(
             id: UUID(),
             name: "Scanned Product",
             brand: "Unknown Brand",
@@ -143,35 +162,46 @@ class ScannerViewModel: NSObject {
             category: .shampoo, // Default category
             scannedAt: Date()
         )
+        self.isAnalyzing = false
     }
 
-    func analyzeImage(_ uiImage: UIImage, activeScalp: ScalpCondition, completion: @escaping () -> Void) {
+    func analyzeImage(_ uiImage: UIImage, activeScalp: ScalpCondition) async {
         guard let cgImage = uiImage.cgImage else { return }
         
-        let request = VNRecognizeTextRequest { [weak self] request, error in
-            guard let self = self else { return }
-            guard let observations = request.results as? [VNRecognizedTextObservation], error == nil else { return }
-            
-            var recognizedTextAccumulator = ""
-            for observation in observations {
-                if let candidate = observation.topCandidates(1).first {
-                    recognizedTextAccumulator += candidate.string + ", "
+        return await withCheckedContinuation { continuation in
+            let request = VNRecognizeTextRequest { [weak self] request, error in
+                guard let self = self else {
+                    continuation.resume()
+                    return
+                }
+                guard let observations = request.results as? [VNRecognizedTextObservation], error == nil else {
+                    continuation.resume()
+                    return
+                }
+                
+                var recognizedTextAccumulator = ""
+                for observation in observations {
+                    if let candidate = observation.topCandidates(1).first {
+                        recognizedTextAccumulator += candidate.string + ", "
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.recognizedText = recognizedTextAccumulator
+                    Task {
+                        await self.processParsedText(recognizedTextAccumulator, activeScalp: activeScalp)
+                        continuation.resume()
+                    }
                 }
             }
             
-            DispatchQueue.main.async {
-                self.recognizedText = recognizedTextAccumulator
-                self.processParsedText(recognizedTextAccumulator, activeScalp: activeScalp)
-                completion()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            DispatchQueue.global(qos: .userInitiated).async {
+                try? handler.perform([request])
             }
-        }
-        
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        DispatchQueue.global(qos: .userInitiated).async {
-            try? handler.perform([request])
         }
     }
 }
@@ -210,18 +240,24 @@ extension ScannerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     private func updateDetectedIngredientsList() {
         let text = recognizedText.lowercased()
-        var matches: [String] = []
-        
-        // Scan for matching key ingredients real-time just to show user in HUD
-        for rule in RecommendationEngine.ingredientRules {
-            for synonym in rule.synonyms {
-                if text.contains(synonym) {
-                    matches.append(rule.name)
-                    break
-                }
+        let items = text.components(separatedBy: CharacterSet(charactersIn: ",;.\n"))
+        var detected: [String] = []
+        for item in items {
+            let cleaned = item.trimmingCharacters(in: .whitespacesAndNewlines)
+            if cleaned.count > 3 && (
+                cleaned.hasSuffix("sulfate") ||
+                cleaned.hasSuffix("siloxane") ||
+                cleaned.hasSuffix("cone") ||
+                cleaned.hasSuffix("ol") ||
+                cleaned.hasSuffix("paraben") ||
+                cleaned.contains("oil") ||
+                cleaned.contains("extract") ||
+                cleaned.hasSuffix("acid")
+            ) {
+                detected.append(cleaned.capitalized)
             }
         }
-        self.detectedIngredients = Array(Set(matches))
+        self.detectedIngredients = Array(Set(detected).prefix(4))
     }
 }
 
@@ -424,10 +460,12 @@ struct ScannerView: View {
                 if viewModel.hasCameraPermission && viewModel.isCameraAvailable {
                     Button {
                         guard !viewModel.recognizedText.isEmpty else { return }
-                        viewModel.processParsedText(viewModel.recognizedText, activeScalp: activeScalp)
-                        if viewModel.parsedProduct != nil {
-                            viewModel.stopSession()
-                            showDetailSheet = true
+                        Task {
+                            await viewModel.processParsedText(viewModel.recognizedText, activeScalp: activeScalp)
+                            if viewModel.parsedProduct != nil {
+                                viewModel.stopSession()
+                                showDetailSheet = true
+                            }
                         }
                     } label: {
                         Text(viewModel.recognizedText.isEmpty ? "Scanning..." : "Evaluate Ingredients")
@@ -443,17 +481,44 @@ struct ScannerView: View {
                     .padding(.bottom, 36)
                 }
             }
+            
+            // Loading Overlay when querying PubChem
+            if viewModel.isAnalyzing {
+                Color.black.opacity(0.65)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .hcBrown))
+                        .scaleEffect(1.5)
+                        .padding()
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(radius: 5)
+                    
+                    VStack(spacing: 8) {
+                        Text("Querying PubChem Database...")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        if viewModel.totalCount > 0 {
+                            Text("Analyzing ingredient \(viewModel.processedCount) of \(viewModel.totalCount)")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
+                }
+            }
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
             Task {
                 if let data = try? await newItem.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
-                    viewModel.analyzeImage(image, activeScalp: activeScalp) {
-                        if viewModel.parsedProduct != nil {
-                            viewModel.stopSession()
-                            showDetailSheet = true
-                        }
+                    await viewModel.analyzeImage(image, activeScalp: activeScalp)
+                    if viewModel.parsedProduct != nil {
+                        viewModel.stopSession()
+                        showDetailSheet = true
                     }
                 }
             }
@@ -497,6 +562,10 @@ struct ManualProductEntryView: View {
     @State private var brand = ""
     @State private var category = ProductCategory.shampoo
     @State private var ingredientsText = ""
+    
+    @State private var isAnalyzing = false
+    @State private var processedCount = 0
+    @State private var totalCount = 0
     
     var activeScalp: ScalpCondition {
         store.latestScanReport?.scalpCondition ?? .normal
@@ -580,25 +649,52 @@ struct ManualProductEntryView: View {
                             let rawItems = ingredientsText.components(separatedBy: CharacterSet(charactersIn: ",;.\n"))
                             let cleaned = rawItems.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
                             
-                            let evaluation = RecommendationEngine.evaluateProduct(ingredients: cleaned, against: activeScalp)
+                            isAnalyzing = true
+                            processedCount = 0
+                            totalCount = cleaned.count
                             
-                            let newProduct = Product(
-                                id: UUID(),
-                                name: name,
-                                brand: brand.isEmpty ? "Unknown Brand" : brand,
-                                ingredients: cleaned,
-                                compatibility: evaluation.rating,
-                                category: category,
-                                scannedAt: Date()
-                            )
-                            
-                            onComplete(newProduct)
-                            dismiss()
+                            Task {
+                                var analyzed: [FlaggedIngredient] = []
+                                for item in cleaned {
+                                    let result = await PubChemService.shared.analyzeIngredient(item, against: activeScalp)
+                                    analyzed.append(result)
+                                    processedCount += 1
+                                }
+                                
+                                let evaluation = RecommendationEngine.evaluateProduct(
+                                    ingredients: cleaned,
+                                    analyzedIngredients: analyzed,
+                                    against: activeScalp
+                                )
+                                
+                                let newProduct = Product(
+                                    id: UUID(),
+                                    name: name,
+                                    brand: brand.isEmpty ? "Unknown Brand" : brand,
+                                    ingredients: cleaned,
+                                    compatibility: evaluation.rating,
+                                    category: category,
+                                    scannedAt: Date()
+                                )
+                                
+                                isAnalyzing = false
+                                onComplete(newProduct)
+                                dismiss()
+                            }
                         } label: {
-                            Text("Analyze Product")
+                            if isAnalyzing {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    Text("Analyzing (\(processedCount)/\(totalCount))...")
+                                }
                                 .hcPrimaryButton()
+                            } else {
+                                Text("Analyze Product")
+                                    .hcPrimaryButton()
+                            }
                         }
-                        .disabled(name.isEmpty || ingredientsText.isEmpty)
+                        .disabled(name.isEmpty || ingredientsText.isEmpty || isAnalyzing)
                         .padding(.top, 8)
                     }
                     .padding(20)

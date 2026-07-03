@@ -7,17 +7,15 @@ struct ProductDetailView: View {
     
     @Environment(AppDataStore.self) private var store
     @State private var notes: String = ""
+    @State private var flaggedIngredients: [FlaggedIngredient] = []
+    @State private var isLoading = false
     
     var activeScalp: ScalpCondition {
         store.latestScanReport?.scalpCondition ?? .normal
     }
     
-    var evaluationResult: (rating: CompatibilityRating, flaggedIngredients: [FlaggedIngredient]) {
-        RecommendationEngine.evaluateProduct(ingredients: product.ingredients, against: activeScalp)
-    }
-    
     var overallRecommendation: (title: String, description: String, color: Color, backgroundColor: Color, icon: String) {
-        switch evaluationResult.rating {
+        switch product.compatibility {
         case .safe:
             return (
                 "Good for your Hair",
@@ -135,7 +133,16 @@ struct ProductDetailView: View {
                             .tracking(1)
                             .padding(.horizontal, 20)
                         
-                        if evaluationResult.flaggedIngredients.isEmpty {
+                        if isLoading {
+                            HStack {
+                                Spacer()
+                                ProgressView("Checking safety data...")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                            }
+                            .padding(.vertical, 24)
+                        } else if flaggedIngredients.isEmpty {
                             HStack(spacing: 12) {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 20))
@@ -157,7 +164,7 @@ struct ProductDetailView: View {
                             // Flagged carousel / scrollable cards
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
-                                    ForEach(evaluationResult.flaggedIngredients) { flag in
+                                    ForEach(flaggedIngredients) { flag in
                                         FlaggedIngredientCard(flag: flag)
                                     }
                                 }
@@ -235,6 +242,18 @@ struct ProductDetailView: View {
             }
         }
         .background(Color.hcCream.ignoresSafeArea())
+        .task {
+            isLoading = true
+            var resolved: [FlaggedIngredient] = []
+            for ingredient in product.ingredients {
+                let flag = await PubChemService.shared.analyzeIngredient(ingredient, against: activeScalp)
+                if flag.rating != .safe {
+                    resolved.append(flag)
+                }
+            }
+            self.flaggedIngredients = resolved
+            isLoading = false
+        }
     }
 }
 
@@ -252,9 +271,9 @@ struct FlaggedIngredientCard: View {
     
     var elementLabel: String {
         switch flag.rating {
-        case .safe: return "GOOD ELEMENT"
+        case .safe: return "SAFE ELEMENT"
         case .caution: return "CAUTION ELEMENT"
-        case .hazard: return "BAD ELEMENT"
+        case .hazard: return "HAZARD ELEMENT"
         }
     }
     
@@ -266,31 +285,67 @@ struct FlaggedIngredientCard: View {
                     .frame(width: 8, height: 8)
                 
                 Text(elementLabel)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundColor(cardColor)
+                
+                if let signal = flag.signalWord {
+                    Text(signal.uppercased())
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(cardColor)
+                        .cornerRadius(4)
+                }
                 
                 Spacer()
             }
             
-            Text(flag.name)
-                .font(.system(size: 16, weight: .bold))
+            Text(flag.name.capitalized)
+                .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.black)
                 .lineLimit(1)
             
-            Text(flag.rule.name)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
+            if !flag.ghsCodes.isEmpty {
+                Text("GHS: \(flag.ghsCodes.prefix(4).joined(separator: ", "))")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.secondary)
+            }
+            
+            Text(flag.explanation)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(.primary.opacity(0.8))
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
             
             Divider()
             
-            Text(flag.explanation)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundColor(.primary.opacity(0.8))
-                .lineLimit(4)
-                .multilineTextAlignment(.leading)
+            // Research Links
+            VStack(alignment: .leading, spacing: 6) {
+                Text("RESEARCH SOURCES")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .tracking(0.5)
+                
+                ForEach(flag.researchLinks.prefix(2)) { link in
+                    Link(destination: URL(string: link.url)!) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "safari")
+                                .font(.system(size: 9))
+                            Text(link.source)
+                                .font(.system(size: 10, weight: .semibold))
+                                .underline()
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 8))
+                        }
+                        .foregroundColor(.hcBrown)
+                    }
+                }
+            }
         }
-        .padding(16)
-        .frame(width: 260, height: 190)
+        .padding(14)
+        .frame(width: 250, height: 235)
         .background(Color.white)
         .cornerRadius(16)
         .overlay(

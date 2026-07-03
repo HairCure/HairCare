@@ -46,19 +46,23 @@ struct Product: Identifiable, Codable, Hashable {
     var notes: String?
 }
 
-// MARK: - Ingredient Rule
-struct IngredientRule: Codable, Hashable {
-    let name: String
-    let synonyms: [String]
-    let hazardProfile: [ScalpCondition: CompatibilityRating]
-    let explanation: String
+// MARK: - Research Link
+struct ResearchLink: Codable, Hashable, Identifiable {
+    var id: String { source }
+    let source: String
+    let url: String
 }
 
 // MARK: - Flagged Ingredient
 struct FlaggedIngredient: Identifiable, Codable, Hashable {
     var id: String { name }
     let name: String
-    let rule: IngredientRule
+    let cid: Int?
     let rating: CompatibilityRating
+    let signalWord: String?
+    let ghsCodes: [String]
+    let hazardStatements: [String]
     let explanation: String
+    let researchLinks: [ResearchLink]
 }
+
