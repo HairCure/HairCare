@@ -192,29 +192,10 @@ struct RecommendationEngine {
         default:      return "refer_doctor"
         }
         
-        let letter: String
-        switch profile {
-        case .poor:     letter = "A"
-        case .moderate: letter = "B"
-        case .good:     letter = "C"
-        }
-        
-        return "\(stageNum)\(letter)"
+        return "Stage \(stageNum)"
     }
     
     // MARK: STEP 4 — MindEase Session Schedule
-    //
-    //  Plan  | Meditation | Yoga    | Sounds  | Freq/week
-    //  ─────────────────────────────────────────────────
-    //  1A    | 15 min     | 30 min  | 10 min  | 7 (daily)
-    //  1B    | 10 min     | 20 min  | 10 min  | 4×/week
-    //  1C    | 10 min     |  0 min  | 10 min  | 3×/week
-    //  2A    | 20 min     | 45 min  | 15 min  | 7 (daily)
-    //  2B    | 15 min     | 30 min  | 10 min  | 5×/week
-    //  2C    | 10 min     | 30 min  | 10 min  | 4×/week
-    //  3A    | 20 min     | 45 min  | 20 min  | 7 (daily)
-    //  3B    | 20 min     | 30 min  | 15 min  | 7 (daily)
-    //  3C    | 15 min     | 30 min  | 10 min  | 5×/week
     
     struct SessionSchedule {
         let meditationMinutes: Int
@@ -224,18 +205,30 @@ struct RecommendationEngine {
     }
     
     static func resolveSessionSchedule(planId: String) -> SessionSchedule {
-        switch planId {
-        case "1A": return SessionSchedule(meditationMinutes: 15, yogaMinutes: 30, soundMinutes: 10, frequencyPerWeek: 7)
-        case "1B": return SessionSchedule(meditationMinutes: 10, yogaMinutes: 20, soundMinutes: 10, frequencyPerWeek: 4)
-        case "1C": return SessionSchedule(meditationMinutes: 10, yogaMinutes:  0, soundMinutes: 10, frequencyPerWeek: 3)
-        case "2A": return SessionSchedule(meditationMinutes: 20, yogaMinutes: 45, soundMinutes: 15, frequencyPerWeek: 7)
-        case "2B": return SessionSchedule(meditationMinutes: 15, yogaMinutes: 30, soundMinutes: 10, frequencyPerWeek: 5)
-        case "2C": return SessionSchedule(meditationMinutes: 10, yogaMinutes: 30, soundMinutes: 10, frequencyPerWeek: 4)
-        case "3A": return SessionSchedule(meditationMinutes: 20, yogaMinutes: 45, soundMinutes: 20, frequencyPerWeek: 7)
-        case "3B": return SessionSchedule(meditationMinutes: 20, yogaMinutes: 30, soundMinutes: 15, frequencyPerWeek: 7)
-        case "3C": return SessionSchedule(meditationMinutes: 15, yogaMinutes: 30, soundMinutes: 10, frequencyPerWeek: 5)
-        default:   return SessionSchedule(meditationMinutes:  0, yogaMinutes:  0, soundMinutes:  0, frequencyPerWeek: 0)
+        if planId == "refer_doctor" {
+            return SessionSchedule(meditationMinutes: 0, yogaMinutes: 0, soundMinutes: 0, frequencyPerWeek: 0)
         }
+        
+        let stageNum: Int
+        if planId.contains("1") {
+            stageNum = 1
+        } else if planId.contains("3") {
+            stageNum = 3
+        } else {
+            stageNum = 2
+        }
+        
+        let meditation = stageNum * 5 + 5
+        let yoga = stageNum * 10 + 10
+        let sound = 10
+        let freq = 4
+        
+        return SessionSchedule(
+            meditationMinutes: meditation,
+            yogaMinutes: yoga,
+            soundMinutes: sound,
+            frequencyPerWeek: freq
+        )
     }
     
     // MARK: STEP 5 — BMR / TDEE / Nutrition Pipeline
@@ -605,106 +598,63 @@ struct RecommendationEngine {
     }
     
     static func buildHairCareRoutine(for plan: UserPlan) -> [HairCareRoutine] {
+        var routines: [HairCareRoutine] = []
+        let condition = plan.scalpModifier
         
-        switch plan.scalpModifier {
-            
+        let washFreq: String
+        let washDetails: String
+        let careFreq: String
+        let careDetails: String
+        let washIcon: String = "shower"
+        let careIcon: String = "drop.fill"
+        
+        switch condition {
         case .dry:
-            return [
-                HairCareRoutine(
-                    iconName: "shower",
-                    cardHeading: "Gentle Wash Routine",
-                    applyingFrequency: "Every 3 days",
-                    summary: "Use a sulphate free shampoo to gently cleanse without stripping the little natural oil your dry scalp produces."
-                ),
-                HairCareRoutine(
-                    iconName: "drop.fill",
-                    cardHeading: "Deep Moisture Oiling",
-                    applyingFrequency: "2× per week",
-                    summary: "Warm coconut or almond oil pre wash to replenish scalp moisture and strengthen hair follicles starved by low sebum production."
-                )
-            ]
-            
+            washFreq = "Every 3 days"
+            washDetails = "Use a sulfate-free shampoo to gently cleanse without stripping the little natural oil your dry scalp produces."
+            careFreq = "2× per week"
+            careDetails = "Warm coconut or almond oil pre-wash to replenish scalp moisture and strengthen hair follicles starved by low sebum production."
         case .dandruff:
-            return [
-                HairCareRoutine(
-                    iconName: "shower",
-                    cardHeading: "Anti-Dandruff Wash",
-                    applyingFrequency: "Every 2 days",
-                    summary: "Use a zinc pyrithione or ketoconazole shampoo to target Malassezia fungus, the primary cause of dandruff in men."
-                ),
-                HairCareRoutine(
-                    iconName: "drop.fill",
-                    cardHeading: "Scalp Treatment Oiling",
-                    applyingFrequency: "1× per week",
-                    summary: "Apply warm neem or tea tree oil to the scalp before wash day to soothe irritation and reduce flaking between washes."
-                )
-            ]
-            
+            washFreq = "Every 2 days"
+            washDetails = "Use a zinc pyrithione or ketoconazole shampoo to target Malassezia fungus, the primary cause of dandruff in men."
+            careFreq = "1× per week"
+            careDetails = "Apply warm neem or tea tree oil to the scalp before wash day to soothe irritation and reduce flaking between washes."
         case .oily:
-            return [
-                HairCareRoutine(
-                    iconName: "shower",
-                    cardHeading: "Clarifying Wash",
-                    applyingFrequency: "Every 2 days",
-                    summary: "Use a clarifying shampoo to remove excess sebum driven by androgens, which cause faster oil buildup in men."
-                ),
-                HairCareRoutine(
-                    iconName: "leaf.fill",
-                    cardHeading: "Lightweight Scalp Care",
-                    applyingFrequency: "Skip heavy oiling",
-                    summary: "Avoid heavy scalp oils. Use a light leave in serum with salicylic acid on wash days to regulate sebum without clogging follicles."
-                )
-            ]
-            
+            washFreq = "Every 2 days"
+            washDetails = "Use a clarifying shampoo to remove excess sebum driven by androgens, which cause faster oil buildup in men."
+            careFreq = "Skip heavy oiling"
+            careDetails = "Avoid heavy scalp oils. Use a light leave-in serum with salicylic acid on wash days to regulate sebum without clogging follicles."
         case .inflamed:
-            return [
-                HairCareRoutine(
-                    iconName: "shower",
-                    cardHeading: "Soothing Wash Routine",
-                    applyingFrequency: "Every 3–4 days",
-                    summary: "Use fragrance free, sulphate-free shampoo to avoid aggravating scalp inflammation linked to stress and DHT sensitivity."
-                ),
-                HairCareRoutine(
-                    iconName: "drop.fill",
-                    cardHeading: "Calming Oil Treatment",
-                    applyingFrequency: "2× per week",
-                    summary: "Apply diluted lavender or chamomile oil to reduce redness and calm irritated follicles before wash day."
-                )
-            ]
-            
-        case .notAssessed, .normal:
-            return [
-                HairCareRoutine(
-                    iconName: "shower",
-                    cardHeading: "Balanced Wash Routine",
-                    applyingFrequency: "Every 2–3 days",
-                    summary: "Use a mild, pH-balanced shampoo to maintain your scalp's healthy oil levels and keep follicles clean."
-                ),
-                HairCareRoutine(
-                    iconName: "drop.fill",
-                    cardHeading: "Nourishing Oil Pre-Wash",
-                    applyingFrequency: "1–2× per week",
-                    summary: "Coconut or bhringraj oil pre wash to maintain follicle strength and support healthy hair growth cycles."
-                )
-            ]
+            washFreq = "Every 3–4 days"
+            washDetails = "Use fragrance-free, sulphate-free shampoo to avoid aggravating scalp inflammation linked to stress and DHT sensitivity."
+            careFreq = "2× per week"
+            careDetails = "Apply diluted lavender or chamomile oil to reduce redness and calm irritated follicles before wash day."
+        default:
+            washFreq = "Every 2–3 days"
+            washDetails = "Use a mild, pH-balanced shampoo to maintain your scalp's healthy oil levels and keep follicles clean."
+            careFreq = "1–2× per week"
+            careDetails = "Coconut or bhringraj oil pre-wash to maintain follicle strength and support healthy hair growth cycles."
         }
+        
+        routines.append(HairCareRoutine(iconName: washIcon, cardHeading: "Scalp Wash Routine", applyingFrequency: washFreq, summary: washDetails))
+        routines.append(HairCareRoutine(iconName: careIcon, cardHeading: "Follicle Care Treatment", applyingFrequency: careFreq, summary: careDetails))
+        
+        return routines
     }
     
     // MARK: Plan Summary Text
     
     static func planSummaryText(for planId: String) -> String {
-        switch planId {
-        case "1A": return "High-nutrient diet reset + intensive stress sessions + gentle scalp care"
-        case "1B": return "Targeted nutrient boosts + light mindfulness + habit corrections"
-        case "1C": return "Maintenance diet + preventive hair insights + monthly check-in"
-        case "2A": return "Aggressive nutrient plan + daily MindEase + structured hair care + weekly tracking"
-        case "2B": return "Targeted diet gaps + regular stress sessions + corrected hair routine"
-        case "2C": return "Maintain good habits + advanced insights + biweekly assessment reminder"
-        case "3A": return "Maximum intervention — strict diet, daily sessions, intensive care, doctor watch"
-        case "3B": return "Lifestyle boost + intensive MindEase + doctor consultation encouraged"
-        case "3C": return "Sustain habits + scalp health focus + strong doctor referral prompt"
-        default:   return "Please consult a dermatologist for personalised treatment."
+        guard planId != "refer_doctor" else {
+            return "Please consult a dermatologist for professional medical assessment."
         }
+        
+        let stageNum: String
+        if planId.contains("1") { stageNum = "1" }
+        else if planId.contains("3") { stageNum = "3" }
+        else { stageNum = "2" }
+        
+        return "Stage \(stageNum) hair thinning support with targeted lifestyle corrections, regular mindfulness, and scalp care."
     }
     
     // MARK: Plan Description Builder
@@ -761,6 +711,14 @@ struct RecommendationEngine {
         scores: LifestyleScores
     ) -> PlanContent {
         
+        let stageNum: String
+        if planId.contains("1") { stageNum = "1" }
+        else if planId.contains("3") { stageNum = "3" }
+        else { stageNum = "2" }
+        
+        let title = "Stage \(stageNum) Recovery Plan"
+        let summary = "This plan targets Stage \(stageNum) hair loss. Guided daily targets will help you rebuild follicle resilience."
+        
         let stressNote = weakest == .stress
         ? " Stress is your biggest driver — Bhramari pranayama is your priority session."
         : " Consistency in daily sessions reduces the cortisol driving your hair fall."
@@ -771,98 +729,19 @@ struct RecommendationEngine {
         ? " Diet is your most critical gap — even one nutrient-rich meal makes a difference today."
         : ""
         
-        switch planId {
-        case "1A":
-            return PlanContent(
-                title: "Early Stage — Full Lifestyle Reset",
-                summary: "Hair loss is in the early stage, but your lifestyle needs a complete reset. Consistent changes now can stop and reverse this.",
-                dietFocus: "Focus on biotin (eggs, almonds) and zinc-rich foods (pumpkin seeds, lentils) at every meal.\(dietNote)",
-                mindEaseFocus: "Daily 55-min sessions (15 min meditation + 30 min yoga + 10 min sounds).\(stressNote)",
-                hairCareFocus: "Wash every 2–3 days. Oil twice weekly. Switch to sulphate-free shampoo.",
-                insightsFocus: "Nutrition tips and early-stage hair loss science. Weekly progress tracking."
-            )
-        case "1B":
-            return PlanContent(
-                title: "Early Stage — Targeted Correction",
-                summary: "Early hair loss with a fairly balanced lifestyle. A few targeted corrections will stop the progression.",
-                dietFocus: "Diet is moderately good. Close iron and zinc gaps — add spinach, lentils, and eggs more regularly.",
-                mindEaseFocus: "4×/week, 40 min per session.\(sleepNote)\(stressNote)",
-                hairCareFocus: "Maintain current routine. If washing daily, switch to every 2–3 days.",
-                insightsFocus: "Maintenance tips and progress monitoring. You're on track."
-            )
-        case "1C":
-            return PlanContent(
-                title: "Early Stage — Maintain & Prevent",
-                summary: "Excellent lifestyle! Hair loss is early and may be stress or seasonal. Maintain habits and monitor progress.",
-                dietFocus: "Diet is strong. Continue high-nutrient choices. Focus on Omega-3 for scalp health.",
-                mindEaseFocus: "Light 3×/week sessions — 20 min each. Focus on relaxation sounds before sleep.",
-                hairCareFocus: "Your routine is good. Oil once a week as preventive care.",
-                insightsFocus: "Progress monitoring and preventive care tips."
-            )
-        case "2A":
-            return PlanContent(
-                title: "Moderate Stage — Intensive Recovery",
-                summary: "Moderate hair loss combined with poor lifestyle. This requires an aggressive, consistent approach across diet, mind, and hair care.",
-                dietFocus: "Every meal must be nutrient-dense. Target biotin, zinc, and iron at every slot. Eliminate junk food entirely.\(dietNote)",
-                mindEaseFocus: "Daily 80-min sessions (20 min meditation + 45 min yoga + 15 min sounds).\(stressNote)",
-                hairCareFocus: "Structured routine: wash every 2–3 days, oil twice weekly, sulphate-free shampoo.",
-                insightsFocus: "Stage 2 science, cortisol impact, deficiency connections. Weekly progress tracking."
-            )
-        case "2B":
-            return PlanContent(
-                title: "Moderate Stage — Gap Correction",
-                summary: "Moderate hair loss with a fairly balanced lifestyle. Filling specific gaps will reverse the progression.",
-                dietFocus: "Fix identified diet gaps — likely iron or protein. Add one high-protein meal daily.",
-                mindEaseFocus: "5×/week, 55 min per session.\(sleepNote)\(stressNote)",
-                hairCareFocus: "Correct washing frequency. Add oiling twice a week if not already.",
-                insightsFocus: "Stage 2 recovery tips and biweekly progress monitoring."
-            )
-        case "2C":
-            return PlanContent(
-                title: "Moderate Stage — Sustain & Watch",
-                summary: "Good lifestyle but moderate hair loss. Continue habits and watch for further progression.",
-                dietFocus: "Excellent diet. Maintain Omega-3 intake (flaxseeds, walnuts) to support scalp health.",
-                mindEaseFocus: "4×/week, 50 min. Continue current practice.",
-                hairCareFocus: "Maintain strong routine. Add weekly scalp massage for blood circulation.",
-                insightsFocus: "Stage 2 monitoring tips. Biweekly re-assessment recommended."
-            )
-        case "3A":
-            return PlanContent(
-                title: "Advanced Stage — Maximum Intervention",
-                summary: "Significant hair loss with poor lifestyle. Most intensive non-medical plan. Doctor consultation strongly encouraged.",
-                dietFocus: "Maximum nutrient density at every meal. Biotin, zinc, iron, and Omega-3 at every slot. Zero junk food.",
-                mindEaseFocus: "Daily 85-min sessions (20 min meditation + 45 min yoga + 20 min sounds). Cortisol reduction is non-negotiable.",
-                hairCareFocus: "Intensive scalp care. Oiling 3× weekly. Gentle washing only.",
-                insightsFocus: "Stage 3 recovery information, doctor referral guidance, and weekly progress monitoring."
-            )
-        case "3B":
-            return PlanContent(
-                title: "Advanced Stage — Lifestyle Boost",
-                summary: "Significant hair loss but moderate lifestyle. Improving consistency slows progression significantly. Doctor consultation encouraged.",
-                dietFocus: "Intensify nutrient density. Iron (spinach, fish) and zinc (pumpkin seeds) as priority nutrients.",
-                mindEaseFocus: "Daily 65-min sessions. Stress management is critical at Stage 3.",
-                hairCareFocus: "Structured weekly routine. Oiling twice a week minimum.",
-                insightsFocus: "Stage 3 insights, doctor consultation information, and weekly tracking."
-            )
-        case "3C":
-            return PlanContent(
-                title: "Advanced Stage — Sustain & Consult",
-                summary: "Good lifestyle but significant hair loss — genetic or medical factors likely. Doctor consultation strongly recommended.",
-                dietFocus: "Diet is strong. Ensure Omega-3 and Vitamin D are consistent.",
-                mindEaseFocus: "5×/week sessions to maintain stress levels.",
-                hairCareFocus: "Maintain excellent routine. Consider dermatologist-recommended topical treatments.",
-                insightsFocus: "Doctor consultation guidance, genetic factors, and monitoring tips."
-            )
-        default:
-            return PlanContent(
-                title: "Your Personalised Plan",
-                summary: planSummaryText(for: planId),
-                dietFocus: "Follow the recommended meal plan.",
-                mindEaseFocus: "Complete daily MindEase sessions.",
-                hairCareFocus: "Follow the hair care routine.",
-                insightsFocus: "Check Hair Insights for personalised tips."
-            )
-        }
+        let dietFocus = "Focus on biotin (eggs, almonds) and zinc-rich foods (pumpkin seeds, lentils) at every meal.\(dietNote)"
+        let mindEaseFocus = "Daily sessions tailored to your schedule. Cortisol reduction is key.\(sleepNote)\(stressNote)"
+        let hairCareFocus = "Wash and oil according to your scalp condition. Avoid harsh chemicals."
+        let insightsFocus = "Check Hair Insights for details on follicle recovery and monthly progress tracking."
+        
+        return PlanContent(
+            title: title,
+            summary: summary,
+            dietFocus: dietFocus,
+            mindEaseFocus: mindEaseFocus,
+            hairCareFocus: hairCareFocus,
+            insightsFocus: insightsFocus
+        )
     }
     
     // MARK: Private Helpers
@@ -937,20 +816,9 @@ private extension Float {
 // MARK: - Plan Display Name Extension
 
 extension String {
-    /// Converts an internal plan code (e.g. "2A") into a user-friendly display name.
+    /// Converts an internal plan code into a user-friendly display name.
     var planDisplayName: String {
-        switch self {
-        case "1A": return "Fresh Start"
-        case "1B": return "Early Revival"
-        case "1C": return "Stay Strong"
-        case "2A": return "Deep Recovery"
-        case "2B": return "Steady Growth"
-        case "2C": return "Growth Guard"
-        case "3A": return "Total Renewal"
-        case "3B": return "Active Repair"
-        case "3C": return "Resilience Plan"
-        case "refer_doctor": return "Specialist Care"
-        default: return self
-        }
+        if self == "refer_doctor" { return "Specialist Care" }
+        return self
     }
 }

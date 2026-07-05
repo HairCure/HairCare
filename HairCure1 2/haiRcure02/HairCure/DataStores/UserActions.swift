@@ -232,7 +232,7 @@ extension AppDataStore {
         rightURL: String? = nil,
         backURL: String? = nil,
         topURL: String? = nil
-    ) -> ActionResult {
+    ) async -> ActionResult {
         
         guard let profile    = currentProfile,
               let assessment = assessments.last(where: { $0.userId == currentUserId }),
@@ -271,7 +271,7 @@ extension AppDataStore {
         case .notAssessed: densityPercent = -1
         }
         
-        return runEngineAndApply(
+        return await runEngineAndApply(
             scanId: scanId,
             stage: stage, scalp: scalp,
             density: density, densityPercent: densityPercent,
@@ -445,7 +445,7 @@ extension AppDataStore {
         rightURL: String? = nil,
         backURL: String? = nil,
         topURL: String? = nil
-    ) -> ActionResult {
+    ) async -> ActionResult {
         
         guard let profile    = currentProfile,
               let assessment = assessments.last(where: { $0.userId == currentUserId })
@@ -464,7 +464,7 @@ extension AppDataStore {
             )
             
             if update.shouldUpdate {
-                let result = submitSelfAssessedStage(
+                let result = await submitSelfAssessedStage(
                     stage: stage, scalp: scalp,
                     density: density, scanType: .monthly,
                     frontURL: frontURL, leftURL: leftURL,
@@ -525,7 +525,7 @@ extension AppDataStore {
             }
         }
         
-        return submitSelfAssessedStage(
+        return await submitSelfAssessedStage(
             stage: stage, scalp: scalp, density: density, scanType: .monthly,
             frontURL: frontURL, leftURL: leftURL, rightURL: rightURL, backURL: backURL, topURL: topURL
         )
@@ -642,7 +642,7 @@ extension AppDataStore {
         source: AnalysisSource,
         profile: UserProfile,
         assessment: Assessment
-    ) -> ActionResult {
+    ) async -> ActionResult {
         
         let age      = Int(pickerValue(for: "age",    assessment: assessment, default: 22))
         let heightCm = pickerValue(for: "height", assessment: assessment, default: 170)
@@ -658,10 +658,35 @@ extension AppDataStore {
             userProfiles[idx].weightKg   = weightKg
         }
         
+        // Format assessment answers for the AI prompt
+        var answersDict: [String: String] = [:]
+        let activeAnswers = userAnswers.filter { $0.assessmentId == assessment.id }
+        for answer in activeAnswers {
+            guard let question = questions.first(where: { $0.id == answer.questionId }) else { continue }
+            let ansText: String
+            if let optId = answer.selectedOptionId,
+               let option = questionOptions.first(where: { $0.id == optId }) {
+                ansText = option.optionText
+            } else if !answer.selectedOptionIds.isEmpty {
+                let optionsTexts = answer.selectedOptionIds.compactMap { oid in
+                    questionOptions.first(where: { $0.id == oid })?.optionText
+                }
+                ansText = optionsTexts.joined(separator: ", ")
+            } else if let pickVal = answer.pickerValue {
+                ansText = "\(pickVal) \(question.pickerUnit ?? "")"
+            } else if let txt = answer.answerText {
+                ansText = txt
+            } else {
+                ansText = "No answer"
+            }
+            answersDict[question.questionText] = ansText
+        }
+        
+        // ── Step 1: Immediately build and apply the base plan locally ──
         let input = EngineInput(
             userId:            currentUserId,
             assessmentId:      assessment.id,
-            answers:           userAnswers.filter { $0.assessmentId == assessment.id },
+            answers:           activeAnswers,
             hairFallStage:     stage,
             scalpCondition:    scalp,
             hairDensityLevel:  density,
@@ -676,46 +701,98 @@ extension AppDataStore {
         )
         
         let output = RecommendationEngine.run(input: input, store: self)
+        
         RecommendationEngine.applyToStore(output, store: self)
+        
+        // ── Step 2: Trigger AI weekly plan generation in the background ──
+        let userId = currentUserId
+        let planId = output.userPlan.id
+        let isGuest = isGuestUser
+        
+        Task {
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let logURL = docs.appendingPathComponent("ai_task_log.txt")
+            try? "Started task at \(Date())".write(to: logURL, atomically: true, encoding: .utf8)
+            
+            do {
+                let weeklyPlan = try await AIRecommendationService.shared.generateWeeklyPlan(
+                    age: age,
+                    heightCm: heightCm,
+                    weightKg: weightKg,
+                    activityLevel: activity.rawValue,
+                    hairFallStage: stage.displayName,
+                    scalpCondition: scalp.rawValue,
+                    hairDensity: density.rawValue,
+                    hairType: hairType ?? "Not Assessed",
+                    answers: answersDict
+                )
+                
+                try? "API Succeeded at \(Date())".write(to: logURL, atomically: true, encoding: .utf8)
+                
+                // Update in-memory userPlan
+                await MainActor.run {
+                    if let idx = self.userPlans.firstIndex(where: { $0.id == planId }) {
+                        self.userPlans[idx].aiWeeklyPlan = weeklyPlan
+                        print("Background AI plan attached successfully.")
+                    }
+                }
+                
+                // Persist the plan locally inside Documents directory
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = .prettyPrinted
+                if let encodedData = try? encoder.encode(weeklyPlan) {
+                    let fileURL = docs.appendingPathComponent("ai_plan_\(userId).json")
+                    try? encodedData.write(to: fileURL)
+                    print("AI weekly plan persisted to \(fileURL.path)")
+                }
+                
+                // Save updated plan to Supabase if not guest
+                if !isGuest {
+                    if let plan = self.userPlans.first(where: { $0.id == planId }) {
+                        await BackendService.shared.saveUserPlan(
+                            plan: plan,
+                            userId: userId
+                        )
+                        print("AI-enriched plan updated in Supabase.")
+                    }
+                }
+            } catch {
+                let errMsg = "API Failed at \(Date()): \(error.localizedDescription)\nFull details: \(error)"
+                print(errMsg)
+                try? errMsg.write(to: logURL, atomically: true, encoding: .utf8)
+                
+                // Try loading from local cache if exists
+                let fileURL = docs.appendingPathComponent("ai_plan_\(userId).json")
+                if let data = try? Data(contentsOf: fileURL),
+                   let plan = try? JSONDecoder().decode(AIWeeklyPlan.self, from: data) {
+                    await MainActor.run {
+                        if let idx = self.userPlans.firstIndex(where: { $0.id == planId }) {
+                            self.userPlans[idx].aiWeeklyPlan = plan
+                            print("Loaded cached AI plan from disk as fallback.")
+                        }
+                    }
+                }
+            }
+        }
         
         if output.userPlan.planId == "refer_doctor" {
             return .referDoctor(message: output.planDescription.doctorReferralMessage ?? "")
         }
-        // Save to backend (skip for guests — data migrates on sign-up)
+        // Save base plan to backend (skip for guests)
         if !isGuestUser {
             let scanToSave = scalpScans.last(where: { $0.id == scanId })
             let reportToSave = scanReports.last(where: { $0.scalpScanId == scanId })
-            let userId = currentUserId
             
             Task {
-                // Save scalp scan
                 if let scan = scanToSave {
-                    await BackendService.shared.saveScalpScan(
-                        scan: scan,
-                        userId: userId
-                    )
+                    await BackendService.shared.saveScalpScan(scan: scan, userId: userId)
                 }
-                
-                // Save scan report
                 if let report = reportToSave {
-                    await BackendService.shared.saveScanReport(
-                        report: report,
-                        userId: userId
-                    )
+                    await BackendService.shared.saveScanReport(report: report, userId: userId)
                 }
-                
-                // Save plan
-                await BackendService.shared.saveUserPlan(
-                    plan: output.userPlan,
-                    userId: userId
-                )
-                
-                // Save nutrition
+                await BackendService.shared.saveUserPlan(plan: output.userPlan, userId: userId)
                 if let nutrition = userNutritionProfiles.first(where: { $0.userId == userId }) {
-                    await BackendService.shared.saveNutritionProfile(
-                        profile: nutrition,
-                        userId: userId
-                    )
+                    await BackendService.shared.saveNutritionProfile(profile: nutrition, userId: userId)
                 }
             }
         }

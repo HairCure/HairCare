@@ -53,12 +53,14 @@ class WeeklyScanViewModel {
         let totalDuration = Double(analysisSteps.count) * stepInterval + 0.40
         DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) { [weak self] in
             guard let self = self else { return }
-            let report = self.deriveAndSubmitResult(store: store)
-            onComplete(report)
+            Task {
+                let report = await self.deriveAndSubmitResult(store: store)
+                onComplete(report)
+            }
         }
     }
     
-    private func deriveAndSubmitResult(store: AppDataStore) -> ScanReport {
+    private func deriveAndSubmitResult(store: AppDataStore) async -> ScanReport {
         let prior = store.latestScanReport
         
         let baseDensity = prior?.hairDensityPercent ?? 65.0
@@ -80,7 +82,7 @@ class WeeklyScanViewModel {
         let frontPath = photo2.map { saveImageLocally($0, prefix: "front") } ?? ""
         let sidePath = photo3.map { saveImageLocally($0, prefix: "side") } ?? ""
         
-        store.submitWeeklyScan(
+        _ = await store.submitWeeklyScan(
             stage:   baseStage,
             scalp:   baseScalp,
             density: newLevel,

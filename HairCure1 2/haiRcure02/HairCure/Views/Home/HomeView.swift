@@ -492,6 +492,7 @@ struct HomeFeatureCardsSectionView: View {
     var body: some View {
         VStack(spacing: 20) {
             HomeTodaySectionView(viewModel: viewModel, store: store)
+            HomeWeeklyPlanCardView(store: store)
             HomeMealLogSectionView(viewModel: viewModel, store: store)
             HomeWaterCardCompactView(viewModel: viewModel, store: store, healthKit: healthKit)
             HomeSleepCardCompactView(viewModel: viewModel, healthKit: healthKit)
@@ -1075,5 +1076,56 @@ struct HomeDailyTipCardView: View {
         .background(Color.white)
         .cornerRadius(18)
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+    }
+}
+
+struct HomeWeeklyPlanCardView: View {
+    var store: AppDataStore
+    
+    var body: some View {
+        let activePlan = store.activePlan
+        let planTitle = activePlan?.aiWeeklyPlan?.planTitle ?? "Your 1-Week AI Plan"
+        let planSummary = activePlan?.aiWeeklyPlan?.planSummary ?? "Tap to view your personalized meals, MindEase and hair routine details."
+        
+        return NavigationLink(destination: PlanResultsView(onStart: {}, onRetake: nil)) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(LinearGradient(
+                            colors: [Color.hcBrown, Color.hcBrownLight],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 52, height: 52)
+                    
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(planTitle)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(planSummary)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(18)
+            .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        }
+        .buttonStyle(.plain)
     }
 }

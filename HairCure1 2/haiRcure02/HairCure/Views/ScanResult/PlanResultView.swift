@@ -13,6 +13,7 @@ struct PlanResultsView: View {
     @State private var showReferences = false
     @State private var showAuthSheet  = false
     @State private var showNorwoodSheet = false
+    @State private var selectedDay    = 1
 
     private var report:    ScanReport?           { store.latestScanReport }
     private var plan:      UserPlan?             { store.activePlan }
@@ -51,12 +52,7 @@ struct PlanResultsView: View {
                     swipeableCards
                         .padding(.bottom, 20)
 
-                    planBadgeCard
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-
-                    recommendedPlanSection
-                        .padding(.horizontal, 20)
+                    aiWeeklyPlanSection
                         .padding(.bottom, 20)
 
                     dailyTargetsSection
@@ -298,151 +294,8 @@ struct PlanResultsView: View {
         }
         .padding(.bottom, 10)
     }
-
     
-    // MARK: 4 — Plan Badge Card
-  
-
-    private var planBadgeCard: some View {
-        let stage   = plan?.stage ?? report?.hairFallStage.intValue ?? 2
-        let profile = plan?.lifestyleProfile ?? .poor
-
-        let (profileLabel, profileColor): (String, Color) = {
-            switch profile {
-            case .poor:     return ("Poor lifestyle",     .red)
-            case .moderate: return ("Moderate lifestyle", .orange)
-            case .good:     return ("Good lifestyle",     .green)
-            }
-        }()
-
-        return VStack(spacing: 14) {
-            Text((plan?.planId ?? "2A").planDisplayName)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.primary)
-
-            Text("Your personalised hair recovery plan")
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 10) {
-                HStack(spacing: 6) {
-                    Circle().fill(stageColor(stage)).frame(width: 8, height: 8)
-                    Text("Stage \(stage)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(stageColor(stage))
-                }
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(stageColor(stage).opacity(0.12))
-                .cornerRadius(20)
-
-                Text(profileLabel)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(profileColor)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(profileColor.opacity(0.12))
-                    .cornerRadius(20)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
-        .background(Color.white)
-        .cornerRadius(20)
-    }
-
-    // MARK: 5 — Recommended Plan Section
-    
-    private var recommendedPlanSection: some View {
-        let scalp = plan?.scalpModifier ?? report?.scalpCondition ?? .dry
-        let np    = nutrition
-
-        var items: [(icon: String, iconBg: Color, iconFg: Color, title: String, subtitle: String)] = []
-
-        items.append((
-            icon:     "leaf.fill",
-            iconBg:   Color(red: 1.0,  green: 0.65, blue: 0.2),
-            iconFg:   .white,
-            title:    "Protein Rich-Diet",
-            subtitle: "For keratin production and hair follicle strength"
-        ))
-        items.append((
-            icon:     "moon.zzz.fill",
-            iconBg:   Color(red: 0.38, green: 0.3, blue: 0.75),
-            iconFg:   .white,
-            title:    "Sleep",
-            subtitle: "Aim for 7–8 hours to reduce cortisol and support hair repair"
-        ))
-        let waterL = np.map { String(format: "%.1f", $0.waterTargetML / 1000) } ?? "2.5"
-        items.append((
-            icon:     "drop.fill",
-            iconBg:   Color(red: 0.15, green: 0.55, blue: 0.9),
-            iconFg:   .white,
-            title:    "Hydration",
-            subtitle: "Drink at least \(waterL)L of water to keep your scalp and body hydrated"
-        ))
-        items.append((
-            icon:     "heart.fill",
-            iconBg:   Color(red: 0.2,  green: 0.72, blue: 0.4),
-            iconFg:   .white,
-            title:    "Stress Management",
-            subtitle: "High stress pushes hair follicles into a resting phase — daily MindEase sessions help"
-        ))
-        let (scalpTitle, scalpSub) = scalpPlanItem(scalp)
-        items.append((
-            icon:     scalpIcon(scalp),
-            iconBg:   Color.hcWarmBrown,
-            iconFg:   .white,
-            title:    scalpTitle,
-            subtitle: scalpSub
-        ))
-
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Recommended Plan")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.primary)
-                .padding(.bottom, 4)
-
-            ForEach(0..<items.count, id: \.self) { i in
-                let item = items[i]
-                recommendCard(
-                    icon:     item.icon,
-                    iconBg:   item.iconBg,
-                    iconFg:   item.iconFg,
-                    title:    item.title,
-                    subtitle: item.subtitle
-                )
-            }
-        }
-    }
-
-    private func recommendCard(
-        icon: String, iconBg: Color, iconFg: Color,
-        title: String, subtitle: String
-    ) -> some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                Circle().fill(iconBg).frame(width: 50, height: 50)
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(iconFg)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.primary)
-                Text(subtitle)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-    }
-
-        // MARK: 6 — Daily Targets Strip
+    // MARK: 6 — Daily Targets Strip
     
     @ViewBuilder
     private var dailyTargetsSection: some View {
@@ -623,6 +476,134 @@ struct PlanResultsView: View {
         guard let p = plan else { return 80 }
         return p.meditationMinutesPerDay + p.yogaMinutesPerDay + p.soundMinutesPerDay
     }
+
+    @ViewBuilder
+    private var aiWeeklyPlanSection: some View {
+        if let plan = plan, let aiPlan = plan.aiWeeklyPlan {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your Personalised 7-Day Schedule")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.primary)
+                    
+                    Text("AI generated day-by-day roadmap for your scalp and lifestyle needs.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 20)
+                
+                // Horizontal day selector
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(aiPlan.dailyPlans) { daily in
+                            let isSelected = selectedDay == daily.dayNumber
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedDay = daily.dayNumber
+                                }
+                            } label: {
+                                Text(daily.dayName)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(isSelected ? .white : .primary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(isSelected ? Color.hcBrown : Color.white)
+                                    .cornerRadius(20)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(isSelected ? Color.hcBrown : Color.black.opacity(0.06), lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 4)
+                    }
+                    
+                    // Card details for active day
+                    if let activeDayPlan = aiPlan.dailyPlans.first(where: { $0.dayNumber == selectedDay }) {
+                        VStack(spacing: 12) {
+                            // Diet card
+                            dailyPlanCard(
+                                icon: "fork.knife",
+                                iconBg: Color(red: 0.9, green: 0.58, blue: 0.18),
+                                title: "What to Eat",
+                                description: activeDayPlan.eat
+                            )
+                            
+                            // MindEase card
+                            dailyPlanCard(
+                                icon: "moon.zzz.fill",
+                                iconBg: Color(red: 0.38, green: 0.3, blue: 0.75),
+                                title: "MindEase Wellness",
+                                description: activeDayPlan.mindEase
+                            )
+                            
+                            // Hair insights / routine card
+                            dailyPlanCard(
+                                icon: "sparkles",
+                                iconBg: Color.hcWarmBrown,
+                                title: "Hair Insight & Routine",
+                                description: activeDayPlan.hairCare
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .trailing)),
+                            removal: .opacity
+                        ))
+                    }
+                }
+                .padding(.vertical, 10)
+            } else {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                            .tint(Color.hcBrown)
+                        Text("Creating your custom 7-day plan using AI...")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+        
+        private func dailyPlanCard(
+            icon: String,
+            iconBg: Color,
+            title: String,
+            description: String
+        ) -> some View {
+            HStack(alignment: .top, spacing: 16) {
+                ZStack {
+                    Circle().fill(iconBg).frame(width: 44, height: 44)
+                    Image(systemName: icon)
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text(description)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+        }
 
     private var compositeRing: some View {
         let score = report?.lifestyleScore ?? 3.25
