@@ -33,8 +33,8 @@ extension AppDataStore {
         //Pre generate report ID so plan can reference it
         let reportId = UUID()
         
-        // Plan re-evaluation
-        var finalPlanId = activePlan?.planId ?? "2A"
+                // Plan re-evaluation
+        var finalPlanId = activePlan?.planId ?? "Stage 2"
         
         if let currentPlan = activePlan {
             let carriedScores = RecommendationEngine.LifestyleScores(

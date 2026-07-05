@@ -321,7 +321,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = haiRcure02/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to take photos of your scalp for AI analysis.";
-				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads your water intake data to display hydration insights.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app writes water intake data to the Health app to track hydration.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -364,7 +363,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = haiRcure02/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to take photos of your scalp for AI analysis.";
-				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads your water intake data to display hydration insights.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app writes water intake data to the Health app to track hydration.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

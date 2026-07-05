@@ -137,7 +137,7 @@ class AppDataStore {
     //   Q6  Hair washing         — hairCareScore (Ranganathan 2010)
     //   Q7  Activity level       — TDEE only, no score
     //  Age / height / weight now read from UserProfile (set in ProfileSetupView)
-    //
+    // 
     //  3 fallback questions unchanged (orderIndex 8, 9, 10)
     
     private func seedQuestions() {
@@ -502,7 +502,7 @@ class AppDataStore {
         hairFallStage: HairFallStage,
         scalpCondition: ScalpCondition,
         hairType: String? = nil
-    ) {
+    ) async {
         guard let scan = scalpScans.last(where: { $0.userId == currentUserId }),
               let assessment = assessments.last(where: { $0.userId == currentUserId }),
               let profile = currentProfile
@@ -510,7 +510,7 @@ class AppDataStore {
         
         scanReports.removeAll(where: { $0.scalpScanId == scan.id })
         
-        let result = runEngineAndApply(
+        let result = await runEngineAndApply(
             scanId: scan.id,
             stage: hairFallStage,
             scalp: scalpCondition,
@@ -592,7 +592,14 @@ class AppDataStore {
             }
 
             // ── Restore active user plan + seed MindEase targets ──
-            if let plan = plan {
+            if var plan = plan {
+                let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let fileURL = docs.appendingPathComponent("ai_plan_\(userId).json")
+                if let data = try? Data(contentsOf: fileURL),
+                   let cachedPlan = try? JSONDecoder().decode(AIWeeklyPlan.self, from: data) {
+                    plan.aiWeeklyPlan = cachedPlan
+                }
+                
                 self.userPlans.removeAll(where: { $0.userId == userId })
                 self.userPlans.append(plan)
 

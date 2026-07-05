@@ -39,6 +39,33 @@ struct UserProfile: Identifiable {
     var joinedAt: Date
 }
 
+struct AIWeeklyPlan: Codable, Hashable {
+    let planTitle: String
+    let planSummary: String
+    
+    // Core areas
+    let dietRecommendation: String
+    let recommendedFoods: [String]
+    
+    let mindEaseRecommendation: String
+    let recommendedMindEaseMinutes: Int
+    
+    let hairInsightRecommendation: String
+    let recommendedHairCareRoutine: String
+    
+    // Structured 7-Day Plan
+    let dailyPlans: [AIDailyPlan]
+}
+
+struct AIDailyPlan: Codable, Identifiable, Hashable {
+    var id: Int { dayNumber }
+    let dayNumber: Int
+    let dayName: String
+    let eat: String
+    let mindEase: String
+    let hairCare: String
+}
+
 // MARK: - UserPlan
 
 struct UserPlan: Identifiable {
@@ -56,6 +83,7 @@ struct UserPlan: Identifiable {
     var isActive: Bool
     var assignedAt: Date
     var expiresAt: Date
+    var aiWeeklyPlan: AIWeeklyPlan?
 }
 
 // MARK: - UserNutritionProfile

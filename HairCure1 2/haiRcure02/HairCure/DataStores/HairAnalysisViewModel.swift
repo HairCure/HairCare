@@ -133,7 +133,7 @@ class HairAnalysisViewModel {
                 topURL:   ""
             )
             
-            store.applyAIResult(
+            await store.applyAIResult(
                 densityPercent: Float(result.overall_density_percentage),
                 densityLevel:   densityLevel,
                 hairFallStage:  hairFallStage,
