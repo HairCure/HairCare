@@ -103,6 +103,7 @@ class AppDataStore {
         mindEaseStore.parentStore = self
         
         seedSettings(userId: userId)
+        seedDummyScans(userId: userId)
         
         //Save profile to Supabase
         // Only save if this is a real auth user (not guest)
@@ -115,6 +116,109 @@ class AppDataStore {
                 )
             }
         }
+    }
+    
+    func seedDummyScans(userId: UUID) {
+        let now = Date()
+        let oneMonthAgo = Calendar.current.date(byAdding: .month, value: -1, to: now)!
+        let twoMonthsAgo = Calendar.current.date(byAdding: .month, value: -2, to: now)!
+
+        let scan1Id = UUID()
+        let scan2Id = UUID()
+        let scan3Id = UUID()
+
+        let scan1 = ScalpScan(
+            id: scan1Id,
+            userId: userId,
+            scanDate: twoMonthsAgo,
+            frontImageURL: "",
+            leftImageURL: "",
+            rightImageURL: "",
+            backImageURL: "",
+            topImageURL: "",
+            scanType: .initial
+        )
+        let scan2 = ScalpScan(
+            id: scan2Id,
+            userId: userId,
+            scanDate: oneMonthAgo,
+            frontImageURL: "",
+            leftImageURL: "",
+            rightImageURL: "",
+            backImageURL: "",
+            topImageURL: "",
+            scanType: .monthly
+        )
+        let scan3 = ScalpScan(
+            id: scan3Id,
+            userId: userId,
+            scanDate: now,
+            frontImageURL: "",
+            leftImageURL: "",
+            rightImageURL: "",
+            backImageURL: "",
+            topImageURL: "",
+            scanType: .monthly
+        )
+        
+        self.scalpScans.append(contentsOf: [scan1, scan2, scan3])
+
+        let report1 = ScanReport(
+            id: UUID(),
+            createdAt: twoMonthsAgo,
+            scalpScanId: scan1Id,
+            hairDensityPercent: 60.0,
+            hairDensityLevel: .low,
+            hairFallStage: .stage3,
+            scalpCondition: .dandruff,
+            hairType: "Straight",
+            analysisSource: .aiModel,
+            planId: "plan_1",
+            lifestyleScore: 4.0,
+            dietScore: 5.0,
+            stressScore: 6.0,
+            sleepScore: 4.0,
+            hairCareScore: 5.0,
+            recommendedPlan: "Focus on scalp health and better sleep."
+        )
+        let report2 = ScanReport(
+            id: UUID(),
+            createdAt: oneMonthAgo,
+            scalpScanId: scan2Id,
+            hairDensityPercent: 72.0,
+            hairDensityLevel: .medium,
+            hairFallStage: .stage2,
+            scalpCondition: .normal,
+            hairType: "Straight",
+            analysisSource: .aiModel,
+            planId: "plan_1",
+            lifestyleScore: 7.0,
+            dietScore: 8.0,
+            stressScore: 5.0,
+            sleepScore: 7.0,
+            hairCareScore: 8.0,
+            recommendedPlan: "Keep up the good work! Diet has improved."
+        )
+        let report3 = ScanReport(
+            id: UUID(),
+            createdAt: now,
+            scalpScanId: scan3Id,
+            hairDensityPercent: 85.0,
+            hairDensityLevel: .high,
+            hairFallStage: .stage1,
+            scalpCondition: .normal,
+            hairType: "Straight",
+            analysisSource: .aiModel,
+            planId: "plan_1",
+            lifestyleScore: 9.0,
+            dietScore: 9.0,
+            stressScore: 3.0,
+            sleepScore: 9.0,
+            hairCareScore: 9.0,
+            recommendedPlan: "Optimal hair health achieved."
+        )
+
+        self.scanReports.append(contentsOf: [report1, report2, report3])
     }
     
     
