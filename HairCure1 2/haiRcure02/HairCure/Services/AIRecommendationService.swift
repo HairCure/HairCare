@@ -60,51 +60,80 @@ class AIRecommendationService {
         {
           "dayNumber": 1,
           "dayName": "Day 1",
-          "eat": "Diet recommendations for today (specifically what foods/nutrients to target, e.g. 'Start with eggs and avocados, pumpkin seeds as a snack')",
-          "mindEase": "MindEase recommendations for today (e.g. '15 mins of deep breathing meditation before sleep')",
-          "hairCare": "Hair routine details for today (e.g. 'Massage scalp with warm coconut oil, wash with sulfate-free shampoo after 30 mins')"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [
+            { "title": "Oatmeal & Almonds", "subtitle": "High in biotin and healthy fats", "time": "Breakfast" },
+            { "title": "Lentil & Spinach Bowl", "subtitle": "Plant-based iron & zinc boost", "time": "Lunch" }
+          ],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [
+            { "title": "Deep Breathing", "subtitle": "Lowers cortisol", "time": "Evening" }
+          ],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": [
+            { "title": "Warm Coconut Oil Massage", "subtitle": "Stimulates follicles", "time": "Night" },
+            { "title": "Sulfate-free Wash", "subtitle": "Gentle cleanse", "time": "Night" }
+          ]
         },
         {
           "dayNumber": 2,
           "dayName": "Day 2",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         },
         {
           "dayNumber": 3,
           "dayName": "Day 3",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         },
         {
           "dayNumber": 4,
           "dayName": "Day 4",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         },
         {
           "dayNumber": 5,
           "dayName": "Day 5",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         },
         {
           "dayNumber": 6,
           "dayName": "Day 6",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         },
         {
           "dayNumber": 7,
           "dayName": "Day 7",
-          "eat": "Diet recommendations for today",
-          "mindEase": "MindEase recommendations for today",
-          "hairCare": "Hair routine details for today"
+          "eat": "Diet recommendations summary for today",
+          "eatActions": [],
+          "mindEase": "MindEase recommendations summary for today",
+          "mindEaseActions": [],
+          "hairCare": "Hair routine details summary for today",
+          "hairCareActions": []
         }
       ]
     }

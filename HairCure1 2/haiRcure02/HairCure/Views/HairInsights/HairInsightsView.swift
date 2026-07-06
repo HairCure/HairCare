@@ -44,9 +44,8 @@ struct HairInsightsView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    cleanShelfBannerSection
                     routineSection
                     favouritesSection
                     careTipsSection
@@ -57,7 +56,15 @@ struct HairInsightsView: View {
             .background(Color.hcCream.ignoresSafeArea())
             .navigationTitle("Hair Insights")
             .navigationBarTitleDisplayMode(.large)
-
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: MyShelfView()) {
+                        Image(systemName: "shippingbox.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color.hcBrown)
+                    }
+                }
+            }
             .task {
                 await insightStore.loadContent(hairType: detectedHairType)
             }
@@ -535,7 +542,7 @@ struct RoutineCardView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.hcBrown.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(

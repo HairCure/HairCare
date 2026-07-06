@@ -566,8 +566,7 @@ struct RecommendationEngine {
         let cal        = store.todaysTotalCalories()
         let calTarget  = store.activeNutritionProfile?.tdee ?? 2000
         let mindful    = Float(store.todaysMindfulMinutes())
-        let mindTarget = Float(store.appPreferences.first(where: {
-            $0.userId == store.currentUserId })?.dailyMindfulMinutesGoal ?? 60)
+        let mindTarget = Float(store.dailyMindfulTarget)
         let water      = Float(HealthKitManager.shared.todaysWaterML)
         let wTarget    = store.activeNutritionProfile?.waterTargetML ?? 2500
         let sleep      = Float(HealthKitManager.shared.lastNightSleepHours)

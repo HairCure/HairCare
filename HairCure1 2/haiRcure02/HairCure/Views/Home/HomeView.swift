@@ -73,6 +73,17 @@ struct HomeView: View {
                     await healthKit.refresh()
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        viewModel.showDailyPlan = true
+                    } label: {
+                        Image(systemName: "doc.text.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.hcBrown)
+                    }
+                }
+            }
         }
         .sheet(isPresented: $viewModel.showCoach) {
             CoachView(viewModel: CoachViewModel())
@@ -127,6 +138,15 @@ struct HomeView: View {
                     showAuthSheet = false
                 })
             }
+        }
+        .sheet(isPresented: $viewModel.showDailyPlan) {
+            DailyActionPlanSheet(
+                plan: store.activePlan,
+                nutrition: store.activeNutritionProfile
+            )
+            .presentationDetents([.large])
+            .presentationCornerRadius(28)
+            .presentationDragIndicator(.visible)
         }
     }
 }
@@ -488,11 +508,13 @@ struct HomeFeatureCardsSectionView: View {
     var viewModel: HomeViewModel
     var store: AppDataStore
     let healthKit: HealthKitManager
-    
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Today")
+                .font(.system(size: 24, weight: .bold))
+                .padding(.horizontal, 2)
+            
             HomeTodaySectionView(viewModel: viewModel, store: store)
-            HomeWeeklyPlanCardView(store: store)
             HomeMealLogSectionView(viewModel: viewModel, store: store)
             HomeWaterCardCompactView(viewModel: viewModel, store: store, healthKit: healthKit)
             HomeSleepCardCompactView(viewModel: viewModel, healthKit: healthKit)
@@ -507,10 +529,6 @@ struct HomeTodaySectionView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Today")
-                .font(.system(size: 22, weight: .bold))
-                .padding(.bottom, 2)
-
             HStack(alignment: .top, spacing: 12) {
                 HomeHairNutrientsCardView(viewModel: viewModel, store: store)
                     .buttonStyle(.plain)
@@ -722,7 +740,7 @@ struct HomeMealLogSectionView: View {
                 }
             } label: {
                 HStack {
-                    Text("Today's Log")
+                    Text("Meal Log")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.primary)
                     Image(systemName: "chevron.right")
@@ -1079,53 +1097,3 @@ struct HomeDailyTipCardView: View {
     }
 }
 
-struct HomeWeeklyPlanCardView: View {
-    var store: AppDataStore
-    
-    var body: some View {
-        let activePlan = store.activePlan
-        let planTitle = activePlan?.aiWeeklyPlan?.planTitle ?? "Your 1-Week AI Plan"
-        let planSummary = activePlan?.aiWeeklyPlan?.planSummary ?? "Tap to view your personalized meals, MindEase and hair routine details."
-        
-        return NavigationLink(destination: PlanResultsView(onStart: {}, onRetake: nil)) {
-            HStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(
-                            colors: [Color.hcBrown, Color.hcBrownLight],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 52, height: 52)
-                    
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(planTitle)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    Text(planSummary)
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.secondary.opacity(0.6))
-            }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(18)
-            .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
-        }
-        .buttonStyle(.plain)
-    }
-}

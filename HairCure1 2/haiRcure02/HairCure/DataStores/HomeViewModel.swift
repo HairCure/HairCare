@@ -13,6 +13,7 @@ class HomeViewModel {
     var isMealLogExpanded = true
     var expandedMeals: Set<MealType> = []
     var showNutrientInfo = false
+    var showDailyPlan = false
     
     init() {}
     

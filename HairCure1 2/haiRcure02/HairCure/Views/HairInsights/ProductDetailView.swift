@@ -45,13 +45,7 @@ struct ProductDetailView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Drag Indicator
-            Capsule()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 36, height: 5)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-            
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header Brand & Name
@@ -239,6 +233,7 @@ struct ProductDetailView: View {
                     .padding(.top, 10)
                     .padding(.bottom, 24)
                 }
+                .padding(.top, 24)
             }
         }
         .background(Color.hcCream.ignoresSafeArea())

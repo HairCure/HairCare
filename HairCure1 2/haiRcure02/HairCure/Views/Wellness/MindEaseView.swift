@@ -58,6 +58,8 @@ struct MindEaseView: View {
     
     @State private var showAssessmentSheet      = false
     @State private var selectedMood: String?    = nil
+    @State private var recommendedContent: [MindEaseCategoryContent] = []
+    @State private var isFetchingRecommendations: Bool = false
     
     private let moods = [
         ("calm_anim", "Calm"),
@@ -140,27 +142,34 @@ struct MindEaseView: View {
                             Text("Recommended for \(mood)")
                                 .font(.system(size: 22, weight: .bold))
                                 .padding(.horizontal, 20)
-                                
-                            let finalRecs = recommendedContent(for: mood)
-                            
-                            VStack(spacing: 0) {
-                                ForEach(Array(finalRecs.enumerated()), id: \.element.id) { idx, content in
-                                    if authVM.isGuestMode {
-                                        Button { onGuestTap() } label: {
-                                            MoodRecommendationRow(content: content, store: mindEaseStore)
+                            if isFetchingRecommendations {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity, minHeight: 100)
+                            } else if recommendedContent.isEmpty {
+                                Text("No recommendations found for this mood yet.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 20)
+                            } else {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(recommendedContent.enumerated()), id: \.element.id) { idx, content in
+                                        if authVM.isGuestMode {
+                                            Button { onGuestTap() } label: {
+                                                MoodRecommendationRow(content: content, store: mindEaseStore)
+                                            }
+                                            .buttonStyle(.plain)
+                                        } else {
+                                            NavigationLink(value: content) {
+                                                MoodRecommendationRow(content: content, store: mindEaseStore)
+                                            }
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
-                                    } else {
-                                        NavigationLink(value: content) {
-                                            MoodRecommendationRow(content: content, store: mindEaseStore)
-                                        }
-                                        .buttonStyle(.plain)
+                                        if idx < recommendedContent.count - 1 { Divider().padding(.leading, 96) }
                                     }
-                                    if idx < finalRecs.count - 1 { Divider().padding(.leading, 96) }
                                 }
+                                .mindEaseCard(cornerRadius: 16)
+                                .padding(.horizontal, 20)
                             }
-                            .mindEaseCard(cornerRadius: 16)
-                            .padding(.horizontal, 20)
                         }
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
@@ -215,40 +224,14 @@ struct MindEaseView: View {
                 mindEaseStore.addAll(userId: store.currentUserId, userPlans: store.userPlans)
             }
         }
-    }
-    
-    private func recommendedContent(for mood: String) -> [MindEaseCategoryContent] {
-        // Smart filtering: match exact mood or broader related terms
-        let recommended = mindEaseStore.mindEaseCategoryContents.filter {
-            let t = $0.title.lowercased()
-            let c = $0.caption.lowercased()
-            let m = mood.lowercased()
-            
-            if t.contains(m) || c.contains(m) { return true }
-            
-            // Broader keyword mapping
-            if m == "calm" && (t.contains("meditation") || t.contains("breath") || c.contains("focus")) { return true }
-            if m == "stressed" && (t.contains("yoga") || t.contains("relax") || c.contains("stress")) { return true }
-            if m == "tired" && (t.contains("sleep") || t.contains("sound") || c.contains("rest")) { return true }
-            if m == "anxious" && (t.contains("meditation") || t.contains("breath") || t.contains("yoga")) { return true }
-            
-            return false
-        }
-        
-        // Fallback to a deterministic shuffle based on the mood if not enough exact matches
-        if recommended.count >= 2 {
-            return Array(recommended.prefix(2))
-        } else {
-            let fallback = mindEaseStore.mindEaseCategoryContents.sorted {
-                let hash0 = abs($0.id.hashValue ^ mood.hashValue)
-                let hash1 = abs($1.id.hashValue ^ mood.hashValue)
-                return hash0 < hash1
+        .onChange(of: selectedMood) { _, newMood in
+            guard let mood = newMood else { return }
+            Task {
+                isFetchingRecommendations = true
+                await mindEaseStore.logUserMood(mood)
+                recommendedContent = await mindEaseStore.fetchMoodRecommendations(for: mood)
+                isFetchingRecommendations = false
             }
-            // Combine any matches we did find with the fallback to guarantee 2 items
-            let combined = (recommended + fallback).reduce(into: [MindEaseCategoryContent]()) { result, item in
-                if !result.contains(where: { $0.id == item.id }) { result.append(item) }
-            }
-            return Array(combined.prefix(2))
         }
     }
 }
