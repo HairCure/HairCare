@@ -57,6 +57,12 @@ struct AIWeeklyPlan: Codable, Hashable {
     let dailyPlans: [AIDailyPlan]
 }
 
+struct AIActionItem: Codable, Hashable {
+    let title: String
+    let subtitle: String?
+    let time: String?
+}
+
 struct AIDailyPlan: Codable, Identifiable, Hashable {
     var id: Int { dayNumber }
     let dayNumber: Int
@@ -64,6 +70,10 @@ struct AIDailyPlan: Codable, Identifiable, Hashable {
     let eat: String
     let mindEase: String
     let hairCare: String
+    
+    let eatActions: [AIActionItem]?
+    let mindEaseActions: [AIActionItem]?
+    let hairCareActions: [AIActionItem]?
 }
 
 // MARK: - UserPlan

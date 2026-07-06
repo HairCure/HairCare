@@ -237,6 +237,61 @@ final class MindEaseBackendService {
             print("Save MindEase plan error: \(error)")
         }
     }
+
+    // MARK: - Mood Tracking & Recommendations
+    
+    func logUserMood(userId: UUID, mood: String) async {
+        do {
+            let data: [String: AnyJSON] = [
+                "user_id": .string(userId.uuidString),
+                "mood":    .string(mood)
+            ]
+            try await db.from("user_mood_logs").insert(data).execute()
+        } catch {
+            print("MindEase log user mood error: \(error)")
+        }
+    }
+    
+    func fetchMoodRecommendations(mood: String) async -> [MindEaseCategoryContent] {
+        do {
+            let response = try await db
+                .rpc("get_mood_recommendations", params: ["p_mood": mood])
+                .execute()
+            
+            guard let contentRows = try JSONSerialization.jsonObject(with: response.data) as? [[String: Any]] else {
+                return []
+            }
+            
+            let contents: [MindEaseCategoryContent] = contentRows.compactMap { row in
+                guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+                      let catIdStr = row["category_id"] as? String, let catId = UUID(uuidString: catIdStr),
+                      let title = row["title"] as? String,
+                      let mediaURL = row["media_url"] as? String,
+                      let typeRaw = row["media_type"] as? String,
+                      let mediaType = MediaType(rawValue: typeRaw)
+                else { return nil }
+
+                let thumbnailUrl = row["thumbnail_url"] as? String
+
+                return MindEaseCategoryContent(
+                    id:              id,
+                    categoryId:      catId,
+                    title:           title,
+                    caption:         row["caption"] as? String ?? "",
+                    mediaURL:        mediaURL,
+                    mediaType:       mediaType,
+                    durationSeconds: row["duration_seconds"] as? Int ?? 0,
+                    difficultyLevel: row["difficulty_level"] as? String ?? "beginner",
+                    imageurl:        thumbnailUrl ?? "",
+                    thumbnailUrl:    thumbnailUrl
+                )
+            }
+            return contents
+        } catch {
+            print("MindEase fetch mood recommendations error: \(error)")
+            return []
+        }
+    }
 }
 
 // MARK: - DateFormatter helper

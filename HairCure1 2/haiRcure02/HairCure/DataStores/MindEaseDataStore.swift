@@ -293,4 +293,14 @@ final class MindEaseDataStore {
         updatePlan(contentId: contentId, minutesCompleted: minutesCompleted)
         Task { await MindEaseBackendService.shared.saveSession(session) }
     }
+    
+    // MARK: - Mood Tracking & Recommendations
+    
+    func logUserMood(_ mood: String) async {
+        await MindEaseBackendService.shared.logUserMood(userId: currentUserId, mood: mood)
+    }
+    
+    func fetchMoodRecommendations(for mood: String) async -> [MindEaseCategoryContent] {
+        return await MindEaseBackendService.shared.fetchMoodRecommendations(mood: mood)
+    }
 }

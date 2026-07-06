@@ -16,34 +16,16 @@ struct MyShelfView: View {
         return store.userProducts
     }
     
+    private var filterLabel: String {
+        selectedCategory?.displayName ?? "All Items"
+    }
+    
     var body: some View {
         ZStack {
             Color.hcCream.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Category Segment Filter
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        CategoryFilterTag(title: "All Items", isSelected: selectedCategory == nil) {
-                            withAnimation(.spring(duration: 0.25)) {
-                                selectedCategory = nil
-                            }
-                        }
-                        
-                        ForEach(ProductCategory.allCases) { cat in
-                            CategoryFilterTag(title: cat.displayName, isSelected: selectedCategory == cat) {
-                                withAnimation(.spring(duration: 0.25)) {
-                                    selectedCategory = cat
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                }
-                .background(Color.white)
-                .shadow(color: .black.opacity(0.02), radius: 4, y: 3)
-                
+
                 // Guest Banner Alert
                 if authVM.isGuestMode {
                     HStack(spacing: 12) {
@@ -132,8 +114,30 @@ struct MyShelfView: View {
                 }
             }
         }
-        .navigationTitle("Bathroom Shelf")
+        .navigationTitle("Hair Insights")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        withAnimation(.spring(duration: 0.25)) { selectedCategory = nil }
+                    } label: {
+                        Label("All Items", systemImage: selectedCategory == nil ? "checkmark" : "")
+                    }
+                    ForEach(ProductCategory.allCases) { cat in
+                        Button {
+                            withAnimation(.spring(duration: 0.25)) { selectedCategory = cat }
+                        } label: {
+                            Label(cat.displayName, systemImage: selectedCategory == cat ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.hcBrown)
+                }
+            }
+        }
 
         .fullScreenCover(isPresented: $showScanner) {
             ScannerView()

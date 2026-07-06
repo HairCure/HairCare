@@ -13,7 +13,7 @@ struct PlanResultsView: View {
     @State private var showReferences = false
     @State private var showAuthSheet  = false
     @State private var showNorwoodSheet = false
-    @State private var selectedDay    = 1
+    @State private var showDailyPlanSheet = false
 
     private var report:    ScanReport?           { store.latestScanReport }
     private var plan:      UserPlan?             { store.activePlan }
@@ -37,7 +37,7 @@ struct PlanResultsView: View {
         }
     }
 
-    var body: some View {
+     var body: some View {
         ZStack(alignment: .bottom) {
             Color.hcCream.ignoresSafeArea()
 
@@ -80,6 +80,12 @@ struct PlanResultsView: View {
         }
         .sheet(isPresented: $showNorwoodSheet) {
             NorwoodInfoSheet()
+        }
+        .sheet(isPresented: $showDailyPlanSheet) {
+            DailyActionPlanSheet(plan: plan, nutrition: nutrition)
+                .presentationDetents([.large])
+                .presentationCornerRadius(28)
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -175,11 +181,15 @@ struct PlanResultsView: View {
     private var swipeableCards: some View {
         VStack(spacing: 12) {
             TabView(selection: $cardPage) {
-                hairAnalysisCard.tag(0)
-                lifestyleScoresCard.tag(1)
+                hairAnalysisCard
+                    .padding(.horizontal, 4)
+                    .tag(0)
+                lifestyleScoresCard
+                    .padding(.horizontal, 4)
+                    .tag(1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 190)
+            .frame(height: 220)
 
             // Page dots
             HStack(spacing: 8) {
@@ -196,36 +206,124 @@ struct PlanResultsView: View {
     }
 
     private var hairAnalysisCard: some View {
-        let density  = report?.hairDensityPercent ?? 52
-        let stage    = report?.hairFallStage.intValue ?? plan?.stage ?? 2
-        let hairType = report?.hairType?.capitalized ?? "N/A"
+        let density      = report?.hairDensityPercent ?? 52
+        let stage        = report?.hairFallStage.intValue ?? plan?.stage ?? 2
+        let hairType     = report?.hairType?.capitalized ?? "N/A"
         let isNotAssessed = report?.hairDensityLevel == .notAssessed
+        let dColor        = isNotAssessed ? Color.white.opacity(0.5) : densityColor(density)
+        let sColor        = stageColor(stage)
 
-        return VStack(alignment: .leading, spacing: 0) {
-            Text("Your Hair Analysis Results")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.primary)
-                .padding(.bottom, 10)
+        return ZStack(alignment: .topLeading) {
+            // Base gradient
+            LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
+                    .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            // Cream glow top-right
+            RadialGradient(
+                colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.13), .clear],
+                center: .init(x: 0.80, y: 0.15),
+                startRadius: 8,
+                endRadius: 150
+            )
+            // Dark-rose glow bottom-left
+            RadialGradient(
+                colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
+                center: .init(x: 0.10, y: 0.85),
+                startRadius: 5,
+                endRadius: 110
+            )
 
-            Divider().padding(.bottom, 14)
+            VStack(alignment: .leading, spacing: 14) {
+                // Header chip
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color(red: 0.953, green: 0.933, blue: 0.851))
+                    Text("AI ANALYSIS")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(red: 0.953, green: 0.933, blue: 0.851))
+                        .kerning(1.3)
+                }
 
-            resultRow(label: "Hair Density",
-                      value: isNotAssessed ? "Not Assessed" : "\(Int(density))%",
-                      color: isNotAssessed ? .secondary : densityColor(density))
+                Text("Your Hair Analysis Results")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
 
-            resultRow(label: "Growth Stage",
-                      value: "Stage \(stage)",
-                      color: stageColor(stage),
-                      onInfo: { showNorwoodSheet = true })
+                // Metric rows
+                VStack(spacing: 12) {
+                    // Hair Density
+                    HStack {
+                        Text("Hair Density")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white.opacity(0.60))
+                        Spacer()
+                        Text(isNotAssessed ? "Not Assessed" : "\(Int(density))%")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(dColor)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(dColor.opacity(0.18))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(dColor.opacity(0.45), lineWidth: 1))
+                    }
 
-            resultRow(label: "Hair Type",
-                      value: hairType,
-                      color: Color(red: 0.2, green: 0.55, blue: 0.9))
+                    // Growth Stage
+                    HStack {
+                        HStack(spacing: 4) {
+                            Text("Growth Stage")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.white.opacity(0.60))
+                            Button { showNorwoodSheet = true } label: {
+                                Image(systemName: "info.circle")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.40))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Spacer()
+                        Text("Stage \(stage)")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(sColor)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(sColor.opacity(0.18))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(sColor.opacity(0.45), lineWidth: 1))
+                    }
+
+                    // Hair Type
+                    HStack {
+                        Text("Hair Type")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white.opacity(0.60))
+                        Spacer()
+                        let typeColor = Color(red: 0.45, green: 0.70, blue: 1.0)
+                        Text(hairType)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(typeColor)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(typeColor.opacity(0.18))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(typeColor.opacity(0.45), lineWidth: 1))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .cornerRadius(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.10), radius: 10, x: 0, y: 6)
     }
 
     private func resultRow(label: String, value: String, color: Color, onInfo: (() -> Void)? = nil) -> some View {
@@ -251,32 +349,69 @@ struct PlanResultsView: View {
 
     // Card B — Lifestyle Scores
     private var lifestyleScoresCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        ZStack(alignment: .topLeading) {
+            // Base gradient
+            LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
+                    .init(color: Color(red: 0.298, green: 0.192, blue: 0.196), location: 1.0)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            // Cream glow top-right
+            RadialGradient(
+                colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.13), .clear],
+                center: .init(x: 0.80, y: 0.15),
+                startRadius: 8,
+                endRadius: 150
+            )
+            // Dark-rose glow bottom-left
+            RadialGradient(
+                colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
+                center: .init(x: 0.10, y: 0.85),
+                startRadius: 5,
+                endRadius: 110
+            )
 
-            // Title row
-            Text("Your Lifestyle Scores")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.primary)
-                .padding(.bottom, 10)
+            VStack(alignment: .leading, spacing: 8) {
+                // Header chip
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color(red: 0.953, green: 0.933, blue: 0.851))
+                    Text("LIFESTYLE SCORE")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(red: 0.953, green: 0.933, blue: 0.851))
+                        .kerning(1.3)
+                }
 
-            Divider().padding(.bottom, 12)
+                Text("Your Lifestyle Scores")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
 
-            // Ring + dimension bars
-            HStack(alignment: .center, spacing: 20) {
-                compositeRing
-                    .frame(width: 100, height: 100)
-                VStack(spacing: 10) {
-                    dimBar("Sleep",     report?.sleepScore    ?? 2.0, Color(red: 0.3,  green: 0.55, blue: 0.9))
-                    dimBar("Stress",    report?.stressScore   ?? 4.0, Color(red: 0.4,  green: 0.72, blue: 0.35))
-                    dimBar("Diet",      report?.dietScore     ?? 3.5, Color(red: 0.9,  green: 0.58, blue: 0.18))
-                    dimBar("Hair care", report?.hairCareScore ?? 4.0, Color.hcBrown)
+                // Ring + dimension bars
+                HStack(alignment: .center, spacing: 16) {
+                    compositeRing
+                        .frame(width: 85, height: 85)
+                    VStack(spacing: 8) {
+                        dimBar("Sleep",     report?.sleepScore    ?? 2.0, Color(red: 0.3,  green: 0.55, blue: 0.9))
+                        dimBar("Stress",    report?.stressScore   ?? 4.0, Color(red: 0.4,  green: 0.72, blue: 0.35))
+                        dimBar("Diet",      report?.dietScore     ?? 3.5, Color(red: 0.9,  green: 0.58, blue: 0.18))
+                        dimBar("Hair care", report?.hairCareScore ?? 4.0, Color(red: 0.953, green: 0.933, blue: 0.851))
+                    }
                 }
             }
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .cornerRadius(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.10), radius: 10, x: 0, y: 6)
     }
 
     private func scoreRow(_ label: String, _ value: Float, _ dotColor: Color) -> some View {
@@ -322,11 +457,6 @@ struct PlanResultsView: View {
                     dividerLine
                     targetCell(value: "7.5",
                                unit: "hrs", label: "Sleep")
-                    dividerLine
-                    targetCell(
-                        value: "\(mindEaseMinutes)",
-                        unit: "min", label: "MindEase"
-                    )
                 }
                 .padding(.vertical, 18)
                 .background(Color.white)
@@ -472,180 +602,69 @@ struct PlanResultsView: View {
         }
     }
 
-    private var mindEaseMinutes: Int {
-        guard let p = plan else { return 80 }
-        return p.meditationMinutesPerDay + p.yogaMinutesPerDay + p.soundMinutesPerDay
-    }
-
     @ViewBuilder
     private var aiWeeklyPlanSection: some View {
-        if let plan = plan, let aiPlan = plan.aiWeeklyPlan {
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Your Personalised 7-Day Schedule")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.primary)
-                    
-                    Text("AI generated day-by-day roadmap for your scalp and lifestyle needs.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 20)
-                
-                // Horizontal day selector
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(aiPlan.dailyPlans) { daily in
-                            let isSelected = selectedDay == daily.dayNumber
-                            Button {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    selectedDay = daily.dayNumber
-                                }
-                            } label: {
-                                Text(daily.dayName)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(isSelected ? .white : .primary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(isSelected ? Color.hcBrown : Color.white)
-                                    .cornerRadius(20)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(isSelected ? Color.hcBrown : Color.black.opacity(0.06), lineWidth: 1)
-                                        )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 4)
-                    }
-                    
-                    // Card details for active day
-                    if let activeDayPlan = aiPlan.dailyPlans.first(where: { $0.dayNumber == selectedDay }) {
-                        VStack(spacing: 12) {
-                            // Diet card
-                            dailyPlanCard(
-                                icon: "fork.knife",
-                                iconBg: Color(red: 0.9, green: 0.58, blue: 0.18),
-                                title: "What to Eat",
-                                description: activeDayPlan.eat
-                            )
-                            
-                            // MindEase card
-                            dailyPlanCard(
-                                icon: "moon.zzz.fill",
-                                iconBg: Color(red: 0.38, green: 0.3, blue: 0.75),
-                                title: "MindEase Wellness",
-                                description: activeDayPlan.mindEase
-                            )
-                            
-                            // Hair insights / routine card
-                            dailyPlanCard(
-                                icon: "sparkles",
-                                iconBg: Color.hcWarmBrown,
-                                title: "Hair Insight & Routine",
-                                description: activeDayPlan.hairCare
-                            )
-                        }
-                        .padding(.horizontal, 20)
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .trailing)),
-                            removal: .opacity
-                        ))
-                    }
-                }
-                .padding(.vertical, 10)
-            } else {
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                            .tint(Color.hcBrown)
-                        Text("Creating your custom 7-day plan using AI...")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 20)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .padding(.horizontal, 20)
-                }
-            }
-        }
-        
-        private func dailyPlanCard(
-            icon: String,
-            iconBg: Color,
-            title: String,
-            description: String
-        ) -> some View {
-            HStack(alignment: .top, spacing: 16) {
-                ZStack {
-                    Circle().fill(iconBg).frame(width: 44, height: 44)
-                    Image(systemName: icon)
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text(description)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-        }
+        WeeklyPlanWidgetView(plan: plan)
+    }
 
     private var compositeRing: some View {
         let score = report?.lifestyleScore ?? 3.25
         let frac  = CGFloat(score / 10.0)
-        let c: Color = score < 5 ? .orange : score < 8 ? .orange : .green
+        let c: Color = score < 5 ? Color(red: 1.0, green: 0.6, blue: 0.2) : score < 8 ? Color(red: 0.4, green: 0.85, blue: 0.45) : Color(red: 0.3, green: 0.90, blue: 0.5)
         return ZStack {
+            // Track
             Circle()
-                .stroke(c.opacity(0.18), lineWidth: 11)
+                .stroke(Color.white.opacity(0.12), lineWidth: 11)
+            // Filled arc with glow
             Circle()
                 .trim(from: 0, to: animateBars ? frac : 0)
                 .stroke(c, style: StrokeStyle(lineWidth: 11, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .shadow(color: c.opacity(0.55), radius: 8, x: 0, y: 0)
                 .animation(.easeOut(duration: 1.0).delay(0.2), value: animateBars)
             VStack(spacing: 1) {
                 Text(String(format: "%.1f", score))
-                    .font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
-                Text("/ 10").font(.system(size: 11)).foregroundStyle(.secondary)
-                Text("composite").font(.system(size: 10)).foregroundStyle(.secondary)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("/ 10")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.55))
+                Text("composite")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.45))
             }
         }
     }
 
     private func dimBar(_ title: String, _ value: Float, _ c: Color) -> some View {
         let frac = CGFloat(value / 10.0)
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(title)
-                    .font(.system(size: 13)).foregroundStyle(.secondary)
-                    .frame(width: 62, alignment: .leading)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.60))
+                    .frame(width: 60, alignment: .leading)
                 Spacer()
                 Text(String(format: "%.1f", value))
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(c)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(c.opacity(0.20))
+                    .clipShape(Capsule())
             }
             GeometryReader { g in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(c.opacity(0.15)).frame(height: 6)
-                    Capsule().fill(c)
-                        .frame(width: animateBars ? g.size.width * frac : 0, height: 6)
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                        .frame(height: 5)
+                    Capsule()
+                        .fill(c)
+                        .frame(width: animateBars ? g.size.width * frac : 0, height: 5)
                         .animation(.easeOut(duration: 0.85).delay(0.3), value: animateBars)
                 }
             }
-            .frame(height: 6)
+            .frame(height: 5)
         }
     }
 }
@@ -781,5 +800,124 @@ private struct NorwoodInfoSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
+    }
+}
+
+// MARK: - DailyActionPlanSheet
+
+struct DailyActionPlanSheet: View {
+    let plan:      UserPlan?
+    let nutrition: UserNutritionProfile?
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // ── Header ──
+                ZStack {
+                    Color(.systemBackground)
+                    VStack(spacing: 0) {
+                        Spacer().frame(height: 24)
+
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.hcBrown.opacity(0.10))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "doc.text.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Color.hcBrown)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Daily Action Plan")
+                                    .font(.system(size: 18, weight: .bold))
+                                Text("AI-powered daily roadmap for your hair")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Button { dismiss() } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(Color.hcBrown)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+
+                        Divider()
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+
+                // ── Scrollable content ──
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+
+                        // Daily Targets strip
+                        if let np = nutrition {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label("Daily Targets", systemImage: "target")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+                                    .tracking(0.6)
+
+                                HStack(spacing: 0) {
+                                    sheetTargetCell(value: "\(Int(np.tdee))",   unit: "kcal", label: "Calories")
+                                    sheetDivider
+                                    sheetTargetCell(value: "\(Int(np.proteinTargetGm))", unit: "g", label: "Protein")
+                                    sheetDivider
+                                    sheetTargetCell(value: "\(Int(np.carbTargetGm))",    unit: "g", label: "Carbs")
+                                    sheetDivider
+                                    sheetTargetCell(value: String(format: "%.1f", np.waterTargetML / 1000), unit: "L", label: "Water")
+                                    sheetDivider
+                                    sheetTargetCell(value: "7.5",                        unit: "hrs", label: "Sleep")
+                                }
+                                .padding(.vertical, 18)
+                                .background(Color(.systemBackground))
+                                .cornerRadius(16)
+                                .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 2)
+                            }
+                            .padding(.horizontal, 20)
+                        }
+
+                        // 7-Day Plan
+                        WeeklyPlanWidgetView(plan: plan)
+
+                        Color.clear.frame(height: 30)
+                    }
+                    .padding(.top, 20)
+                }
+            }
+        }
+    }
+
+    private func sheetTargetCell(value: String, unit: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(unit)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.hcBrown)
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var sheetDivider: some View {
+        Rectangle()
+            .fill(Color(.systemGray5))
+            .frame(width: 1, height: 44)
     }
 }

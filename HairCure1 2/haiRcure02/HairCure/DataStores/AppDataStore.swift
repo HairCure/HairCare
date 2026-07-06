@@ -424,15 +424,48 @@ class AppDataStore {
     
     
     var dailyMindfulTarget: Int {
-        // Read from preferences (set by engine via applyToStore), fall back to active plan, then 0
-        if let pref = appPreferences.first(where: { $0.userId == currentUserId }),
-           pref.dailyMindfulMinutesGoal > 0 {
-            return pref.dailyMindfulMinutesGoal
+        guard let plan = activePlan, let aiPlan = plan.aiWeeklyPlan else {
+            return 15
         }
-        if let plan = activePlan {
-            return plan.meditationMinutesPerDay + plan.yogaMinutesPerDay + plan.soundMinutesPerDay
+        
+        let daysSinceAssigned = Calendar.current.dateComponents([.day], from: plan.assignedAt, to: Date()).day ?? 0
+        let currentDayNumber = (max(0, daysSinceAssigned) % 7) + 1
+        
+        if let todaysPlan = aiPlan.dailyPlans.first(where: { $0.dayNumber == currentDayNumber }) {
+            let actions = todaysPlan.mindEaseActions ?? []
+            var totalMins = 0
+            
+            for action in actions {
+                let timeStr = (action.time ?? "").lowercased()
+                let titleStr = action.title.lowercased()
+                let subStr = (action.subtitle ?? "").lowercased()
+                
+                totalMins += extractMinutes(from: timeStr)
+                if totalMins == 0 { totalMins += extractMinutes(from: titleStr) }
+                if totalMins == 0 { totalMins += extractMinutes(from: subStr) }
+            }
+            
+            if totalMins > 0 {
+                return totalMins
+            }
         }
-        return 0
+        
+        // Fallback
+        return 15
+    }
+    
+    private func extractMinutes(from text: String) -> Int {
+        let pattern = "(\\d+)\\s*(?:min|minute)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return 0 }
+        let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+        
+        var mins = 0
+        for match in matches {
+            if let range = Range(match.range(at: 1), in: text), let val = Int(text[range]) {
+                mins += val
+            }
+        }
+        return mins
     }
     
     func todaysMindfulMinutes() -> Int {
@@ -625,6 +658,44 @@ class AppDataStore {
         Task {
             await BackendService.shared.saveScanReport(report: report, userId: currentUserId)
         }
+    }
+
+    func addDummyReport() {
+        let dummyScanId = UUID()
+        let oneMonthAgo = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+        
+        let dummyScan = ScalpScan(
+            id: dummyScanId,
+            userId: currentUserId,
+            scanDate: oneMonthAgo,
+            frontImageURL: "",
+            leftImageURL: "",
+            rightImageURL: "",
+            backImageURL: "",
+            topImageURL: "",
+            scanType: .monthly
+        )
+        scalpScans.append(dummyScan)
+        
+        let dummyReport = ScanReport(
+            id: UUID(),
+            createdAt: oneMonthAgo,
+            scalpScanId: dummyScanId,
+            hairDensityPercent: 55.0,
+            hairDensityLevel: .low,
+            hairFallStage: .stage3,
+            scalpCondition: .dandruff,
+            hairType: "straight",
+            analysisSource: .aiModel,
+            planId: "plan_recovery",
+            lifestyleScore: 6.5,
+            dietScore: 5.0,
+            stressScore: 7.0,
+            sleepScore: 6.0,
+            hairCareScore: 8.0,
+            recommendedPlan: "Focus on recovery and reducing dandruff."
+        )
+        scanReports.append(dummyReport)
     }
 
     // MARK: - Reset on Logout

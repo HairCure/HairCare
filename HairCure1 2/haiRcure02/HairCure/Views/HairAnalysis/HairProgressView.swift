@@ -55,6 +55,18 @@ struct HairProgressView: View {
                                 .background(Color.hcBrown)
                                 .clipShape(Capsule())
                             }
+                        } else {
+                            Button {
+                                store.addDummyReport()
+                            } label: {
+                                Text("Add Dummy")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray)
+                                    .clipShape(Capsule())
+                            }
                         }
                     }
                     .padding(.horizontal, 20)
