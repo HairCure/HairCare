@@ -178,8 +178,6 @@ struct HairAnalysisView: View {
     }
 }
 
-// MARK: - Subviews
-
 struct PhotoGridCellView: View {
     let index: Int
     var viewModel: HairAnalysisViewModel

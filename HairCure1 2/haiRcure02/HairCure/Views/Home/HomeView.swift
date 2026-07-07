@@ -24,7 +24,6 @@ struct HomeView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 20) {
-                        // Guest banner
                         if authVM.isGuestMode {
                             GuestBannerView(
                                 daysRemaining: authVM.guestDaysRemaining,
@@ -192,8 +191,6 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Subviews for HomeView
-
 struct HomeHeroCardsSectionView: View {
     var viewModel: HomeViewModel
     var store: AppDataStore
@@ -215,7 +212,6 @@ struct HomeHeroCardsSectionView: View {
             .frame(height: heroCardHeight)
             .background(Color.clear)
 
-            // Page dots
             HStack(spacing: 8) {
                 ForEach(0..<2, id: \.self) { i in
                     Circle()
@@ -303,7 +299,6 @@ struct HomeHairHealthCardView: View {
                     
                     // Columns Row: Density, Stage, Last Scanned
                     HStack(alignment: .center, spacing: 0) {
-                        // Density Column
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(alignment: .firstTextBaseline, spacing: 1) {
                                 Text(hasReport ? "\(Int(density))" : "--")
@@ -321,13 +316,11 @@ struct HomeHairHealthCardView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         
-                        // Divider 1
                         Rectangle()
                             .fill(Color.white.opacity(0.12))
                             .frame(width: 1, height: 40)
                             .padding(.horizontal, 8)
                         
-                        // Stage Column
                         VStack(alignment: .center, spacing: 4) {
                             Text("Stage")
                                 .font(.system(size: 12, weight: .medium))
@@ -344,13 +337,11 @@ struct HomeHairHealthCardView: View {
                         }
                         .frame(maxWidth: .infinity)
                         
-                        // Divider 2
                         Rectangle()
                             .fill(Color.white.opacity(0.12))
                             .frame(width: 1, height: 40)
                             .padding(.horizontal, 8)
                         
-                        // Last Scanned Column
                         VStack(alignment: .center, spacing: 4) {
                             Text("Last Scanned")
                                 .font(.system(size: 12, weight: .medium))

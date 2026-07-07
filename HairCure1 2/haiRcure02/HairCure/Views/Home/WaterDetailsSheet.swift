@@ -19,18 +19,15 @@ struct WaterDetailsSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
                     
-                    // Progress ring + stats
                     WaterProgressCardView(progress: progress, todayL: todayL, targetL: targetL, remaining: remaining)
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
                     
-                    // Permission banner
                     if !healthKit.canWriteWater {
                         WaterPermissionBannerView()
                             .padding(.horizontal, 20)
                     }
                     
-                    // Success/info banner
                     if let msg = viewModel.banner {
                         Text(msg)
                             .font(.system(size: 14, weight: .medium))
@@ -40,11 +37,9 @@ struct WaterDetailsSheet: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                     
-                    // Cup picker
                     WaterCupPickerSectionView(selectedCup: $viewModel.selectedCup)
                         .padding(.horizontal, 20)
                     
-                    // Add button
                     Button {
                         viewModel.logWater(healthKit: healthKit, targetML: targetML)
                     } label: {
@@ -68,13 +63,11 @@ struct WaterDetailsSheet: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 20)
                     
-                    // Today's log from HealthKit
                     if !healthKit.todaysWaterSamples.isEmpty {
                         WaterTodayLogSectionView(healthKit: healthKit)
                             .padding(.horizontal, 20)
                     }
                     
-                    // Weekly chart
                     WaterWeeklySectionView(healthKit: healthKit)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
@@ -108,8 +101,6 @@ struct WaterDetailsSheet: View {
         }
     }
 }
-
-// MARK: - Subviews
 
 struct WaterProgressCardView: View {
     let progress: Double

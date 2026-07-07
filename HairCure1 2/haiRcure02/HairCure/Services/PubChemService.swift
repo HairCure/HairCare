@@ -27,8 +27,6 @@ actor PubChemService {
         loadCache()
     }
     
-    // MARK: - Cache Helpers
-    
     private func loadCache() {
         do {
             let data = try Data(contentsOf: cacheFileURL)

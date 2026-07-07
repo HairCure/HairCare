@@ -6,7 +6,6 @@ import Charts
 struct HairProgressView: View {
     @Environment(AppDataStore.self) private var store
 
-    // Scan flow state
     @State private var showMonthlyAssessment = false
     @State private var showNotDueAlert       = false
     @State private var notDueDaysLeft        = 0
@@ -77,7 +76,6 @@ struct HairProgressView: View {
             }
             .background(Color.hcCream.ignoresSafeArea())
 
-            // ── FAB + schedule chip
             VStack(alignment: .trailing, spacing: 10) {
                 scheduleChip
                 floatingCameraButton
@@ -88,7 +86,6 @@ struct HairProgressView: View {
         .navigationTitle("Hair Progress")
         .navigationBarTitleDisplayMode(.inline)
 
-        // Post-scan push to detail
         .navigationDestination(isPresented: Binding(
             get: { pushToReportId != nil },
             set: { if !$0 { pushToReportId = nil } }
@@ -99,7 +96,6 @@ struct HairProgressView: View {
             }
         }
 
-        // Monthly (full) re-assessment
         .fullScreenCover(isPresented: $showMonthlyAssessment) {
             MonthlyAssessmentWrapper(
                 onComplete: { newReport in
@@ -113,7 +109,6 @@ struct HairProgressView: View {
             .environment(store)
         }
 
-        // ── Not-due alert
         .alert("Scan Not Due Yet", isPresented: $showNotDueAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -127,8 +122,6 @@ struct HairProgressView: View {
                 .environment(store)
         }
     }
-
-    // MARK: - Schedule Chip
 
     private var scheduleChip: some View {
         let schedule = RecommendationEngine.scanSchedule(store: store)
@@ -183,8 +176,6 @@ struct HairProgressView: View {
         }
     }
 
-    // MARK: - Empty State
-
     private var emptyJourneyState: some View {
         VStack(spacing: 16) {
             Spacer(minLength: 60)
@@ -213,7 +204,6 @@ struct HairProgressAllScansView: View {
     @State private var showMonthPicker       = false
     @State private var showComparisonView    = false
 
-    // ── Scan flow state ──
     @State private var showMonthlyAssessment = false
     @State private var showNotDueAlert       = false
     @State private var notDueDaysLeft        = 0
@@ -240,7 +230,6 @@ struct HairProgressAllScansView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
 
-                    // Month row
                     HStack {
                         Text("Monthly reports")
                             .font(.system(size: 22, weight: .bold))
@@ -277,7 +266,6 @@ struct HairProgressAllScansView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
 
-                    // Entry cards
                     if scansForMonth.isEmpty {
                         emptyState
                     } else {
@@ -329,8 +317,6 @@ struct HairProgressAllScansView: View {
                 .environment(store)
         }
     }
-
-    // MARK: - Schedule Chip
 
     private var scheduleChip: some View {
         let schedule = RecommendationEngine.scanSchedule(store: store)
@@ -538,7 +524,6 @@ struct HairProgressDetailView: View {
     }
 }
 
-
 #Preview {
     NavigationStack {
         HairProgressView()
@@ -556,8 +541,6 @@ struct HairProgressComparisonView: View {
     @State private var selectedReportIdB: UUID?
     @State private var animateCharts = false
 
-    // ── Data models for charts ──────────────────────────────────
-
     struct DensityPoint: Identifiable {
         let id: UUID
         let date: Date
@@ -572,8 +555,6 @@ struct HairProgressComparisonView: View {
         let value: Double
     }
 
-    // ── Sorted reports for this user ────────────────────────────
-
     private var allUserReports: [ScanReport] {
         store.scanReports
             .filter { r in
@@ -584,8 +565,6 @@ struct HairProgressComparisonView: View {
 
     private var reportA: ScanReport? { store.scanReports.first { $0.id == selectedReportIdA } }
     private var reportB: ScanReport? { store.scanReports.first { $0.id == selectedReportIdB } }
-
-    // ── Chart data builders ─────────────────────────────────────
 
     private var densityPoints: [DensityPoint] {
         allUserReports.map { r in
@@ -610,8 +589,6 @@ struct HairProgressComparisonView: View {
         ]}
     }
 
-    // ── Date formatter ──────────────────────────────────────────
-
     private static let shortDate: DateFormatter = {
         let df = DateFormatter(); df.dateFormat = "dd MMM, yyyy"; return df
     }()
@@ -619,8 +596,6 @@ struct HairProgressComparisonView: View {
     private static let axisDate: DateFormatter = {
         let df = DateFormatter(); df.dateFormat = "MMM yy"; return df
     }()
-
-    // ── Body ────────────────────────────────────────────────────
 
     var body: some View {
         NavigationStack {
@@ -630,26 +605,21 @@ struct HairProgressComparisonView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
 
-                        // ─── Scan Selectors ───────────────────
                         scanSelectors
                             .padding(.horizontal, 20)
                             .padding(.top, 16)
 
-                        // ─── Density Trend Chart ──────────────
                         densityTrendCard
                             .padding(.horizontal, 20)
 
                         if reportA != nil && reportB != nil {
 
-                            // ─── Delta Badge ──────────────────
                             deltaBadgeCard
                                 .padding(.horizontal, 20)
 
-                            // ─── Lifestyle Bar Chart ──────────
                             lifestyleChartCard
                                 .padding(.horizontal, 20)
 
-                            // ─── Side-by-side Photos ──────────
                             photoComparisonSection
                         }
 
@@ -672,8 +642,6 @@ struct HairProgressComparisonView: View {
             }
         }
     }
-
-    // MARK: – Scan Selectors
 
     private var scanSelectors: some View {
         HStack(spacing: 12) {
@@ -750,7 +718,6 @@ struct HairProgressComparisonView: View {
                         .interpolationMethod(.catmullRom)
                     }
 
-                    // Main line
                     ForEach(densityPoints) { pt in
                         LineMark(
                             x: .value("Date", pt.date),
@@ -761,7 +728,6 @@ struct HairProgressComparisonView: View {
                         .interpolationMethod(.catmullRom)
                     }
 
-                    // Plain data points
                     ForEach(densityPoints.filter { $0.tag == nil }) { pt in
                         PointMark(
                             x: .value("Date", pt.date),
@@ -771,7 +737,6 @@ struct HairProgressComparisonView: View {
                         .symbolSize(40)
                     }
 
-                    // Scan A highlight
                     ForEach(densityPoints.filter { $0.tag == "A" }) { pt in
                         PointMark(
                             x: .value("Date", pt.date),
@@ -790,7 +755,6 @@ struct HairProgressComparisonView: View {
                         }
                     }
 
-                    // Scan B highlight
                     ForEach(densityPoints.filter { $0.tag == "B" }) { pt in
                         PointMark(
                             x: .value("Date", pt.date),
@@ -842,8 +806,6 @@ struct HairProgressComparisonView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    // MARK: – Delta Badge
-
     @ViewBuilder
     private var deltaBadgeCard: some View {
         if let a = reportA, let b = reportB {
@@ -854,7 +816,6 @@ struct HairProgressComparisonView: View {
             let arrowColor: Color = improved ? .green : .red
 
             HStack(spacing: 0) {
-                // Scan A
                 VStack(spacing: 4) {
                     Text("\(Int(a.hairDensityPercent))%")
                         .font(.system(size: 30, weight: .bold))
@@ -868,7 +829,6 @@ struct HairProgressComparisonView: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                // Delta
                 VStack(spacing: 6) {
                     Image(systemName: arrow)
                         .font(.system(size: 22, weight: .semibold))
@@ -882,7 +842,6 @@ struct HairProgressComparisonView: View {
                         .clipShape(Capsule())
                 }
 
-                // Scan B
                 VStack(spacing: 4) {
                     Text("\(Int(b.hairDensityPercent))%")
                         .font(.system(size: 30, weight: .bold))
@@ -915,7 +874,6 @@ struct HairProgressComparisonView: View {
                     .foregroundStyle(.secondary)
             }
 
-            // Legend
             HStack(spacing: 16) {
                 legendDot(color: Color.hcBrown, label: "Scan A")
                 legendDot(color: Color(hue: 0.07, saturation: 0.55, brightness: 0.75), label: "Scan B")
@@ -986,8 +944,6 @@ struct HairProgressComparisonView: View {
             Text(label).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
         }
     }
-
-    // MARK: – Photo Comparison
 
     @ViewBuilder
     private var photoComparisonSection: some View {

@@ -26,7 +26,6 @@ struct MyShelfView: View {
             
             VStack(spacing: 0) {
 
-                // Guest Banner Alert
                 if authVM.isGuestMode {
                     HStack(spacing: 12) {
                         Image(systemName: "cloud.rainbow.half")
@@ -65,7 +64,6 @@ struct MyShelfView: View {
                     .padding(.top, 16)
                 }
                 
-                // Content Area
                 if filteredProducts.isEmpty {
                     emptyShelfPlaceholder
                 } else {
@@ -87,7 +85,6 @@ struct MyShelfView: View {
                 }
             }
             
-            // Floating Action Button
             VStack {
                 Spacer()
                 HStack {
@@ -144,10 +141,8 @@ struct MyShelfView: View {
         }
         .sheet(item: $selectedProduct) { product in
             ProductDetailView(product: product) {
-                // Done / Update notes
                 selectedProduct = nil
             } onDiscard: {
-                // Delete product
                 store.removeProduct(product)
                 selectedProduct = nil
             }
@@ -188,8 +183,6 @@ struct MyShelfView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 48)
             }
-            
-
             
             Spacer()
             Spacer()
@@ -238,7 +231,6 @@ struct ProductCabinetRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Category Icon background
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.hcCream)

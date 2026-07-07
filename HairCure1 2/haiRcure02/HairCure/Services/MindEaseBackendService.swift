@@ -1,4 +1,3 @@
-// MindEaseBackendService.swift
 import Foundation
 import Supabase
 
@@ -25,7 +24,6 @@ final class MindEaseBackendService {
 
     func fetchCategoriesAndContents() async throws -> ([MindEaseCategory], [MindEaseCategoryContent]) {
 
-        // ── STEP 1: Raw fetch — categories ──────────────────
         print("[MindEase] Fetching mindease_categories...")
         let catResponse = try await db
             .from("mindease_categories")
@@ -76,7 +74,6 @@ final class MindEaseBackendService {
         }
         print("[MindEase] Parsed \(categories.count) categories")
 
-        // ── STEP 2: Raw fetch — contents ────────────────────
         print("[MindEase] Fetching mindease_contents...")
         let contentResponse = try await db
             .from("mindease_contents")
@@ -140,8 +137,6 @@ final class MindEaseBackendService {
         return (categories, contents)
     }
 
-    // MARK: - Fetch Sessions
-
     func fetchSessions(userId: UUID) async -> [MindfulSession] {
         do {
             let response = try await db
@@ -178,10 +173,7 @@ final class MindEaseBackendService {
         }
     }
 
-    // MARK: - Save Session
-
     func saveSession(_ session: MindfulSession) async {
-        // ── Guard: verify content exists in Supabase before writing the FK ──
         let contentIdStr = session.contentId.uuidString
         print("[MindEase] saveSession — checking content_id exists: \(contentIdStr)")
         do {
@@ -216,8 +208,6 @@ final class MindEaseBackendService {
             print("Save MindEase session error: \(error)")
         }
     }
-
-    // MARK: - Save Plan
 
     func savePlan(_ plan: TodaysPlan) async {
         do {
@@ -293,8 +283,6 @@ final class MindEaseBackendService {
         }
     }
 }
-
-// MARK: - DateFormatter helper
 
 private extension DateFormatter {
     static let yyyyMMdd: DateFormatter = {

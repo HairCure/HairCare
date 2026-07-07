@@ -1,12 +1,8 @@
 import Foundation
 
-// MARK: - MealType
-
 enum MealType: String, Codable, CaseIterable {
     case breakfast, lunch, snack, dinner
 }
-
-// MARK: - MealEntry
 
 struct MealEntry: Identifiable {
     let id: UUID
@@ -25,16 +21,12 @@ extension MealEntry {
     var hasCalories: Bool { caloriesConsumed > 0 }
 }
 
-// MARK: - MealFood
-
 struct MealFood: Identifiable {
     let id: UUID
     var mealEntryId: UUID
     var foodId: Int
     var quantity: Float      
 }
-
-// MARK: - Food  
 
 struct Food: Identifiable {
     let id: Int
@@ -46,10 +38,8 @@ struct Food: Identifiable {
     var hairBenefit: String?
     var dataSource: String?
 
-    // Calories per serving
     var caloriesKcal: Float
 
-    // Macros per serving
     var totalProteinsInGm: Float
     var totalCarbsInGm: Float
     var totalFatInGm: Float
@@ -66,8 +56,6 @@ struct Food: Identifiable {
     var seleniumMcg: Float
     var niacinMg: Float
 }
-
-// MARK: - Food convenience
 
 extension Food {
     // Hair-nutrient flags — derived from evidence-based thresholds

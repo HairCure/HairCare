@@ -1,19 +1,13 @@
 import Foundation
 import Observation
 
-// MARK: - HairInsightsDataStore
-
 @Observable
 class HairInsightsDataStore {
-    
-    // MARK: - Properties
     
     var careTips: [CareTip]              = []
     var homeRemedies: [HomeRemedy]       = []
     var hairCareRoutines: [HairCareRoutine] = []
     var userFavorites: [UserFavorite]    = []
-    
-    // MARK: - Init
     
     init() {
         // Data is fetched dynamically from backend
@@ -68,8 +62,6 @@ class HairInsightsDataStore {
             r.hairTypes.isEmpty || r.hairTypes.contains(where: { $0.lowercased() == ht })
         }
     }
-    
-    // MARK: - Favourite Helpers
     
     func isFavorite(contentId: UUID) -> Bool {
         userFavorites.contains { $0.contentId == contentId }
@@ -167,8 +159,6 @@ class HairInsightsDataStore {
         return tips + remedies
     }
 }
-
-// MARK: - AnyFavouriteItem
 
 enum AnyFavouriteItem: Identifiable {
     case careTip(CareTip)

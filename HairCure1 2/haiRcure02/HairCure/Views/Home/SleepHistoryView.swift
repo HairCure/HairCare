@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - SleepHistoryView
-
 struct SleepHistoryView: View {
     @Environment(AppDataStore.self) private var store
     
@@ -21,23 +19,18 @@ struct SleepHistoryView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
                 
-                // ── Apple Health badge removed ──
-                
-                // ── Today summary card ──
                 todaySummaryCard
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.2))) { c, p in
                         c.opacity(p.isIdentity ? 1 : 0).scaleEffect(p.isIdentity ? 1 : 0.96)
                     }
                 
-                //  4-day tappable ring selector
                 ringSelectorSection
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.2))) { c, p in
                         c.opacity(p.isIdentity ? 1 : 0.2).scaleEffect(p.isIdentity ? 1 : 0.95)
                     }
                 
-                // Selected day detail
                 selectedDayDetail
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.1))) { c, p in
@@ -125,7 +118,6 @@ struct SleepHistoryView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                // Calendar picker button
                 Button {
                     showDatePicker = true
                 } label: {
@@ -174,7 +166,6 @@ struct SleepHistoryView: View {
                                         .rotationEffect(.degrees(-90))
                                         .animation(.easeInOut(duration: 0.4), value: prog)
                                 }
-                                // Centre label
                                 if hours > 0 {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.1f", hours))
@@ -228,7 +219,6 @@ struct SleepHistoryView: View {
         
         return VStack(alignment: .leading, spacing: 0) {
             
-            // Header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleLabel)
@@ -292,8 +282,6 @@ struct SleepHistoryView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selectedDate)
     }
     
-    // MARK: - Helpers
-    
     private func shortDayLabel(_ date: Date) -> String {
         let cal = Calendar.current
         if cal.isDateInToday(date)     { return "Today" }
@@ -352,8 +340,6 @@ private struct SleepDetailRow: View {
     }
 }
 
-// MARK: - Sleep chip
-
 private struct SleepChip: View {
     let icon: String; let label: String; let color: Color
     var body: some View {
@@ -365,8 +351,6 @@ private struct SleepChip: View {
         .background(color.opacity(0.12)).clipShape(Capsule())
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     NavigationStack { SleepHistoryView() }

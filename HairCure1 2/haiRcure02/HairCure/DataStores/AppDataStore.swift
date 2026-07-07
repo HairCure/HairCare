@@ -4,58 +4,42 @@ import Observation
 @Observable
 class AppDataStore {
     
-    // MARK: - Core User
     var users: [User] = []
     var userProfiles: [UserProfile] = []
     var currentUserId: UUID = UUID()
     
-    // MARK: - Assessment
     var assessments: [Assessment] = []
     var questions: [Question] = []
     var questionOptions: [QuestionOption] = []
     var questionScoreMaps: [QuestionScoreMap] = []
     var userAnswers: [UserAnswer] = []
     
-    // MARK: - Scalp Scan
     var scalpScans: [ScalpScan] = []
     var scanReports: [ScanReport] = []
     
-    // MARK: - Engine Output
     var userPlans: [UserPlan] = []
     var userNutritionProfiles: [UserNutritionProfile] = []
     
-    // MARK: - Trackers
     var sleepRecords: [SleepRecord] = []
     var waterIntakeLogs: [WaterIntakeLog] = []
     
-    // MARK: - Hair Insights
     private(set) var hairInsightsStore: HairInsightsDataStore = HairInsightsDataStore()
     
-    // MARK: - DietMate
     private(set) var dietMateStore: DietmateDataStore = DietmateDataStore(currentUserId: UUID())
     
-    // MARK: - MindEase
     private(set) var mindEaseStore: MindEaseDataStore = MindEaseDataStore(currentUserId: UUID())
     
-    // MARK: - Settings
     var appPreferences: [AppPreferences] = []
     var notificationSettings: [NotificationSettings] = []
     var userProducts: [Product] = []
 
-    
-    // MARK: - Init
-    
     init() {
         // Only seed the question bank and content library — no user data
         seedQuestions()
         hairInsightsStore = HairInsightsDataStore()
     }
     
-    
     // MARK: 1 — Create User (called from auth flow)
-    
-    
-    
     
     func createUser(
         name: String,
@@ -117,13 +101,11 @@ class AppDataStore {
         }
     }
     
-    
     func seedSubStoresAfterEngineRun(userId: UUID) {
         let np = userNutritionProfiles.first(where: { $0.userId == userId })
         dietMateStore.seedTodaysMealEntries(userId: userId, nutritionProfile: np)
         mindEaseStore.addAll(userId: userId, userPlans: userPlans)
     }
-    
     
     // MARK: seedQuestions — REPLACE this entire function
     //       in AppDataStore.swift
@@ -215,21 +197,18 @@ class AppDataStore {
                                                       optionId: opt.id, scoreDimension: .hairCare, scoreValue: pair.1))
         }
         
-        // Q4  Age (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your age?",
                                   questionOrderIndex: 4, scoreDimension: .none,
                                   pickerMin: 18, pickerMax: 40 , pickerStep: 1, pickerUnit: "yrs",
                                   keyboardType: .number))
         
-        //  Q5  Height (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your height?",
                                   questionOrderIndex: 5, scoreDimension: .none,
                                   pickerMin: 140, pickerMax: 220, pickerStep: 1, pickerUnit: "cm",
                                   keyboardType: .number))
         
-        // Q6 Weight (picker)
         questions.append(Question(id: UUID(), questionType: .picker,
                                   questionText: "What is your weight?",
                                   questionOrderIndex: 6, scoreDimension: .none,
@@ -249,7 +228,6 @@ class AppDataStore {
                                                   optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
         }
         
-        //  Q8  Fallback: self-select stage
         let q8 = Question(id: UUID(), questionType: .imageChoice,
                            questionText: "Select your current hair fall stage",
                            questionOrderIndex: 8, scoreDimension: .none)
@@ -264,7 +242,6 @@ class AppDataStore {
                                                   imageURL: pair.1, optionType: .image))
         }
         
-        // Q9  Fallback: scalp condition
         let q9 = Question(id: UUID(), questionType: .singleChoice,
                            questionText: "How does your scalp feel most of the time?",
                            questionOrderIndex: 9, scoreDimension: .none)
@@ -278,7 +255,6 @@ class AppDataStore {
                                                   optionOrderIndex: i+1, optionText: text, imageURL: nil, optionType: .text))
         }
         
-        //  Q10  Fallback: hair density
         let q10 = Question(id: UUID(), questionType: .singleChoice,
                            questionText: "How would you describe your hair thickness?",
                            questionOrderIndex: 10, scoreDimension: .none)
@@ -295,11 +271,6 @@ class AppDataStore {
     // MARK: 3 — Engine Output
     //   (no longer pre-seeded — computed dynamically by
     //    RecommendationEngine.run() after assessment + hair analysis)
-    
-    
-    
-    // MARK: 9 — Settings
-    
     
     private func seedSettings(userId: UUID) {
         // Derive initial goals from UserProfile using the same formulas as RecommendationEngine
@@ -344,7 +315,6 @@ class AppDataStore {
                                                          weeklyScanReminderEnabled: true,
                                                          weeklyScanReminderDay: "monday", weeklyScanReminderTime: "10:00"))
     }
-    
     
     // MARK: - Convenience Helpers (used by Views)
     
@@ -423,7 +393,6 @@ class AppDataStore {
         waterIntakeLogs.append(log)
     }
     
-    
     var dailyMindfulTarget: Int {
         guard let plan = activePlan, let aiPlan = plan.aiWeeklyPlan else {
             return 15
@@ -451,7 +420,6 @@ class AppDataStore {
             }
         }
         
-        // Fallback
         return 15
     }
     
@@ -559,11 +527,6 @@ class AppDataStore {
         print("AI result applied: \(result)")
     }
     
-    
-    // MARK: - Backend Sync
-    
-    
-    
     func loadScanReports() async {
         guard currentUserId != UUID() else { return }
         let reports = await BackendService.shared.fetchScanReports(userId: currentUserId)
@@ -605,7 +568,6 @@ class AppDataStore {
         let (profileData, nutrition, plan) = await (profileTask, nutritionTask, planTask)
 
         await MainActor.run {
-            // ── Restore physical profile ──
             if let data = profileData,
                let idx = self.userProfiles.firstIndex(where: { $0.userId == userId }) {
                 if data.heightCm > 0 { self.userProfiles[idx].heightCm = data.heightCm }
@@ -613,7 +575,6 @@ class AppDataStore {
                 if let dob = data.dob { self.userProfiles[idx].dateOfBirth = dob }
             }
 
-            // ── Restore nutrition profile (calorie goal + water target) ──
             if let nutrition = nutrition {
                 self.userNutritionProfiles.removeAll(where: { $0.userId == userId })
                 self.userNutritionProfiles.append(nutrition)
@@ -625,7 +586,6 @@ class AppDataStore {
                 }
             }
 
-            // ── Restore active user plan + seed MindEase targets ──
             if var plan = plan {
                 let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 let fileURL = docs.appendingPathComponent("ai_plan_\(userId).json")
@@ -653,15 +613,11 @@ class AppDataStore {
         print("User data restored from backend")
     }
 
-    
-    
     func saveScanReportToBackend(_ report: ScanReport) {
         Task {
             await BackendService.shared.saveScanReport(report: report, userId: currentUserId)
         }
     }
-
-
 
     // MARK: - Reset on Logout
     /// Clears all user-specific in-memory data so a fresh login
@@ -685,8 +641,6 @@ class AppDataStore {
         dietMateStore        = DietmateDataStore(currentUserId: UUID())
         mindEaseStore        = MindEaseDataStore(currentUserId: UUID())
     }
-
-    // MARK: - Product Management
 
     func loadUserProducts() async {
         guard currentUserId != UUID() else { return }
@@ -715,9 +669,6 @@ class AppDataStore {
         }
     }
 
-    
-    // MARK: - Guest Helpers
-    
     /// Whether the current user is a guest (not authenticated)
     var isGuestUser: Bool {
         currentUser?.authProvider == .guest
@@ -730,7 +681,6 @@ class AppDataStore {
         let oldUserId = currentUserId
         currentUserId = newUserId
         
-        // Re-assign user records
         if let idx = users.firstIndex(where: { $0.id == oldUserId }) {
             // Replace the guest user with the authenticated one
             users[idx] = User(
@@ -743,34 +693,28 @@ class AppDataStore {
             )
         }
         
-        // Re-assign user profile
         if let idx = userProfiles.firstIndex(where: { $0.userId == oldUserId }) {
             userProfiles[idx].userId = newUserId
             userProfiles[idx].displayName = name
             userProfiles[idx].username = name.lowercased().replacingOccurrences(of: " ", with: "")
         }
         
-        // Re-assign assessments
         for i in assessments.indices where assessments[i].userId == oldUserId {
             assessments[i].userId = newUserId
         }
         
-        // Re-assign scalp scans
         for i in scalpScans.indices where scalpScans[i].userId == oldUserId {
             scalpScans[i].userId = newUserId
         }
         
-        // Re-assign user plans
         for i in userPlans.indices where userPlans[i].userId == oldUserId {
             userPlans[i].userId = newUserId
         }
         
-        // Re-assign nutrition profiles
         for i in userNutritionProfiles.indices where userNutritionProfiles[i].userId == oldUserId {
             userNutritionProfiles[i].userId = newUserId
         }
         
-        // Re-assign tracker data
         for i in sleepRecords.indices where sleepRecords[i].userId == oldUserId {
             sleepRecords[i].userId = newUserId
         }
@@ -778,7 +722,6 @@ class AppDataStore {
             waterIntakeLogs[i].userId = newUserId
         }
         
-        // Re-assign preferences
         for i in appPreferences.indices where appPreferences[i].userId == oldUserId {
             appPreferences[i].userId = newUserId
         }
@@ -786,7 +729,6 @@ class AppDataStore {
             notificationSettings[i].userId = newUserId
         }
         
-        // Update sub-stores
         dietMateStore = DietmateDataStore(currentUserId: newUserId)
         dietMateStore.parentStore = self
         Task { await dietMateStore.loadFoodsFromBackend() }
@@ -797,12 +739,10 @@ class AppDataStore {
         
         // Sync migrated data to backend
         Task {
-            // Save profile
             await BackendService.shared.saveProfile(
                 userId: newUserId, name: name, email: email
             )
             
-            // Save assessment if completed
             if let assessment = assessments.last(where: { $0.userId == newUserId && $0.completedAt != nil }) {
                 await BackendService.shared.saveAssessment(
                     assessmentId: assessment.id,
@@ -829,7 +769,6 @@ class AppDataStore {
                 }
             }
             
-            // Save scan data
             for scan in scalpScans.filter({ $0.userId == newUserId }) {
                 await BackendService.shared.saveScalpScan(scan: scan, userId: newUserId)
             }
@@ -837,7 +776,6 @@ class AppDataStore {
                 await BackendService.shared.saveScanReport(report: report, userId: newUserId)
             }
             
-            // Save plan & nutrition
             if let plan = userPlans.first(where: { $0.userId == newUserId && $0.isActive }) {
                 await BackendService.shared.saveUserPlan(plan: plan, userId: newUserId)
             }

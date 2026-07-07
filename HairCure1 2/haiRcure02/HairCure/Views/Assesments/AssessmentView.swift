@@ -151,8 +151,6 @@ struct AssessmentView: View {
     }
 }
 
-// MARK: - Subviews for Questions
-
 struct QuestionBodyView: View {
     let q: Question
     var viewModel: AssessmentViewModel
@@ -218,7 +216,6 @@ struct SingleChoiceOptionsView: View {
                             .padding(.leading, 20)
                         
                         Spacer()
-                        
                         
                     }
                     .frame(maxWidth: .infinity)
@@ -556,19 +553,16 @@ struct FreeTextQuestionView: View {
 struct HairFolliclePointer: View {
     var body: some View {
         ZStack {
-            // Shadow / background
             Circle()
                 .fill(Color.white)
                 .frame(width: 24, height: 24)
                 .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
             
-            // The follicle root bulb
             Path { path in
                 path.addArc(center: CGPoint(x: 12, y: 16), radius: 3.5, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
             }
             .fill(Color.hcBrown)
             
-            // The hair shaft
             Path { path in
                 path.move(to: CGPoint(x: 12, y: 14))
                 path.addCurve(to: CGPoint(x: 14, y: 5), control1: CGPoint(x: 10, y: 9), control2: CGPoint(x: 16, y: 8))

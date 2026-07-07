@@ -34,7 +34,6 @@ struct GuestGateModifier: ViewModifier {
                 Color.black.opacity(0.15)
                     .ignoresSafeArea()
                 
-                // Central lock indicator
                 VStack(spacing: 12) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 32, weight: .medium))
@@ -81,8 +80,6 @@ struct GuestGateModifier: ViewModifier {
     }
 }
 
-// MARK: - View Extension
-
 extension View {
     /// Applies a guest gate overlay that blocks the view and prompts sign-up.
     func guestGate(
@@ -119,7 +116,6 @@ struct GuestGateSheetView: View {
             Spacer()
             
             VStack(spacing: 20) {
-                // Icon
                 ZStack {
                     Circle()
                         .fill(Color.hcCream)
@@ -129,7 +125,6 @@ struct GuestGateSheetView: View {
                         .foregroundStyle(Color.hcBrown)
                 }
                 
-                // Title & message
                 VStack(spacing: 10) {
                     Text(title)
                         .font(.system(size: 24, weight: .bold))
@@ -142,7 +137,6 @@ struct GuestGateSheetView: View {
                         .padding(.horizontal, 24)
                 }
                 
-                // CTAs
                 VStack(spacing: 12) {
                     Button(action: onSignUp) {
                         Text("Create Free Account")
@@ -171,8 +165,6 @@ struct GuestGateSheetView: View {
     }
 }
 
-// MARK: - Shared Guest Gate Configurations and Views
-
 struct GuestGateConfig {
     let icon: String
     let title: String
@@ -197,7 +189,6 @@ struct GuestGatePage: View {
                 Spacer()
 
                 VStack(spacing: 20) {
-                    // Icon circle
                     ZStack {
                         Circle()
                             .fill(Color.hcBrown.opacity(0.10))
@@ -207,7 +198,6 @@ struct GuestGatePage: View {
                             .foregroundStyle(Color.hcBrown)
                     }
 
-                    // Title & message
                     VStack(spacing: 10) {
                         Text(config.title)
                             .font(.system(size: 24, weight: .bold))
@@ -221,7 +211,6 @@ struct GuestGatePage: View {
                             .padding(.horizontal, 24)
                     }
 
-                    // CTAs
                     VStack(spacing: 14) {
                         Button(action: onSignUp) {
                             Text("Create Free Account")

@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - MyProfileView
-
 struct MyProfileView: View {
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
@@ -10,7 +8,6 @@ struct MyProfileView: View {
     
     @State private var isEditing = false
     
-    // Editable fields
     @State private var fullName:    String = ""
     @State private var email:       String = ""
     @State private var dateOfBirth: Date?  = nil
@@ -29,7 +26,6 @@ struct MyProfileView: View {
         ScrollView {
             VStack(spacing: 0) {
                 
-                // ── List sections ──
                 VStack(spacing: 28) {
                     personalDetailsSection
                     healthGoalsSection
@@ -76,8 +72,6 @@ struct MyProfileView: View {
         .sheet(isPresented: $showDOBPicker) { dobPickerSheet }
         .onAppear(perform: loadFields)
     }
-    
-    
     
     // MARK: - Personal Details Section
     
@@ -135,8 +129,6 @@ struct MyProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
-    // MARK: - Row Components
-    
     @ViewBuilder
     private func editableRow(
         label: String,
@@ -172,8 +164,6 @@ struct MyProfileView: View {
         .padding(.vertical, 13)
     }
     
-    
-    
     private var dobRow: some View {
         Button {
             if isEditing {
@@ -205,8 +195,6 @@ struct MyProfileView: View {
         Divider().padding(.leading, 16)
     }
     
-    // MARK: - Helpers
-    
     private func sectionHeader(icon: String, title: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
@@ -218,7 +206,6 @@ struct MyProfileView: View {
         }
     }
     
-    
     private var dobDisplayText: String {
         guard let dob = dateOfBirth else {
             return isEditing ? "Add Birthday" : "—"
@@ -227,8 +214,6 @@ struct MyProfileView: View {
         f.dateFormat = "dd MMM yyyy"
         return f.string(from: dob)
     }
-    
-    // MARK: - DOB Picker
     
     private var dobPickerSheet: some View {
         NavigationStack {
@@ -297,8 +282,6 @@ struct MyProfileView: View {
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     NavigationStack { MyProfileView() }

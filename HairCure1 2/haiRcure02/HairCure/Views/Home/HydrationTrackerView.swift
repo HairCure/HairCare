@@ -141,7 +141,6 @@ struct HydrationTrackerView: View {
         }
     }
     
-    // MARK: - Log Action
     private func logWater() {
         let amount = selectedCupSize.ml
         Task {
@@ -330,7 +329,6 @@ struct HydrationTrackerView: View {
         }
     }
     
-    // MARK: - Helpers
     private var stripDivider: some View {
         Rectangle()
             .fill(Color(UIColor.separator).opacity(0.5))

@@ -173,7 +173,6 @@ struct DietMateProgressView: View {
         }()
 
         return VStack(alignment: .leading, spacing: 0) {
-            // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(titleLabel).font(.system(size: 18, weight: .bold))
@@ -247,7 +246,6 @@ struct DietMateProgressView: View {
                 }
                 .padding(.bottom, 8)
 
-                // Macro summary
                 let totalP = entries.reduce(0) { $0 + $1.proteinConsumed }
                 let totalC = entries.reduce(0) { $0 + $1.carbsConsumed }
                 let totalF = entries.reduce(0) { $0 + $1.fatConsumed }
@@ -277,8 +275,6 @@ struct DietMateProgressView: View {
         return f.string(from: date)
     }
 }
-
-// MARK: - MacroChip
 
 private struct MacroChip: View {
     let label: String; let value: String; let color: Color

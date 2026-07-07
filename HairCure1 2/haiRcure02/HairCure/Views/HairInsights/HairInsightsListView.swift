@@ -1,7 +1,5 @@
 import SwiftUI
 
-// MARK: - HomeRemediesListView
-
 struct HomeRemediesListView: View {
     let insightStore: HairInsightsDataStore
     let hairType: String?
@@ -28,8 +26,6 @@ struct HomeRemediesListView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
-
-// MARK: - HomeRemedyRowView
 
 struct HomeRemedyRowView: View {
     let remedy: HomeRemedy
@@ -93,8 +89,6 @@ struct HomeRemedyRowView: View {
     }
 }
 
-// MARK: - CareTipsListView
-
 struct CareTipsListView: View {
     let insightStore: HairInsightsDataStore
     let hairType: String?
@@ -131,8 +125,6 @@ struct CareTipsListView: View {
         }
     }
 }
-
-// MARK: - CareTipRowView
 
 struct CareTipRowView: View {
     let tip: CareTip
@@ -186,8 +178,6 @@ struct CareTipRowView: View {
     }
 }
 
-// MARK: - FavouritesListView
-
 struct FavouritesListView: View {
     let insightStore: HairInsightsDataStore
     let userPlan: UserPlan?
@@ -230,7 +220,6 @@ struct FavouritesListView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    
     @ViewBuilder
     private func detailView(for item: AnyFavouriteItem) -> some View {
         switch item {
@@ -243,8 +232,6 @@ struct FavouritesListView: View {
         }
     }
 }
-
-// MARK: - FavouriteItemRowView
 
 struct FavouriteItemRowView: View {
     let item: AnyFavouriteItem

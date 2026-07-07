@@ -1,12 +1,10 @@
 import Foundation
 
-// Area breakdown per angle
 struct AreaDetail: Codable {
     let density_percentage: Int
     let notes: String
 }
 
-// Per angle validity
 struct ImagesValid: Codable {
     let front: Bool
     let crown: Bool
@@ -14,7 +12,6 @@ struct ImagesValid: Codable {
     let right: Bool
 }
 
-// Area breakdown
 struct AreaBreakdown: Codable {
     let front: AreaDetail
     let crown: AreaDetail
@@ -22,7 +19,6 @@ struct AreaBreakdown: Codable {
     let right: AreaDetail
 }
 
-// Main response model
 struct HairAnalysisResult: Codable {
     let overall_density_percentage: Int
     let overall_density_label: String

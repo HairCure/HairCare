@@ -3,7 +3,6 @@ import SwiftUI
 
 struct CoachView: View {
 
-    // MARK: - ViewModel
     @State var viewModel: CoachViewModel
     @State private var inputText: String = ""
     @Environment(\.dismiss) private var dismiss
@@ -31,8 +30,6 @@ struct CoachView: View {
             }
         }
     }
-
-    // MARK: - Message List
 
     private var messageList: some View {
         ScrollViewReader { proxy in
@@ -63,8 +60,6 @@ struct CoachView: View {
         }
     }
 
-    // MARK: - Empty State
-
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -79,8 +74,6 @@ struct CoachView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
     }
-
-    // MARK: - Input Area
 
     private var inputArea: some View {
         VStack(spacing: 0) {
@@ -110,8 +103,6 @@ struct CoachView: View {
     }
 }
 
-// MARK: - Chat Bubble
-
 struct ChatBubble: View {
     let message: ChatMessage
 
@@ -132,8 +123,6 @@ struct ChatBubble: View {
     }
 }
 
-// MARK: - Typing Indicator
-
 struct TypingIndicator: View {
     var body: some View {
         HStack {
@@ -146,8 +135,6 @@ struct TypingIndicator: View {
         .padding(.leading, 4)
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     CoachView(viewModel: CoachViewModel())

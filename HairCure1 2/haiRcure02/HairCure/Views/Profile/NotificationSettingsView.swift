@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - NotificationSettingsView
-
 struct NotificationSettingsView: View {
     @Environment(AppDataStore.self) private var store
     
@@ -16,7 +14,6 @@ struct NotificationSettingsView: View {
     var body: some View {
         List {
             
-            // ── Water Reminders ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].waterReminderEnabled) {
@@ -44,7 +41,6 @@ struct NotificationSettingsView: View {
                 Text("Hydration")
             }
             
-            // ── Meal Reminders ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].mealReminderEnabled) {
@@ -68,7 +64,6 @@ struct NotificationSettingsView: View {
             } header: {
                 Text("Meals")
             }
-            // ── Bedtime Reminder ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].bedtimeReminderEnabled) {
@@ -96,7 +91,6 @@ struct NotificationSettingsView: View {
                 Text("Sleep")
             }
             
-            // ── Weekly Scan Reminder ──
             Section {
                 if let idx = settingsIndex {
                     Toggle(isOn: Bindable(store).notificationSettings[idx].weeklyScanReminderEnabled) {
@@ -176,15 +170,11 @@ struct NotificationSettingsView: View {
         }
     }
     
-    // MARK: - Reschedule
-    
     private func reschedule() {
         guard let s = settings else { return }
         NotificationManager.shared.reschedule(settings: s)
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     NavigationStack { NotificationSettingsView() }

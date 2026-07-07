@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - CareTip
-
 struct CareTip: Identifiable {
     let id: UUID
     var title: String
@@ -15,9 +13,6 @@ struct CareTip: Identifiable {
     var hairTypes: [String]
     var isActive: Bool
 }
-
-// MARK: - HomeRemedy
-
 
 struct HomeRemedy: Identifiable {
     let id: UUID
@@ -37,9 +32,6 @@ struct HomeRemedy: Identifiable {
     var isActive: Bool
 }
 
-// MARK: - HairCareRoutine
-
-
 struct HairCareRoutine: Identifiable {
     let id: UUID
     var cardHeading: String
@@ -52,8 +44,6 @@ struct HairCareRoutine: Identifiable {
     var hairTypes: [String]
     var isActive: Bool
 }
-
-// MARK: - UserFavorite
 
 struct UserFavorite: Identifiable {
     let id: UUID

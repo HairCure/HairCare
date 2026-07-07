@@ -23,7 +23,6 @@ struct PlanResultsView: View {
     private var plan:      UserPlan?             { overridePlan ?? store.activePlan }
     private var nutrition: UserNutritionProfile? { store.activeNutritionProfile }
 
-    // Density → fixed thresholds
     private func densityLabel(_ pct: Float) -> String {
         switch pct {
         case 80...100: return "High (\(Int(pct))%)"
@@ -101,10 +100,8 @@ struct PlanResultsView: View {
         }
     }
 
-    
     // MARK: 1 — Nav Bar
     
-
     private var navBar: some View {
         HStack {
             HCBackButton {
@@ -127,7 +124,6 @@ struct PlanResultsView: View {
         .padding(.horizontal, 16)
     }
 
-    
     // MARK: 2 — Scan Photo Row
 
     private var scanPhotoRow: some View {
@@ -189,7 +185,6 @@ struct PlanResultsView: View {
         }
     }
 
-
     private var swipeableCards: some View {
         VStack(spacing: 12) {
             TabView(selection: $cardPage) {
@@ -203,7 +198,6 @@ struct PlanResultsView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 220)
 
-            // Page dots
             HStack(spacing: 8) {
                 ForEach(0..<2, id: \.self) { i in
                     Circle()
@@ -226,7 +220,6 @@ struct PlanResultsView: View {
         let sColor        = stageColor(stage)
 
         return ZStack(alignment: .topLeading) {
-            // Base gradient
             LinearGradient(
                 stops: [
                     .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
@@ -235,14 +228,12 @@ struct PlanResultsView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            // Cream glow top-right
             RadialGradient(
                 colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.13), .clear],
                 center: .init(x: 0.80, y: 0.15),
                 startRadius: 8,
                 endRadius: 150
             )
-            // Dark-rose glow bottom-left
             RadialGradient(
                 colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
                 center: .init(x: 0.10, y: 0.85),
@@ -251,7 +242,6 @@ struct PlanResultsView: View {
             )
 
             VStack(alignment: .leading, spacing: 14) {
-                // Header chip
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 9, weight: .bold))
@@ -266,9 +256,7 @@ struct PlanResultsView: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white)
 
-                // Metric rows
                 VStack(spacing: 12) {
-                    // Hair Density
                     HStack {
                         Text("Hair Density")
                             .font(.system(size: 14))
@@ -284,7 +272,6 @@ struct PlanResultsView: View {
                             .overlay(Capsule().stroke(dColor.opacity(0.45), lineWidth: 1))
                     }
 
-                    // Growth Stage
                     HStack {
                         HStack(spacing: 4) {
                             Text("Growth Stage")
@@ -308,7 +295,6 @@ struct PlanResultsView: View {
                             .overlay(Capsule().stroke(sColor.opacity(0.45), lineWidth: 1))
                     }
 
-                    // Hair Type
                     HStack {
                         Text("Hair Type")
                             .font(.system(size: 14))
@@ -362,7 +348,6 @@ struct PlanResultsView: View {
     // Card B — Lifestyle Scores
     private var lifestyleScoresCard: some View {
         ZStack(alignment: .topLeading) {
-            // Base gradient
             LinearGradient(
                 stops: [
                     .init(color: Color(red: 0.424, green: 0.298, blue: 0.302), location: 0.0),
@@ -371,14 +356,12 @@ struct PlanResultsView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            // Cream glow top-right
             RadialGradient(
                 colors: [Color(red: 0.953, green: 0.933, blue: 0.851).opacity(0.13), .clear],
                 center: .init(x: 0.80, y: 0.15),
                 startRadius: 8,
                 endRadius: 150
             )
-            // Dark-rose glow bottom-left
             RadialGradient(
                 colors: [Color(red: 0.424, green: 0.298, blue: 0.302).opacity(0.30), .clear],
                 center: .init(x: 0.10, y: 0.85),
@@ -387,7 +370,6 @@ struct PlanResultsView: View {
             )
 
             VStack(alignment: .leading, spacing: 8) {
-                // Header chip
                 HStack(spacing: 6) {
                     Image(systemName: "chart.bar.fill")
                         .font(.system(size: 9, weight: .bold))
@@ -402,7 +384,6 @@ struct PlanResultsView: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white)
 
-                // Ring + dimension bars
                 HStack(alignment: .center, spacing: 16) {
                     compositeRing
                         .frame(width: 85, height: 85)
@@ -498,9 +479,6 @@ struct PlanResultsView: View {
             .frame(width: 1, height: 44)
     }
 
-        // MARK: 7 — CTA
-    
-
     private var ctaButton: some View {
         let isNotAssessed = report?.hairDensityLevel == .notAssessed
         
@@ -555,10 +533,6 @@ struct PlanResultsView: View {
             .background(Color.hcCream)
         }
     }
-
-    // MARK: Helpers
-
-
 
     private func stageColor(_ s: Int) -> Color {
         switch s {
@@ -661,10 +635,8 @@ struct PlanResultsView: View {
         let frac  = CGFloat(score / 10.0)
         let c: Color = score < 5 ? Color(red: 1.0, green: 0.6, blue: 0.2) : score < 8 ? Color(red: 0.4, green: 0.85, blue: 0.45) : Color(red: 0.3, green: 0.90, blue: 0.5)
         return ZStack {
-            // Track
             Circle()
                 .stroke(Color.white.opacity(0.12), lineWidth: 11)
-            // Filled arc with glow
             Circle()
                 .trim(from: 0, to: animateBars ? frac : 0)
                 .stroke(c, style: StrokeStyle(lineWidth: 11, lineCap: .round))
@@ -718,8 +690,6 @@ struct PlanResultsView: View {
     }
 }
 
-// MARK: - NorwoodInfoSheet
-
 private struct NorwoodInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -752,12 +722,10 @@ private struct NorwoodInfoSheet: View {
 
     var body: some View {
         NavigationStack {
-            // ── Stage list ──
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 10) {
                     ForEach(stages, id: \.stage) { item in
                         HStack(alignment: .top, spacing: 14) {
-                            // Stage badge
                             Text(item.stage)
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(item.color)
@@ -789,7 +757,6 @@ private struct NorwoodInfoSheet: View {
                         )
                     }
 
-                    // ── Open in Safari button ──
                     Button {
                         openURL(norwoodURL)
                     } label: {
@@ -827,8 +794,6 @@ private struct NorwoodInfoSheet: View {
     }
 }
 
-// MARK: - DailyActionPlanSheet
-
 struct DailyActionPlanSheet: View {
     let plan:      UserPlan?
     let nutrition: UserNutritionProfile?
@@ -840,7 +805,6 @@ struct DailyActionPlanSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
 
-                        // Daily Targets strip
                         if let np = nutrition {
                             VStack(alignment: .leading, spacing: 10) {
                                 Label("Daily Targets", systemImage: "target")
@@ -868,7 +832,6 @@ struct DailyActionPlanSheet: View {
                             .padding(.horizontal, 20)
                         }
 
-                        // 7-Day Plan
                         WeeklyPlanWidgetView(plan: plan)
 
                         Color.clear.frame(height: 30)

@@ -12,7 +12,6 @@ extension AppDataStore {
     
     // MARK: - Submit Weekly Scan
     
-    
     @discardableResult
     func submitWeeklyScan(
         hairFallStage:     HairFallStage,
@@ -23,7 +22,6 @@ extension AppDataStore {
         
         let prior = latestScanReport
         
-        // Carry lifestyle scores forward
         let lifeScore     = prior?.lifestyleScore  ?? 5.0
         let dietScore     = prior?.dietScore       ?? 5.0
         let stressScore   = prior?.stressScore     ?? 5.0
@@ -33,7 +31,6 @@ extension AppDataStore {
         //Pre generate report ID so plan can reference it
         let reportId = UUID()
         
-                // Plan re-evaluation
         var finalPlanId = activePlan?.planId ?? "Stage 2"
         
         if let currentPlan = activePlan {
@@ -55,11 +52,9 @@ extension AppDataStore {
             if evalResult.shouldUpdate {
                 finalPlanId = evalResult.newPlanId
                 
-                // Deactivate existing plans
                 for idx in userPlans.indices where userPlans[idx].isActive {
                     userPlans[idx].isActive = false
                 }
-                
                 
                 let newSchedule = RecommendationEngine.resolveSessionSchedule(planId: finalPlanId)
                 
@@ -95,7 +90,6 @@ extension AppDataStore {
             }
         }
         
-        // ── Build and store the ScanReport 
         let report = ScanReport(
             id:                 reportId,
             createdAt:          Date(),

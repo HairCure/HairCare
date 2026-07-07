@@ -3,18 +3,14 @@ import Foundation
 import Observation
 import FoundationModels
 
-// MARK: - ViewModel
-
 @Observable
 @MainActor
 final class CoachViewModel {
 
-    // MARK: - Published State
     var messages: [ChatMessage] = []
     var isThinking: Bool = false
     var errorMessage: String? = nil
 
-    // MARK: - Private
     private var session: LanguageModelSession
 
     private static let systemInstructions = """
@@ -33,12 +29,9 @@ final class CoachViewModel {
     4. Always encourage consistency — hair improvement takes time.
     """
 
-    // MARK: - Init
     init() {
         self.session = LanguageModelSession(instructions: Self.systemInstructions)
     }
-
-    // MARK: - Send Message
 
     func sendMessage(_ text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

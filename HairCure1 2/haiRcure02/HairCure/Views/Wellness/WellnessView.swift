@@ -70,7 +70,6 @@ struct WellnessView: View {
             .background(Color.hcCream.ignoresSafeArea())
             .navigationTitle("Wellness")
             .navigationBarTitleDisplayMode(.large)
-            // ── Guest gate pushed as nav destination (tab bar + back button stay visible) ──
             .navigationDestination(isPresented: $pushGuestGate) {
                 GuestGatePage(
                     config: guestGateConfig,
@@ -94,8 +93,6 @@ struct WellnessView: View {
         }
     }
 
-    // MARK: - Picker Bar
-
     private var pickerBar: some View {
         Picker("Wellness", selection: $selectedSegment) {
             ForEach(WellnessSegment.allCases, id: \.self) { seg in
@@ -108,7 +105,6 @@ struct WellnessView: View {
         .background(Color.hcCream)
     }
 }
-
 
 #Preview {
     WellnessView()

@@ -46,8 +46,6 @@ struct HeroAsyncImage: View {
     }
 }
 
-// MARK: - Image Gallery
-
 struct ImageGalleryView: View {
     let urls: [String]
     
@@ -88,8 +86,6 @@ struct ImageGalleryView: View {
         }
     }
 }
-
-// MARK: - HomeRemedyDetailView
 
 struct HomeRemedyDetailView: View {
     let remedy: HomeRemedy
@@ -159,7 +155,6 @@ struct HomeRemedyDetailView: View {
                     .padding(.top, 12)
                     .padding(.horizontal, 20)
                     
-                    // Scrubber
                     VStack(spacing: 6) {
                         Slider(value: $progress, in: 0...totalDuration) { editing in
                             if editing {
@@ -184,7 +179,6 @@ struct HomeRemedyDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
                     
-                    // MARK: Title & Benefits
                     Text(remedy.title)
                         .font(.title3.bold())
                         .padding(.horizontal, 20)
@@ -196,7 +190,6 @@ struct HomeRemedyDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                     
-                    // MARK: Ingredients
                     if !remedy.ingredients.isEmpty {
                         Divider()
                             .padding(.horizontal, 20)
@@ -224,7 +217,6 @@ struct HomeRemedyDetailView: View {
                         .padding(.top, 6)
                     }
                     
-                    // MARK: Steps
                     if !remedy.steps.isEmpty {
                         Divider()
                             .padding(.horizontal, 20)
@@ -254,7 +246,6 @@ struct HomeRemedyDetailView: View {
                         .padding(.top, 6)
                     }
                     
-                    // MARK: Precautions
                     if let precautions = remedy.precautions {
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: "exclamationmark.triangle.fill")
@@ -299,8 +290,6 @@ struct HomeRemedyDetailView: View {
         }
     }
     
-    // MARK: Playback helpers
-    
     private func togglePlayback() {
         if isPlaying {
             isPlaying = false
@@ -332,8 +321,6 @@ struct HomeRemedyDetailView: View {
     }
 }
 
-// MARK: - CareTipDetailView
-
 struct CareTipDetailView: View {
     let tip: CareTip
     let insightStore: HairInsightsDataStore
@@ -349,7 +336,6 @@ struct CareTipDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 
-                // Hero
                 HeroAsyncImage(urlString: tip.mediaURL, fallbackIcon: "leaf", height: 240)
                 
                 VStack(alignment: .leading, spacing: 12) {
@@ -384,7 +370,6 @@ struct CareTipDetailView: View {
                         .foregroundStyle(.secondary)
                         .lineSpacing(4)
                     
-                    // Steps
                     if !tip.steps.isEmpty {
                         Divider()
                         
@@ -408,7 +393,6 @@ struct CareTipDetailView: View {
                         }
                     }
                     
-                    // Precautions
                     if let precautions = tip.precautions {
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: "exclamationmark.triangle.fill")
@@ -449,8 +433,6 @@ struct CareTipDetailView: View {
     }
 }
 
-// MARK: - HairCareRoutineDetailView (NEW)
-
 struct HairCareRoutineDetailView: View {
     let routine: HairCareRoutine
     let insightStore: HairInsightsDataStore
@@ -458,14 +440,12 @@ struct HairCareRoutineDetailView: View {
     
     @State private var showResearch = false
 
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 
                 VStack(alignment: .leading, spacing: 12) {
                     
-                    // Frequency badge
                     Label(routine.applyingFrequency, systemImage: "calendar")
                         .font(.caption.bold())
                         .foregroundStyle(Color.hcBrown)
@@ -482,7 +462,6 @@ struct HairCareRoutineDetailView: View {
                         .foregroundStyle(.secondary)
                         .lineSpacing(4)
                     
-                    // Benefits
                     if let benefits = routine.benefits, !benefits.isEmpty {
                         Divider()
                         
@@ -494,7 +473,6 @@ struct HairCareRoutineDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                     
-                    // Steps
                     if !routine.steps.isEmpty {
                         Divider()
                         
@@ -518,7 +496,6 @@ struct HairCareRoutineDetailView: View {
                         }
                     }
                     
-                    // Precautions
                     if let precautions = routine.precautions {
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: "exclamationmark.triangle.fill")
