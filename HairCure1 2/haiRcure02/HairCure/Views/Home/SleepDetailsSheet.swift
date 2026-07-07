@@ -78,8 +78,6 @@ struct SleepDetailsSheet: View {
     }
 }
 
-// MARK: - Subviews
-
 struct SleepStatusBannerView: View {
     let hours: Int
     

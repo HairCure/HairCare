@@ -2,8 +2,6 @@
 import Foundation
 import Observation
 
-// MARK: - Action Result
-
 enum ActionResult {
     case success(message: String)
     case blocked(reason: String)
@@ -16,7 +14,6 @@ enum ActionResult {
 // MARK: - AppDataStore User Actions Extension
 
 extension AppDataStore {
-    
     
     @discardableResult
     func saveAnswer(questionId: UUID, selectedOptionId: UUID) -> ActionResult {
@@ -108,8 +105,6 @@ extension AppDataStore {
         return .success(message: "Value saved.")
     }
     
-    
-    
     @discardableResult
     func completeAssessment() -> ActionResult {
         guard let idx = assessments.lastIndex(where: { $0.userId == currentUserId }) else {
@@ -133,7 +128,6 @@ extension AppDataStore {
             if weight > 0 { userProfiles[profileIdx].weightKg = weight }
         }
         
-        // ── Save to Supabase (skip for guests — data migrates on sign-up) ──
         if !isGuestUser {
             let answersToSave = userAnswers.filter { $0.assessmentId == assessment.id }
             let age    = Int(pickerValue(for: "age",    assessment: assessment, default: 22))
@@ -260,7 +254,6 @@ extension AppDataStore {
             topImageURL: topURL ?? "self_assessed_top",
             scanType: scanType
         ))
-        
         
         let densityPercent: Float
         switch density {
@@ -514,7 +507,6 @@ extension AppDataStore {
                 )
                 scanReports.append(report)
                 
-                // ── Save to Supabase ──
                 let userId = currentUserId
                 Task {
                     await BackendService.shared.saveScalpScan(scan: scan, userId: userId)
@@ -561,7 +553,6 @@ extension AppDataStore {
         userNutritionProfiles.removeAll(where: { $0.userId == currentUserId })
         userNutritionProfiles.append(newNutrition)
         
-        
         if let prefIdx = appPreferences.firstIndex(where: { $0.userId == currentUserId }) {
             appPreferences[prefIdx].dailyCalorieGoal = newNutrition.tdee
             appPreferences[prefIdx].dailyWaterGoalML = newNutrition.waterTargetML
@@ -602,7 +593,6 @@ extension AppDataStore {
         return hairInsightsStore.hairCareRoutines
     }
     
-    
     // ─────────────────────────────────────────────
     // MARK: Private Helpers
     // ─────────────────────────────────────────────
@@ -626,7 +616,6 @@ extension AppDataStore {
         else { return fallback }
         return answer.pickerValue ?? fallback
     }
-    
     
     private func ageFromProfile(_ profile: UserProfile) -> Int {
         Calendar.current.dateComponents([.year], from: profile.dateOfBirth ?? Date(), to: Date()).year ?? 0
@@ -682,7 +671,6 @@ extension AppDataStore {
             answersDict[question.questionText] = ansText
         }
         
-        // ── Step 1: Immediately build and apply the base plan locally ──
         let input = EngineInput(
             userId:            currentUserId,
             assessmentId:      assessment.id,
@@ -704,7 +692,6 @@ extension AppDataStore {
         
         RecommendationEngine.applyToStore(output, store: self)
         
-        // ── Step 2: Trigger AI weekly plan generation in the background ──
         let userId = currentUserId
         let planId = output.userPlan.id
         let isGuest = isGuestUser
@@ -729,7 +716,6 @@ extension AppDataStore {
                 
                 try? "API Succeeded at \(Date())".write(to: logURL, atomically: true, encoding: .utf8)
                 
-                // Update in-memory userPlan
                 await MainActor.run {
                     if let idx = self.userPlans.firstIndex(where: { $0.id == planId }) {
                         self.userPlans[idx].aiWeeklyPlan = weeklyPlan
@@ -799,7 +785,6 @@ extension AppDataStore {
         
         return .success(message: "Plan \(output.userPlan.planId) assigned.")
     }
-    
     
     private func resolvedActivityLevel(from assessment: Assessment) -> ActivityLevel? {
         guard let q7 = questions.first(where: { $0.questionOrderIndex == 7 }),

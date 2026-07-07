@@ -10,11 +10,9 @@ struct Hair12App: App {
     @State private var authVM = AuthViewModel()
     @State private var healthKit = HealthKitManager.shared
     
-    // 1. Move task string to a constant to prevent typos
     static let backgroundTaskIdentifier = "com.guavnish.hairCare.refreshTask"
     
     init() {
-        // 2. Reference the manager directly instead of using 'self'
         let manager = HealthKitManager.shared
         
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundTaskIdentifier, using: nil) { task in
@@ -29,7 +27,6 @@ struct Hair12App: App {
                 await manager.refresh()
                 processingTask.setTaskCompleted(success: true)
                 
-                // Re-schedule the loop
                 Hair12App.scheduleBackgroundTask()
             }
         }
@@ -67,7 +64,6 @@ struct Hair12App: App {
         }
     }
     
-    // 3. Made this static so it can be called safely without needing a 'self' instance
     static func scheduleBackgroundTask() {
         let request = BGProcessingTaskRequest(identifier: Self.backgroundTaskIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 mins later

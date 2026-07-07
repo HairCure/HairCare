@@ -18,8 +18,6 @@ extension RecommendationEngine {
         case notDue(nextDate: Date, daysLeft: Int)
     }
 
-    // MARK: - Schedule Resolver
-
     /// Returns the current scan schedule based on the store's scan history.
     static func scanSchedule(store: AppDataStore) -> ScanSchedule {
         guard let latest = store.latestScanReport else {

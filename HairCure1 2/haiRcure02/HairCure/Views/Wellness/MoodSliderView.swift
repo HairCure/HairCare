@@ -4,7 +4,6 @@ struct MoodSliderView: View {
     @Binding var selectedMood: String?
     let moods: [(String, String)]
     
-    // Default selection if nil
     private var currentMoodName: String {
         selectedMood ?? "Select Mood"
     }

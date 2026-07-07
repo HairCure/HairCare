@@ -1,11 +1,8 @@
 import SwiftUI
 
-
 extension View {
     func hcInputField() -> some View { modifier(HCInputField()) }
 }
-
-// MARK: - Colours
 
 extension Color {
     /// Dark brown — primary button fill, selected option, progress bar fill
@@ -24,8 +21,6 @@ extension Color {
     /// Progress bar unfilled segment
     static let hcProgressBg  = Color(red: 0.878, green: 0.867, blue: 0.855)   // #E0DDA9 (muted)
 }
-
-// MARK: - Shared Button Styles
 
 struct HCPrimaryButton: ViewModifier {
     @Environment(\.isEnabled) var isEnabled
@@ -79,8 +74,6 @@ struct HCInputField: ViewModifier {
             )
     }
 }
-
-// MARK: - Back Button
 
 struct HCBackButton: View {
     let action: () -> Void

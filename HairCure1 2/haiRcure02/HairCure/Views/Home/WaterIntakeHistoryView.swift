@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - WaterIntakeHistoryView
-
 struct WaterIntakeHistoryView: View {
     @Environment(AppDataStore.self) private var store
     
@@ -21,23 +19,18 @@ struct WaterIntakeHistoryView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
                 
-                // ── Apple Health badge removed ──
-                
-                // ── Today summary card ──
                 todaySummaryCard
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.2))) { c, p in
                         c.opacity(p.isIdentity ? 1 : 0).scaleEffect(p.isIdentity ? 1 : 0.96)
                     }
                 
-                // 4-day tappable ring selector
                 ringSelectorSection
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.2))) { c, p in
                         c.opacity(p.isIdentity ? 1 : 0.2).scaleEffect(p.isIdentity ? 1 : 0.95)
                     }
                 
-                // ── Selected day detail ──
                 selectedDayDetail
                     .padding(.horizontal, 20)
                     .scrollTransition(.animated.threshold(.visible(0.1))) { c, p in
@@ -65,7 +58,6 @@ struct WaterIntakeHistoryView: View {
         let cups     = store.waterIntakeLogs(for: Date())
         
         return HStack(spacing: 20) {
-            // Blue ring
             ZStack {
                 Circle()
                     .stroke(blue.opacity(0.15), lineWidth: 10)
@@ -125,7 +117,6 @@ struct WaterIntakeHistoryView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                // Calendar picker button
                 Button {
                     showDatePicker = true
                 } label: {
@@ -161,7 +152,6 @@ struct WaterIntakeHistoryView: View {
                         }
                     } label: {
                         VStack(spacing: 8) {
-                            // Ring
                             ZStack {
                                 Circle()
                                     .stroke(
@@ -179,7 +169,6 @@ struct WaterIntakeHistoryView: View {
                                         .rotationEffect(.degrees(-90))
                                         .animation(.easeInOut(duration: 0.4), value: prog)
                                 }
-                                // Centre: ml or drop
                                 if totalML > 0 {
                                     VStack(spacing: 0) {
                                         Text("\(Int(totalML))")
@@ -198,7 +187,6 @@ struct WaterIntakeHistoryView: View {
                             .scaleEffect(isSelected ? 1.08 : 1.0)
                             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
                             
-                            // Day label
                             Text(dayLabel)
                                 .font(.system(size: 12, weight: isSelected ? .bold : .regular))
                                 .foregroundStyle(isSelected ? blue : .secondary)
@@ -234,7 +222,6 @@ struct WaterIntakeHistoryView: View {
         
         return VStack(alignment: .leading, spacing: 0) {
             
-            // Section header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(titleLabel)
@@ -291,8 +278,6 @@ struct WaterIntakeHistoryView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selectedDate)
     }
-    
-    // MARK: - Helpers
     
     private func shortDayLabel(_ date: Date) -> String {
         let cal = Calendar.current
@@ -351,8 +336,6 @@ private struct WaterCupRow: View {
     }
 }
 
-// MARK: - Water chip
-
 private struct WaterChip: View {
     let icon: String; let label: String; let color: Color
     var body: some View {
@@ -364,8 +347,6 @@ private struct WaterChip: View {
         .background(color.opacity(0.12)).clipShape(Capsule())
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     NavigationStack { WaterIntakeHistoryView() }

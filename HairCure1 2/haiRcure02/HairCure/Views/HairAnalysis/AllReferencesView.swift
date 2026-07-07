@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - Data Model
-
 private struct Reference: Identifiable {
     let id = UUID()
     let citation: String
@@ -15,8 +13,6 @@ private struct ReferenceGroup: Identifiable {
     let icon: String
     let references: [Reference]
 }
-
-// MARK: - View
 
 struct AllReferencesView: View {
     @Environment(\.dismiss) private var dismiss
@@ -143,7 +139,6 @@ struct AllReferencesView: View {
                 ]
             ),
         ]
-        
         
     }
 }

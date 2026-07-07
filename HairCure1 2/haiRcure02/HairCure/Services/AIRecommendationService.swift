@@ -151,7 +151,6 @@ class AIRecommendationService {
         answers: [String: String]
     ) async throws -> AIWeeklyPlan {
         
-        // Format assessment answers
         var answersSummary = ""
         for (question, answer) in answers {
             answersSummary += "- Question: \(question)\n  Answer: \(answer)\n"

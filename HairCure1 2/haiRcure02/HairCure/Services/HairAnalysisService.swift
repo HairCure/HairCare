@@ -2,7 +2,6 @@ import UIKit
 
 class HairAnalysisService {
     
-    // OpenRouter API key
     private let apiKey = Config.openRouterAPIKey
     private let apiURL = "https://openrouter.ai/api/v1/chat/completions"
     
@@ -45,7 +44,6 @@ class HairAnalysisService {
         "left":  { "density_percentage": <0-100>, "notes": "<one line>" },
         "right": { "density_percentage": <0-100>, "notes": "<one line>" }
     
-    
     "hair_type": "<Straight/Wavy/Curly/Coily>",
     
       },
@@ -70,7 +68,6 @@ class HairAnalysisService {
         right: UIImage
     ) async throws -> HairAnalysisResult {
         
-        // Convert images to base64
         let frontB64 = imageToBase64(front)
         let crownB64 = imageToBase64(crown)
         let leftB64  = imageToBase64(left)
@@ -112,7 +109,6 @@ class HairAnalysisService {
             ]
         ]
         
-        // Build request
         var request = URLRequest(url: URL(string: apiURL)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -123,11 +119,9 @@ class HairAnalysisService {
         
         let (data, _) = try await URLSession.shared.data(for: request)
         
-        // DEBUG
         let rawString = String(data: data, encoding: .utf8) ?? "nil"
         print("RAW RESPONSE: \(rawString)")
         
-        // Parse OpenAI-compatible response
         guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let choices = response["choices"] as? [[String: Any]],
               let firstChoice = choices.first,
@@ -139,7 +133,6 @@ class HairAnalysisService {
         
         print("AI TEXT: \(text)")
         
-        // Clean response
         let cleaned = text
             .replacingOccurrences(of: "```json", with: "")
             .replacingOccurrences(of: "```", with: "")

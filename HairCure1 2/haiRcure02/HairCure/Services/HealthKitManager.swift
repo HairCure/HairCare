@@ -54,7 +54,6 @@ class HealthKitManager {
         }
     }
 
-    
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else {
             print("HealthKit not available on this device")
@@ -69,7 +68,6 @@ class HealthKitManager {
             isAuthorized = true
             print("HealthKit authorization requested")
 
-            // Fetch data immediately
             await fetchAll()
 
             // Start live observers (retained on self)
@@ -81,7 +79,6 @@ class HealthKitManager {
         }
     }
 
-    // MARK: - Fetch Everything
     func fetchAll() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchTodaysWater() }
@@ -101,7 +98,6 @@ class HealthKitManager {
         }
     }
 
-    // MARK: - Refresh
     func refresh() async {
         await fetchAll()
     }
@@ -301,8 +297,6 @@ class HealthKitManager {
         self.weeklySleepData = result
     }
 
-    // MARK: - Generic Helpers
-
     /// Fetches cumulative sum for a quantity type using async/await safe pattern
     private nonisolated func fetchCumulativeSum(
         type: HKQuantityType,
@@ -389,7 +383,6 @@ class HealthKitManager {
             self?.waterObserverQuery = query
         }
     }
-
 
     // MARK: - Start Observing Sleep Changes
     private nonisolated func startObservingSleep() {

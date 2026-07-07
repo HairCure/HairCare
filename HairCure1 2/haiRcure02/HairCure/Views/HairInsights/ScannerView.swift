@@ -206,7 +206,6 @@ class ScannerViewModel: NSObject {
     }
 }
 
-// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 extension ScannerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         // Throttle frame processing to save battery / CPU
@@ -313,7 +312,6 @@ struct ScannerView: View {
                 CameraPreviewView(previewLayer: viewModel.previewLayer!)
                     .ignoresSafeArea()
                 
-                // Visual scan guide frame
                 GeometryReader { geometry in
                     let frameWidth = geometry.size.width * 0.8
                     let frameHeight = geometry.size.height * 0.35
@@ -337,13 +335,11 @@ struct ScannerView: View {
                                     )
                             )
                         
-                        // Crop border
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.white, lineWidth: 2)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                         
-                        // Animated Scanning Line (Laser)
                         Rectangle()
                             .fill(LinearGradient(colors: [.clear, .hcBrown, .clear], startPoint: .top, endPoint: .bottom))
                             .frame(width: rect.width - 4, height: 4)
@@ -353,7 +349,6 @@ struct ScannerView: View {
                                 value: showLaser
                             )
                         
-                        // Real-time Parsing HUD
                         VStack(spacing: 8) {
                             Text("Position ingredients inside the frame")
                                 .font(.system(size: 14, weight: .medium))
@@ -435,7 +430,6 @@ struct ScannerView: View {
                 }
             }
             
-            // Top Controls overlay
             VStack {
                 HStack {
                     Button {

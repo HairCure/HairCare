@@ -28,7 +28,6 @@ struct WeeklyPlanWidgetView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Horizontal day selector
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(aiPlan.dailyPlans) { daily in
@@ -67,7 +66,6 @@ struct WeeklyPlanWidgetView: View {
                 // Card details for active day
                 if let activeDayPlan = aiPlan.dailyPlans.first(where: { $0.dayNumber == selectedDay }) {
                     VStack(spacing: 12) {
-                        // Diet card
                         dailyPlanCard(
                             icon: "fork.knife",
                             iconBg: Color(red: 0.9, green: 0.58, blue: 0.18),
@@ -76,7 +74,6 @@ struct WeeklyPlanWidgetView: View {
                             actions: activeDayPlan.eatActions
                         )
                         
-                        // MindEase card
                         dailyPlanCard(
                             icon: "moon.zzz.fill",
                             iconBg: Color(red: 0.38, green: 0.3, blue: 0.75),

@@ -103,8 +103,6 @@ struct WeeklyScanView: View {
     }
 }
 
-// MARK: - Subviews
-
 struct PhotoSlotView: View {
     let image: UIImage?
     var picker: Binding<PhotosPickerItem?>

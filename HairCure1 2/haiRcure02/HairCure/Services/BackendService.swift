@@ -7,7 +7,6 @@ class BackendService {
     private let db = SupabaseManager.shared.client
     private init() {}
     
-    // MARK: - Save Profile
     func saveProfile(userId: UUID, name: String, email: String) async {
         do {
             try await db.from("profiles").upsert([
@@ -48,7 +47,6 @@ class BackendService {
         }
     }
     
-    // MARK: - Save Assessment
     func saveAssessment(
         assessmentId: UUID,
         userId: UUID,
@@ -153,8 +151,6 @@ class BackendService {
         }
     }
     
-    
-    
     // MARK: - Save Scalp Scan
     func saveScalpScan(scan: ScalpScan, userId: UUID) async {
         do {
@@ -230,7 +226,6 @@ class BackendService {
         }
     }
 
-    
     // MARK: - Save Scan Report
     func saveScanReport(report: ScanReport, userId: UUID) async {
         do {
@@ -413,8 +408,6 @@ class BackendService {
         }
     }
 
-    
-    // MARK: - Save Favourite
     func saveFavourite(
         userId: UUID,
         contentId: UUID,
@@ -434,7 +427,6 @@ class BackendService {
         }
     }
     
-    // MARK: - Delete Favourite
     func deleteFavourite(userId: UUID, contentId: UUID) async {
         do {
             try await db.from("user_favourites")
@@ -448,7 +440,6 @@ class BackendService {
         }
     }
     
-    // MARK: - Fetch Favourites
     func fetchFavourites(userId: UUID) async -> [(contentId: UUID, contentType: String, savedAt: Date)] {
         do {
             let response = try await db

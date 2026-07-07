@@ -2,8 +2,6 @@ import SwiftUI
 import AVKit
 import AVFoundation   // required for AVAudioSession
 
-// MARK: - Theme
-
 extension Color {
     static let mindEasePurple = Color(red: 0.40, green: 0.30, blue: 0.85)
 }
@@ -24,8 +22,6 @@ extension Date: @retroactive Identifiable {
     public var id: Date { self }
 }
 
-// MARK: - View Modifiers
-
 extension View {
     func mindEaseCard(cornerRadius: CGFloat = 18, shadowRadius: CGFloat = 10, shadowY: CGFloat = 4) -> some View {
         self.background(.background)
@@ -42,8 +38,6 @@ extension View {
         self.background(Color.hcCream.ignoresSafeArea())
     }
 }
-
-// MARK: ── MindEaseView
 
 struct MindEaseView: View {
     @Environment(AppDataStore.self)      private var store
@@ -108,7 +102,6 @@ struct MindEaseView: View {
                     .padding(.vertical, 48)
                 } else {
 
-                    // 1. Mood Check-In
                     VStack(alignment: .center, spacing: 14) {
                         ZStack(alignment: .trailing) {
                             Text("What is your mood?")
@@ -290,8 +283,6 @@ private struct WeekDayCell: View {
     }
 }
 
-// MARK: - Category Card
-
 private struct CategoryCard: View {
     let category: MindEaseCategory
     var body: some View {
@@ -317,7 +308,6 @@ private struct CategoryCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
-
 
 // MARK: - Mood Recommendation Row
 
@@ -394,8 +384,6 @@ private struct CalendarPickerSheet: View {
         .sheet(isPresented: $showDayDetail) { DayDetailSheet(date: pickedDate) }
     }
 }
-
-// MARK: ── MindEaseProgressView
 
 struct MindEaseProgressView: View {
     @Environment(AppDataStore.self)      private var store
@@ -488,8 +476,6 @@ private struct DayProgressRow: View {
         .buttonStyle(.plain)
     }
 }
-
-// MARK: ── DayDetailSheet
 
 struct DayDetailSheet: View, Identifiable {
     var id: Date { date }
@@ -596,8 +582,6 @@ private struct SessionRow: View {
     }
 }
 
-// MARK: ── MindEaseCategoryListView
-
 struct MindEaseCategoryListView: View {
     let category: MindEaseCategory
     let onGuestTap: () -> Void
@@ -692,7 +676,6 @@ struct MindEasePlayerView: View {
         GeometryReader { geo in
             VStack(spacing: 0) {
 
-                // ── Media area ───────────────────────────────
                 if content.mediaType == .video, let player {
                     VideoPlayer(player: player)
                         .frame(width: geo.size.width, height: geo.size.height * 0.48)
@@ -728,7 +711,6 @@ struct MindEasePlayerView: View {
                     .frame(width: geo.size.width, height: geo.size.height * 0.48)
                 }
 
-                // ── Error banner ─────────────────────────────
                 if loadError {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -740,7 +722,6 @@ struct MindEasePlayerView: View {
                     .background(Color.orange.opacity(0.12))
                 }
 
-                // ── Controls ─────────────────────────────────
                 VStack(spacing: 0) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -817,7 +798,6 @@ struct MindEasePlayerView: View {
                         
                         Spacer()
                         
-                        // Placeholder for layout symmetry
                         Color.clear.frame(width: 44, height: 44)
                     }
                     .padding(.top, 12)
@@ -832,8 +812,6 @@ struct MindEasePlayerView: View {
         .onDisappear { teardownPlayer(); saveProgress() }
     }
 
-    // MARK: - Player Setup
-
     private func setupPlayer() {
         guard let url = URL(string: content.mediaURL) else {
             print("[Player] Invalid URL: \(content.mediaURL)")
@@ -841,7 +819,6 @@ struct MindEasePlayerView: View {
             return
         }
 
-        // ── Configure AVAudioSession for playback ───────────────────────────
         do {
             try AVAudioSession.sharedInstance().setCategory(
                 .playback,
@@ -852,7 +829,6 @@ struct MindEasePlayerView: View {
         } catch {
             print("[Player] AVAudioSession setup failed: \(error)")
         }
-        // ───────────────────────────────────────────────────────────────────
 
         let avPlayer = AVPlayer(url: url)
         player = avPlayer
@@ -879,7 +855,6 @@ struct MindEasePlayerView: View {
             isPlaying      = avPlayer?.rate != 0
         }
 
-        // End-of-playback observer
         NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: avPlayer.currentItem,
@@ -943,8 +918,6 @@ struct MindEasePlayerView: View {
     }
 }
 
-// MARK: ── Shared Primitives
-
 struct MindEaseProgressRing: View {
     let progress: Double; let lineWidth: CGFloat; let diameter: CGFloat
     var color: Color = .mindEasePurple; var trackOpacity: Double = 0.15
@@ -999,7 +972,6 @@ struct MindEaseThumbnail: View {
                         // Remote load failed — try local asset next
                         localOrPlaceholder
                     default:
-                        // Loading spinner
                         Color(UIColor.systemGray5)
                             .overlay(ProgressView().scaleEffect(0.7))
                     }
@@ -1027,8 +999,6 @@ struct MindEaseThumbnail: View {
         }
     }
 }
-
-// MARK: ── Previews
 
 #Preview("Home") {
     NavigationStack {

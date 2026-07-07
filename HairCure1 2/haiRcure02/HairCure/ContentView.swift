@@ -228,7 +228,6 @@ struct ContentView: View {
         // Migrate all guest data to the new authenticated account
         store.migrateGuestData(toUserId: newUserId, name: name, email: email)
         
-        // Clear guest flags
         authVM.upgradeGuestToUser()
         authVM.currentUserId = newUserId.uuidString
         authVM.userName = name

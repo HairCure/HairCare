@@ -1,13 +1,8 @@
-// MindEaseDataStore.swift
 import Foundation
 import Observation
 
-// MARK: - MindEaseDataStore
-
 @Observable
 final class MindEaseDataStore {
-    
-    // MARK: - State
     
     var mindEaseCategories:       [MindEaseCategory]        = []
     var mindEaseCategoryContents: [MindEaseCategoryContent] = []
@@ -20,8 +15,6 @@ final class MindEaseDataStore {
     
     var currentUserId: UUID
     weak var parentStore: AppDataStore?
-    
-    // MARK: - Init
     
     init(currentUserId: UUID) {
         self.currentUserId = currentUserId
@@ -45,7 +38,6 @@ final class MindEaseDataStore {
                 mindEaseCategoryContents = contents
                 isLoadingContent         = false
                 
-                
                 if todaysPlans.filter({
                     $0.userId == currentUserId &&
                     Calendar.current.isDateInToday($0.planDate)
@@ -63,8 +55,6 @@ final class MindEaseDataStore {
             }
         }
     }
-    
-    // MARK: - Plan Seeding
     
     func addAll(userId: UUID, userPlans: [UserPlan]) {
         seedTodaysPlan(userId: userId, userPlans: userPlans)
@@ -104,8 +94,6 @@ final class MindEaseDataStore {
         todaysPlans = result
     }
     
-    // MARK: - Session Persistence
-    
     func saveSession(_ session: MindfulSession) async {
         mindfulSessions.append(session)
         await MindEaseBackendService.shared.saveSession(session)
@@ -130,13 +118,9 @@ final class MindEaseDataStore {
         return plan.meditationMinutesPerDay + plan.yogaMinutesPerDay + plan.soundMinutesPerDay
     }
     
-    // MARK: - Content Helpers
-    
     func durationMinutes(for content: MindEaseCategoryContent) -> Int {
         content.durationSeconds / 60
     }
-    
-    // MARK: - Query Helpers
     
     func sessions(for date: Date) -> [MindfulSession] {
         mindfulSessions.filter {
@@ -218,8 +202,6 @@ final class MindEaseDataStore {
         }
     }
     
-    // MARK: - Plan Update
-    
     private func updatePlan(contentId: UUID, minutesCompleted: Int) {
         guard let content = mindEaseCategoryContents.first(where: { $0.id == contentId }) else { return }
         guard let idx = todaysPlans.firstIndex(where: {
@@ -240,8 +222,6 @@ final class MindEaseDataStore {
             }
         }
     }
-    
-    // MARK: - User Actions
     
     func startSession(contentId: UUID) {
         sessionStartTimes[contentId] = .now

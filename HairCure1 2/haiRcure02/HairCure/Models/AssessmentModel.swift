@@ -11,7 +11,6 @@ enum OptionType: String, Codable {
     case image
 }
 
-
 enum ScanType: String, Codable {
     case initial
     case monthly
@@ -40,8 +39,6 @@ enum AnalysisSource: String, Codable {
     case selfAssessed
 }
 
-// MARK: - Lifestyle Profile
-
 enum LifestyleProfile: String, Codable {
     case poor
     case moderate
@@ -55,8 +52,6 @@ enum LifestyleProfile: String, Codable {
         }
     }
 }
-
-// MARK: - Activity Level
 
 enum ActivityLevel: String, Codable {
     case sedentary
@@ -81,7 +76,6 @@ enum ScoreDimension: String, Codable {
     case hydration
     case none
 }
-
 
 enum HairFallStage: String, Codable {
     case stage1
@@ -115,10 +109,6 @@ enum QuestionType: String, Codable {
     case picker
 }
 
-
-
-// MARK: - Assessment
-
 struct Assessment: Identifiable {
     let id: UUID
     var userId: UUID
@@ -127,9 +117,6 @@ struct Assessment: Identifiable {
 }
 
 // MARK: - Question / Option / ScoreMap
-
-
-
 
 struct Question: Identifiable {
     let id: UUID
@@ -153,7 +140,6 @@ struct QuestionOption: Identifiable {
     var optionType: OptionType
 }
 
-
 struct QuestionScoreMap: Identifiable {
     let id: UUID
     var questionId: UUID
@@ -161,8 +147,6 @@ struct QuestionScoreMap: Identifiable {
     var scoreDimension: ScoreDimension
     var scoreValue: Float
 }
-
-// MARK: - UserAnswer
 
 struct UserAnswer: Identifiable {
     let id: UUID
@@ -191,8 +175,6 @@ struct ScalpScan: Identifiable {
     let scanType: ScanType
 }
 
-
-
 struct ScanReport: Identifiable {
     let id: UUID
     let createdAt: Date
@@ -220,7 +202,6 @@ extension String {
         if self.starts(with: "/") || self.contains("://") {
             return self
         }
-        // Avoid placeholder strings
         if self.starts(with: "self_assessed_") || self.starts(with: "weekly_") || self.starts(with: "monthly_") || self.starts(with: "ai_") {
             return nil
         }

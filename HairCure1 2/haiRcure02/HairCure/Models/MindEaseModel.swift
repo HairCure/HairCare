@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Enums
-
 enum MediaType: String, Codable {
     case video, audio
 }
@@ -10,8 +8,6 @@ enum CategoryType {
     case yoga, meditation, sounds
 }
 
-// MARK: - MindEaseCategory
-
 struct MindEaseCategory: Identifiable, Hashable {
     let id: UUID
     var title: String
@@ -19,8 +15,6 @@ struct MindEaseCategory: Identifiable, Hashable {
     var cardImageUrl: String
     var cardIconName: String
 }
-
-// MARK: - MindEaseCategoryContent
 
 struct MindEaseCategoryContent: Identifiable, Hashable {
     let id: UUID
@@ -38,8 +32,6 @@ struct MindEaseCategoryContent: Identifiable, Hashable {
     var thumbnailUrl: String?
 }
 
-// MARK: - MindfulSession
-
 struct MindfulSession: Identifiable, Hashable {
     let id: UUID
     var userId: UUID
@@ -49,8 +41,6 @@ struct MindfulSession: Identifiable, Hashable {
     var startTime: Date
     var endTime: Date
 }
-
-// MARK: - TodaysPlan
 
 struct TodaysPlan: Identifiable, Hashable {
     let id: UUID

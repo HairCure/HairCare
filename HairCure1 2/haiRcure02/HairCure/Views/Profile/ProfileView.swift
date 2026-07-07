@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - ProfileView
-
 struct ProfileView: View {
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
@@ -15,7 +13,6 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Guest upgrade card
                 if authVM.isGuestMode {
                     Section {
                         GuestProfileUpgradeCard {
@@ -54,8 +51,6 @@ struct ProfileView: View {
         }
     }
 }
-
-// MARK: - SettingsView
 
 struct SettingsView: View {
     @Environment(AppDataStore.self) private var store
@@ -164,8 +159,6 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - ProfileRow
-
 private struct ProfileRow<Destination: View>: View {
     let icon: String
     let color: Color
@@ -218,7 +211,6 @@ struct DeleteAccountView: View {
                 }
                 .padding(.vertical, 4)
             }
-            
             
             Section {
                 Button(role: .destructive) {
@@ -281,8 +273,6 @@ struct ProgressPlaceholderView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     ProfileView().environment(AppDataStore())

@@ -1,8 +1,6 @@
 
 import SwiftUI
 
-// MARK: - HairInsightsView
-
 struct HairInsightsView: View {
     
     @Environment(AppDataStore.self)  private var store
@@ -143,8 +141,6 @@ struct HairInsightsView: View {
         }
     }
     
-    // MARK: - Routine Section
-    
     private var routineSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Recommended")
@@ -212,8 +208,6 @@ struct HairInsightsView: View {
         }
         .padding(.bottom, 20)
     }
-    
-    // MARK: - Favourites Section
     
     @ViewBuilder
     private var favouritesSection: some View {
@@ -470,8 +464,6 @@ struct HairInsightsView: View {
         .padding(.bottom, 24)
     }
     
-    // MARK: - Destination Router
-   
     @ViewBuilder
     private func destinationView(for item: AnyFavouriteItem) -> some View {
         switch item {
@@ -485,8 +477,6 @@ struct HairInsightsView: View {
     }
 }
 
-// MARK: - RoutineCardView
-
 struct RoutineCardView: View {
     let routine: HairCareRoutine
     
@@ -496,7 +486,6 @@ struct RoutineCardView: View {
             // Row: Icon | VStack(Title Row & Tag Row)
             HStack(alignment: .center, spacing: 12) {
 
-                // Icon
                 ZStack {
                     Circle()
                         .fill(Color.hcBrown.opacity(0.14))
@@ -509,7 +498,6 @@ struct RoutineCardView: View {
                 // Text Stack: Balance Line (Title) + Chevron on top row, and Tag below it
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .center) {
-                        // Balance line (Title)
                         Text(routine.cardHeading)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.black)
@@ -534,7 +522,6 @@ struct RoutineCardView: View {
                 }
             }
 
-            // Description
             Text(routine.summary)
                 .font(.system(size: 13))
                 .foregroundStyle(.black.opacity(0.55))
@@ -551,8 +538,6 @@ struct RoutineCardView: View {
         )
     }
 }
-
-// MARK: - InsightMediaCardView
 
 struct InsightMediaCardView: View {
     let title: String
@@ -631,8 +616,6 @@ struct InsightMediaCardView: View {
     }
 }
 
-// MARK: - FavouriteCardView
-
 struct FavouriteCardView: View {
     let item: AnyFavouriteItem
     
@@ -688,8 +671,6 @@ struct FavouriteCardView: View {
     }
 }
 
-// MARK: - EmptyFavouritesView
-
 struct EmptyFavouritesView: View {
     var body: some View {
         HStack(spacing: 10) {
@@ -706,8 +687,6 @@ struct EmptyFavouritesView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     let store = AppDataStore()

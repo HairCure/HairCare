@@ -1,6 +1,5 @@
 import Foundation
 import HealthKit
-// MARK: - Engine Input
 
 struct EngineInput {
     let userId: UUID
@@ -18,8 +17,6 @@ struct EngineInput {
     let weightKg: Float
     let activityLevel: ActivityLevel
 }
-
-// MARK: - Engine Output
 
 struct EngineOutput {
     let scanReport: ScanReport
@@ -40,8 +37,6 @@ struct PlanDescription {
     let isReferDoctor: Bool
     let doctorReferralMessage: String?
 }
-
-// MARK: - Recommendation Engine
 
 struct RecommendationEngine {
     
@@ -71,7 +66,6 @@ struct RecommendationEngine {
     
     static func applyToStore(_ output: EngineOutput, store: AppDataStore) {
         
-        // Deactivate existing plans
         for idx in store.userPlans.indices where store.userPlans[idx].isActive {
             store.userPlans[idx].isActive = false
         }
@@ -93,7 +87,6 @@ struct RecommendationEngine {
         createDailyMealEntries(userId: output.userPlan.userId,
                                nutrition: output.nutritionProfile, store: store)
         
-        // Sync app preferences
         if let idx = store.appPreferences.firstIndex(where: {
             $0.userId == output.userPlan.userId
         }) {
@@ -109,7 +102,6 @@ struct RecommendationEngine {
                          userPlan: output.userPlan, store: store)
     }
     
-    
     struct LifestyleScores {
         let diet: Float
         let stress: Float
@@ -118,12 +110,6 @@ struct RecommendationEngine {
         let hydration: Float
         let composite: Float
     }
-    
-    
-    
-    
-    // MARK: calculateLifestyleScores in RecommendationEngine.swift
-    
     
     static func calculateLifestyleScores(
         answers: [UserAnswer],
@@ -154,7 +140,6 @@ struct RecommendationEngine {
         
         // Blends hydration into diet (EFSA water research embedded in diet dimension)
         let adjustedDiet = ((rawDiet + rawHydration) / 2).clamped(to: 0...10)
-        
         
         let composite = (
             (rawStress    * 0.30) +
@@ -278,8 +263,6 @@ struct RecommendationEngine {
         )
     }
     
-    // MARK: Record Builders
-    
     private static func buildScanReport(
         input: EngineInput,
         scores: LifestyleScores,
@@ -323,8 +306,6 @@ struct RecommendationEngine {
             expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: Date())!
         )
     }
-    
-    // MARK: Daily Meal Entries
     
     private static func createDailyMealEntries(
         userId: UUID,
@@ -448,7 +429,6 @@ struct RecommendationEngine {
             score += food.isBiotinRich || food.isZincRich || food.isIronRich ? 2 : 0
         }
         
-        // Scalp condition modifier
         switch plan.scalpModifier {
         case .dry:       score += food.isVitaminARich ? 3 : 0
             score += food.isOmega3Rich   ? 2 : 0
@@ -462,8 +442,6 @@ struct RecommendationEngine {
         
         return score
     }
-    
-    // MARK: Hair Insights Filter
     
     // MARK: Weekly Plan Re-evaluation
     //
@@ -498,7 +476,6 @@ struct RecommendationEngine {
         
         var highlights: [String] = []
         
-        // Lifestyle improvements
         if newScores.sleep > 6  { highlights.append("Sleep improved") }
         if newScores.diet  > 6  { highlights.append("Diet quality is now stronger") }
         if newScores.stress > 6 { highlights.append("Stress is well managed ") }
@@ -515,7 +492,6 @@ struct RecommendationEngine {
             highlights.append("Lifestyle score improved significantly")
         }
         
-        // Stage changes
         let oldStage = currentPlan.stage
         if newStage.intValue < oldStage {
             highlights.append("Hair density scan shows recovery progress ")
@@ -640,8 +616,6 @@ struct RecommendationEngine {
         return routines
     }
     
-    // MARK: Plan Summary Text
-    
     static func planSummaryText(for planId: String) -> String {
         guard planId != "refer_doctor" else {
             return "Please consult a dermatologist for professional medical assessment."
@@ -654,8 +628,6 @@ struct RecommendationEngine {
         
         return "Stage \(stageNum) hair thinning support with targeted lifestyle corrections, regular mindfulness, and scalp care."
     }
-    
-    // MARK: Plan Description Builder
     
     static func buildPlanDescription(
         planId: String,
@@ -742,8 +714,6 @@ struct RecommendationEngine {
         )
     }
     
-    // MARK: Private Helpers
-    
     private static func identifyWeakestDimension(scores: LifestyleScores) -> ScoreDimension {
         let dims: [(ScoreDimension, Float)] = [
             (.diet, scores.diet), (.stress, scores.stress),
@@ -786,7 +756,6 @@ struct RecommendationEngine {
     ) -> (rating: CompatibilityRating, flaggedIngredients: [FlaggedIngredient]) {
         let flagged = analyzedIngredients.filter { $0.rating != .safe }
 
-        // Determine product level rating
         var finalRating = CompatibilityRating.safe
         if flagged.contains(where: { $0.rating == .hazard }) {
             finalRating = .hazard
@@ -797,7 +766,6 @@ struct RecommendationEngine {
         return (finalRating, flagged)
     }
 }
-
 
 // MARK: - Comparable Float Extension
 

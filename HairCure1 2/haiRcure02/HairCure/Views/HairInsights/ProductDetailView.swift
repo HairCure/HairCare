@@ -48,7 +48,6 @@ struct ProductDetailView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Header Brand & Name
                     VStack(alignment: .leading, spacing: 4) {
                         Text(product.brand.uppercased())
                             .font(.system(size: 11, weight: .bold))
@@ -70,7 +69,6 @@ struct ProductDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Overall Recommendation Card
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 14) {
                             ZStack {
@@ -119,7 +117,6 @@ struct ProductDetailView: View {
                     )
                     .padding(.horizontal, 20)
                     
-                    // Flagged Ingredients Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("INGREDIENT ANALYSIS")
                             .font(.system(size: 12, weight: .bold))
@@ -167,7 +164,6 @@ struct ProductDetailView: View {
                         }
                     }
                     
-                    // Full Ingredients List
                     VStack(alignment: .leading, spacing: 12) {
                         Text("ALL INGREDIENTS")
                             .font(.system(size: 12, weight: .bold))
@@ -188,7 +184,6 @@ struct ProductDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Notes Section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("MY NOTES (OPTIONAL)")
                             .font(.system(size: 12, weight: .bold))
@@ -200,7 +195,6 @@ struct ProductDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Action Buttons
                     HStack(spacing: 12) {
                         Button {
                             onDiscard()
@@ -315,7 +309,6 @@ struct FlaggedIngredientCard: View {
             
             Divider()
             
-            // Research Links
             VStack(alignment: .leading, spacing: 6) {
                 Text("RESEARCH SOURCES")
                     .font(.system(size: 8, weight: .bold))

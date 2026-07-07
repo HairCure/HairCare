@@ -26,8 +26,6 @@ final class NotificationManager {
 
     private init() {}
 
-    // MARK: - Permission
-
     func requestPermission() async {
         do {
             let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
@@ -44,14 +42,10 @@ final class NotificationManager {
         }
     }
 
-    // MARK: - Reschedule All
-
     /// Cancels all existing HairCure notifications and reschedules based on current settings.
     func reschedule(settings: NotificationSettings) {
-        // Cancel everything first
         center.removeAllPendingNotificationRequests()
 
-        // Schedule each enabled category
         if settings.waterReminderEnabled {
             scheduleWaterReminders(intervalHours: settings.waterReminderIntervalHours)
         }
@@ -66,8 +60,6 @@ final class NotificationManager {
                                        time: settings.weeklyScanReminderTime)
         }
     }
-
-    // MARK: - Water Reminders
 
     /// Schedules repeating water reminders every `intervalHours` between 8 AM and 10 PM.
     private func scheduleWaterReminders(intervalHours: Int) {
@@ -107,8 +99,6 @@ final class NotificationManager {
         }
     }
 
-    // MARK: - Meal Reminders
-
     /// Schedules meal reminders at specific times like ["08:00", "13:00", "20:00"].
     private func scheduleMealReminders(times: [String]) {
         let mealNames = ["Breakfast", "Lunch", "Dinner"]
@@ -139,8 +129,6 @@ final class NotificationManager {
             center.add(request)
         }
     }
-
-    // MARK: - Bedtime Reminder
 
     /// Schedules a bedtime reminder X minutes before 10:30 PM (default bedtime).
     private func scheduleBedtimeReminder(minutesBefore: Int) {
@@ -201,8 +189,6 @@ final class NotificationManager {
         )
         center.add(request)
     }
-
-    // MARK: - Cancel All
 
     func cancelAll() {
         center.removeAllPendingNotificationRequests()

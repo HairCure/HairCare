@@ -27,7 +27,6 @@ class AuthViewModel: NSObject {
     /// Maximum guest session duration — 7 days
     private static let guestSessionDurationDays = 7
     
-    // MARK: - UserDefaults Keys
     private enum GuestKeys {
         static let isGuestMode = "hc_guest_isGuestMode"
         static let guestUserId = "hc_guest_userId"
@@ -77,7 +76,6 @@ class AuthViewModel: NSObject {
     
     // MARK: - Check Existing Session
     
-    
     func checkSession() async {
         do {
             let session = try await auth.session
@@ -95,7 +93,6 @@ class AuthViewModel: NSObject {
             await MainActor.run {
                 // No auth session — check for a stored guest session
                 if restoreGuestSession() {
-                    // Guest session restored successfully
                     self.isLoading = false
                 } else {
                     self.isLoggedIn = false
@@ -105,7 +102,6 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Sign Up
     func signUp(email: String, password: String, name: String) async {
         isLoading = true
         errorMessage = nil
@@ -165,7 +161,6 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Sign Out
     func signOut() async {
         do {
             try await auth.signOut()
@@ -183,7 +178,6 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Delete Account
     func deleteAccount() async {
         guard let userIdStr = currentUserId, let userId = UUID(uuidString: userIdStr) else { return }
         isLoading = true
@@ -192,7 +186,6 @@ class AuthViewModel: NSObject {
             // Delete user data from database
             await BackendService.shared.deleteUserData(userId: userId)
             
-            // Sign out from Auth
             try await auth.signOut()
             
             await MainActor.run {
@@ -211,7 +204,6 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Reset Password
     func resetPassword(email: String) async {
         isLoading = true
         errorMessage = nil
@@ -288,7 +280,6 @@ class AuthViewModel: NSObject {
         }
     }
     
-    // MARK: - Guest Mode
     @MainActor
     func continueAsGuest() {
         let guestId = UUID().uuidString
@@ -327,7 +318,6 @@ class AuthViewModel: NSObject {
               let startDate = defaults.object(forKey: GuestKeys.guestSessionStart) as? Date
         else { return false }
         
-        // Check expiry (7 days)
         let expiry = Calendar.current.date(byAdding: .day, value: Self.guestSessionDurationDays, to: startDate) ?? startDate
         if Date() > expiry {
             clearGuestStorage()
@@ -446,7 +436,6 @@ class AuthViewModel: NSObject {
     }
 }
 
-// MARK: - ASAuthorizationControllerDelegate
 extension AuthViewModel: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
@@ -503,7 +492,6 @@ extension AuthViewModel: ASAuthorizationControllerDelegate, ASAuthorizationContr
     
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         Task { @MainActor in
-            // Handle cancellation silently
             if let asError = error as? ASAuthorizationError, asError.code == .canceled {
                 self.isLoading = false
                 self.appleSignInContinuation?.resume(returning: ())

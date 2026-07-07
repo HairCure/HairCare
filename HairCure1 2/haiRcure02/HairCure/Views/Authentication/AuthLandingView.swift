@@ -104,8 +104,6 @@ struct AuthLandingView: View {
     }
 }
 
-// MARK: Shared Auth Sub-views
-
 private func socialRow(onAppleTap: @escaping () -> Void, onGoogleTap: @escaping () -> Void) -> some View {
     VStack(spacing: 12) {
         // Apple — HIG: solid black background, white logo, "Continue with Apple"

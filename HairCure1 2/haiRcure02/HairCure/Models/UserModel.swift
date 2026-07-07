@@ -1,15 +1,11 @@
 import Foundation
 
-// MARK: - Auth
-
 enum AuthProvider: String, Codable {
     case apple
     case google
     case email
     case guest
 }
-
-// MARK: - User
 
 struct User: Identifiable {
     let id: UUID
@@ -19,8 +15,6 @@ struct User: Identifiable {
     let authProvider: AuthProvider
     let createdAt: Date
 }
-
-// MARK: - UserProfile
 
 struct UserProfile: Identifiable {
     let id: UUID
@@ -43,7 +37,6 @@ struct AIWeeklyPlan: Codable, Hashable {
     let planTitle: String
     let planSummary: String
     
-    // Core areas
     let dietRecommendation: String
     let recommendedFoods: [String]
     
@@ -53,7 +46,6 @@ struct AIWeeklyPlan: Codable, Hashable {
     let hairInsightRecommendation: String
     let recommendedHairCareRoutine: String
     
-    // Structured 7-Day Plan
     let dailyPlans: [AIDailyPlan]
 }
 
@@ -76,8 +68,6 @@ struct AIDailyPlan: Codable, Identifiable, Hashable {
     let hairCareActions: [AIActionItem]?
 }
 
-// MARK: - UserPlan
-
 struct UserPlan: Identifiable {
     let id: UUID
     var userId: UUID
@@ -95,8 +85,6 @@ struct UserPlan: Identifiable {
     var expiresAt: Date
     var aiWeeklyPlan: AIWeeklyPlan?
 }
-
-// MARK: - UserNutritionProfile
 
 struct UserNutritionProfile: Identifiable {
     let id: UUID
@@ -116,8 +104,6 @@ struct UserNutritionProfile: Identifiable {
     var updatedAt: Date
 }
 
-// MARK: - WaterIntakeLog
-
 struct WaterIntakeLog: Identifiable {
     let id: UUID
     var userId: UUID
@@ -126,8 +112,6 @@ struct WaterIntakeLog: Identifiable {
     var cupSizeAmountInML: Float
     var loggedAt: Date
 }
-
-// MARK: - SleepRecord
 
 struct SleepRecord: Identifiable {
     let id: UUID
@@ -140,8 +124,6 @@ struct SleepRecord: Identifiable {
     var hoursSlept: Float
 }
 
-// MARK: - AppPreferences
-
 struct AppPreferences: Identifiable {
     let id: UUID
     var userId: UUID
@@ -152,8 +134,6 @@ struct AppPreferences: Identifiable {
     var dailyMindfulMinutesGoal: Int
     var dailyWaterGoalML: Float
 }
-
-// MARK: - NotificationSettings
 
 struct NotificationSettings: Identifiable {
     let id: UUID

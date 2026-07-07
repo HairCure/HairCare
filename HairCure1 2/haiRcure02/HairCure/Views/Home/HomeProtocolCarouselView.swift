@@ -7,7 +7,6 @@ struct HomeProtocolCarouselView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     isExpanded.toggle()
@@ -35,7 +34,6 @@ struct HomeProtocolCarouselView: View {
                     if let todayPlan = aiPlan.dailyPlans.first {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                // Card 1: Nutrition
                                 protocolCard(
                                     title: "Nutrition Plan",
                                     icon: "fork.knife",
@@ -48,7 +46,6 @@ struct HomeProtocolCarouselView: View {
                                     ]
                                 )
                                 
-                                // Card 2: MindEase
                                 protocolCard(
                                     title: "MindEase Wellness",
                                     icon: "moon.zzz.fill",
@@ -60,7 +57,6 @@ struct HomeProtocolCarouselView: View {
                                     ]
                                 )
                                 
-                                // Card 3: Hair Care
                                 protocolCard(
                                     title: "Hair Insight & Routine",
                                     icon: "sparkles",

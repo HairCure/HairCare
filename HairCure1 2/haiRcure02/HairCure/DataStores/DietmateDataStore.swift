@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 
-
 extension MealType {
 
     var displayName: String {
@@ -61,12 +60,8 @@ extension Food {
     ]
 }
 
-// MARK: - DietmateDataStore
-
 @Observable
 class DietmateDataStore {
-
-    // MARK: - Properties
 
     var foods:       [Food]      = []
     var mealEntries: [MealEntry] = []
@@ -77,8 +72,6 @@ class DietmateDataStore {
 
     var currentUserId: UUID
     weak var parentStore: AppDataStore?
-
-    // MARK: - Init
 
     init(currentUserId: UUID) {
         self.currentUserId = currentUserId
@@ -130,8 +123,6 @@ class DietmateDataStore {
         }
     }
 
-    // MARK: - Query Helpers
-
     func todaysMealEntries() -> [MealEntry] {
         let today = Calendar.current.startOfDay(for: Date())
         return mealEntries.filter {
@@ -170,7 +161,6 @@ class DietmateDataStore {
                 pair.food.hairNutrients.forEach { covered.insert($0) }
             }
         }
-        // Return in canonical order
         return Food.hairNutrientList.map(\.name).filter { covered.contains($0) }
     }
 
@@ -341,8 +331,6 @@ class DietmateDataStore {
         mealEntries[index].carbsConsumed    = carbs
         mealEntries[index].fatConsumed      = fat
     }
-
-    // MARK: - Food CRUD
 
     func addFood(_ food: Food, to mealEntryId: UUID, quantity: Float = 1.0) {
         mealFoods.append(MealFood(id: UUID(), mealEntryId: mealEntryId,

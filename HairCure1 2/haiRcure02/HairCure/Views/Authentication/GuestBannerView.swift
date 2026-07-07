@@ -14,7 +14,6 @@ struct GuestBannerView: View {
         if !isDismissed {
             Button(action: onSignUp) {
                 HStack(spacing: 12) {
-                    // Avatar circle
                     ZStack {
                         Circle()
                             .fill(Color.hcBrown.opacity(0.12))
@@ -38,7 +37,6 @@ struct GuestBannerView: View {
                     
                     Spacer(minLength: 4)
                     
-                    // Sign up pill
                     Text("Sign Up")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
@@ -47,7 +45,6 @@ struct GuestBannerView: View {
                         .background(Color.hcBrown)
                         .clipShape(Capsule())
                     
-                    // Dismiss
                     Button {
                         withAnimation(.easeOut(duration: 0.25)) {
                             isDismissed = true

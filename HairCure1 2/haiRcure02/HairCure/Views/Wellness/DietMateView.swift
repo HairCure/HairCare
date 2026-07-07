@@ -69,8 +69,6 @@ struct NutrientPillRow: View {
     }
 }
 
-// MARK: - MacroRow
-
 private struct MacroRow: View {
     let color: Color; let label: String; let fraction: Double; let showBar: Bool
     init(color: Color, label: String, fraction: Double = 0, showBar: Bool = true) {
@@ -100,8 +98,6 @@ private struct MacroRow: View {
     }
 }
 
-// MARK: - FoodImageView
-
 private struct FoodImageView: View {
     let food: Food; let tint: Color; let height: CGFloat; let width: CGFloat?; let cornerRadius: CGFloat
 
@@ -109,7 +105,6 @@ private struct FoodImageView: View {
         ZStack {
             if let urlStr = food.imageURL, !urlStr.isEmpty {
                 if urlStr.hasPrefix("http://") || urlStr.hasPrefix("https://") {
-                    // ── Remote URL from backend ──
                     AsyncImage(url: URL(string: urlStr)) { phase in
                         switch phase {
                         case .success(let image):
@@ -123,7 +118,6 @@ private struct FoodImageView: View {
                         }
                     }
                 } else {
-                    // ── Local asset name ──
                     Image(urlStr).resizable().aspectRatio(contentMode: .fill)
                 }
             } else {
@@ -143,9 +137,6 @@ private struct FoodImageView: View {
         }
     }
 }
-
-
-// MARK: - DietMateView
 
 struct DietMateView: View {
     @Environment(AppDataStore.self)      private var store
@@ -169,7 +160,6 @@ struct DietMateView: View {
                         selectedDate = Calendar.current.startOfDay(for: Date())
                     }
                 }
-                // Loading / error states
                 if dietMateStore.isLoadingFoods {
                     HStack {
                         ProgressView().tint(.green)
@@ -197,8 +187,6 @@ struct DietMateView: View {
     }
 }
 
-// MARK: - DateHeader
-
 private struct DateHeader: View {
     let selectedDate: Date; let onCalendarTap: () -> Void
     var body: some View {
@@ -216,8 +204,6 @@ private struct DateHeader: View {
         .padding(.horizontal, 20)
     }
 }
-
-// MARK: - CalendarSheet
 
 private struct CalendarSheet: View {
     @Binding var selectedDate: Date; @Binding var show: Bool
@@ -241,8 +227,6 @@ private struct CalendarSheet: View {
         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
     }
 }
-
-// MARK: - WeekRingStrip
 
 private struct WeekRingStrip: View {
     @Binding var selectedDate: Date; let store: DietmateDataStore
@@ -309,8 +293,6 @@ private struct WeekDayCell: View {
     }
 }
 
-// MARK: - SectionHeading
-
 private struct SectionHeading: View {
     let selectedDate: Date; let onBackToToday: () -> Void
     var body: some View {
@@ -332,8 +314,6 @@ private struct SectionHeading: View {
         .padding(.horizontal, 20)
     }
 }
-
-// MARK: - MealListSection
 
 private struct MealListSection: View {
     let selectedDate: Date; let store: DietmateDataStore
@@ -374,8 +354,6 @@ private struct MealListSection: View {
     }
 }
 
-// MARK: - MealCard
-
 private struct MealCard: View {
     @Environment(DietmateDataStore.self) private var store
     let entry: MealEntry; let isPast: Bool; let isGuest: Bool
@@ -391,7 +369,6 @@ private struct MealCard: View {
         let hasFoods    = !loggedFoods.isEmpty
 
         VStack(alignment: .leading, spacing: 10) {
-            // ── Header row ──
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.mealType.displayName)
@@ -413,7 +390,6 @@ private struct MealCard: View {
             }
 
             if hasFoods {
-                // ── Big calorie number ──
                 HStack(alignment: .firstTextBaseline, spacing: 0) {
                     Text("\(Int(consumed))")
                         .font(.system(size: 32, weight: .bold))
@@ -421,7 +397,6 @@ private struct MealCard: View {
                         .font(.system(size: 14)).foregroundStyle(.secondary)
                 }
 
-                // ── Thick progress bar ──
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
@@ -435,11 +410,9 @@ private struct MealCard: View {
                 }
                 .frame(height: 8)
 
-                // ── Food rows ──
                 MealFoodList(foods: loggedFoods, accentColor: accentColor, onTap: onFoodTap)
 
             } else if !isPast {
-                // ── Add button ──
                 Button(action: isGuest ? onGuestTap : onAdd) {
                     Text("Add \(entry.mealType.displayName)")
                         .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
@@ -461,8 +434,6 @@ private struct MealCard: View {
         .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 }
-
-// MARK: - MealFoodList
 
 private struct MealFoodList: View {
     let foods: [(mealFood: MealFood, food: Food)]; let accentColor: Color; let onTap: (Food) -> Void
@@ -498,8 +469,6 @@ private struct MealFoodList: View {
     }
 }
 
-// MARK: - AddMealView
-
 struct AddMealView: View {
     @Environment(AppDataStore.self)      private var store
     @Environment(DietmateDataStore.self) private var dietMateStore
@@ -518,7 +487,6 @@ struct AddMealView: View {
         let mealColor = entry?.mealType.accentColor ?? .hcBrown
 
         VStack(spacing: 0) {
-            // Nav bar
             HStack {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
@@ -537,12 +505,10 @@ struct AddMealView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     SearchBar(text: $searchText, themeColor: mealColor)
 
-                    // Hair Nutrient Coverage Panel
                     if let e = entry {
                         HairNutrientCoveragePanel(mealEntryId: e.id, store: dietMateStore)
                     }
 
-                    // Calorie info — secondary
                     if let e = entry, e.caloriesConsumed > 0 {
                         HStack(spacing: 4) {
                             Image(systemName: "flame.fill").foregroundStyle(.orange).font(.system(size: 13))
@@ -616,8 +582,6 @@ private struct HairNutrientCoveragePanel: View {
     }
 }
 
-// MARK: - UnifiedFilterMenu
-
 private struct UnifiedFilterMenu: View {
     @Binding var vegFilter: DietmateDataStore.VegFilter
     @Binding var selectedNutrients: Set<String>
@@ -666,8 +630,6 @@ private struct UnifiedFilterMenu: View {
     }
 }
 
-// MARK: - SearchBar
-
 private struct SearchBar: View {
     @Binding var text: String
     var themeColor: Color = .hcBrown
@@ -691,8 +653,6 @@ private struct SearchBar: View {
     }
 }
 
-// MARK: - AddedFoodsSection
-
 private struct AddedFoodsSection: View {
     let addedFoods: [(mealFood: MealFood, food: Food)]
     let mealColor: Color; let mealEntryId: UUID; let store: DietmateDataStore
@@ -704,7 +664,6 @@ private struct AddedFoodsSection: View {
                     FoodImageView(food: pair.food, tint: mealColor, height: 60, width: 60, cornerRadius: 10)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(pair.food.name).font(.system(size: 15, weight: .medium)).lineLimit(2)
-                        // nutrient dots
                         HStack(spacing: 4) {
                             ForEach(kNutrientPills, id: \.name) { pill in
                                 let has = pair.food.hairNutrients.contains(pill.name)
@@ -735,8 +694,6 @@ private struct AddedFoodsSection: View {
         }
     }
 }
-
-// MARK: - SuggestedSection
 
 private struct SuggestedSection: View {
     let foods: [Food]; let mealColor: Color
@@ -795,8 +752,6 @@ private struct SuggestedSection: View {
     }
 }
 
-// MARK: - FoodGridCard
-
 private struct FoodGridCard: View {
     let food: Food; let mealColor: Color; let onAdd: () -> Void; let onTap: () -> Void
 
@@ -825,7 +780,6 @@ private struct FoodGridCard: View {
                 .contentShape(Rectangle())
                 .onTapGesture { onTap() }
 
-            // food name
             Button(action: onTap) {
                 Text(food.name).font(.system(size: 13, weight: .medium))
                     .lineLimit(1).foregroundStyle(.primary).padding(.horizontal, 2)
@@ -833,8 +787,6 @@ private struct FoodGridCard: View {
         }
     }
 }
-
-// MARK: - FoodDetailView
 
 private struct FoodDetailView: View {
     let food: Food
@@ -898,8 +850,6 @@ private struct FoodDetailView: View {
         .scrollBounceBehavior(.basedOnSize)
     }
 }
-
-// MARK: - NutritionCard
 
 private struct NutritionCard: View {
     let food: Food
@@ -998,8 +948,6 @@ private struct HairNutrientsDetailCard: View {
     }
 }
 
-// MARK: - CustomFoodSheet
-
 private struct CustomFoodSheet: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -1011,7 +959,6 @@ private struct CustomFoodSheet: View {
     @State private var calories: String = ""
     @State private var isVeg: Bool = true
     
-    // Optional Macros
     @State private var protein: String = ""
     @State private var carbs: String = ""
     @State private var fat: String = ""
@@ -1099,8 +1046,6 @@ private struct CustomFoodSheet: View {
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     let appStore      = AppDataStore()
