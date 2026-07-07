@@ -548,7 +548,7 @@ extension AppDataStore {
         if let w = weightKg { userProfiles[idx].weightKg = w }
         
         let profile  = userProfiles[idx]
-        let dob      = profile.dateOfBirth
+        let dob      = profile.dateOfBirth ?? Date()
         let age      = Calendar.current.dateComponents([.year], from: dob, to: Date()).year ?? 0
         let activity = activityLevel ?? activeNutritionProfile?.activityLevel ?? .sedentary
         
@@ -629,7 +629,7 @@ extension AppDataStore {
     
     
     private func ageFromProfile(_ profile: UserProfile) -> Int {
-        Calendar.current.dateComponents([.year], from: profile.dateOfBirth, to: Date()).year ?? 0
+        Calendar.current.dateComponents([.year], from: profile.dateOfBirth ?? Date(), to: Date()).year ?? 0
     }
     
     func runEngineAndApply(

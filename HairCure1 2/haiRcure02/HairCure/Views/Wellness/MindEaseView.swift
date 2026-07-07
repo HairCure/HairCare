@@ -342,9 +342,6 @@ private struct MoodRecommendationRow: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(store.durationFormatted(for: content))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

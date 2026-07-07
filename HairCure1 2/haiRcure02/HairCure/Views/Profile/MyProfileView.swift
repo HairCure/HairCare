@@ -13,7 +13,8 @@ struct MyProfileView: View {
     // Editable fields
     @State private var fullName:    String = ""
     @State private var email:       String = ""
-    @State private var dateOfBirth: Date   = Date()
+    @State private var dateOfBirth: Date?  = nil
+    @State private var pickerDate: Date    = Date()
     @State private var showDOBPicker       = false
     @State private var heightCm:    String = ""
     @State private var weightKg:    String = ""
@@ -175,7 +176,10 @@ struct MyProfileView: View {
     
     private var dobRow: some View {
         Button {
-            if isEditing { showDOBPicker = true }
+            if isEditing {
+                pickerDate = dateOfBirth ?? Date()
+                showDOBPicker = true
+            }
         } label: {
             HStack {
                 Text("Date of Birth")
@@ -216,12 +220,12 @@ struct MyProfileView: View {
     
     
     private var dobDisplayText: String {
-        if Calendar.current.isDateInToday(dateOfBirth) && fullName.isEmpty {
-            return "DD / MM / YYYY"
+        guard let dob = dateOfBirth else {
+            return isEditing ? "Add Birthday" : "—"
         }
         let f = DateFormatter()
         f.dateFormat = "dd MMM yyyy"
-        return f.string(from: dateOfBirth)
+        return f.string(from: dob)
     }
     
     // MARK: - DOB Picker
@@ -230,7 +234,7 @@ struct MyProfileView: View {
         NavigationStack {
             DatePicker(
                 "Date of Birth",
-                selection: $dateOfBirth,
+                selection: $pickerDate,
                 in: ...Date(),
                 displayedComponents: .date
             )
@@ -241,7 +245,10 @@ struct MyProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { showDOBPicker = false }
+                    Button("Done") {
+                        dateOfBirth = pickerDate
+                        showDOBPicker = false
+                    }
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.hcBrown)
                 }

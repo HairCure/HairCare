@@ -136,10 +136,6 @@ final class MindEaseDataStore {
         content.durationSeconds / 60
     }
     
-    func durationFormatted(for content: MindEaseCategoryContent) -> String {
-        String(format: "%02d:%02d", content.durationSeconds / 60, content.durationSeconds % 60)
-    }
-    
     // MARK: - Query Helpers
     
     func sessions(for date: Date) -> [MindfulSession] {

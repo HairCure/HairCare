@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var showAuthSheet = false
     @State private var showGuestGateSheet = false
     @State private var guestGateConfig: (icon: String, title: String, message: String) = ("lock.shield.fill", "", "")
+    @State private var isDisclaimerExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -30,6 +31,8 @@ struct HomeView: View {
                                 onSignUp: { showAuthSheet = true }
                             )
                         }
+
+                        stageDisclaimerBanner
                         
                         HomeHeroCardsSectionView(viewModel: viewModel, store: store)
                         HomeFeatureCardsSectionView(viewModel: viewModel, store: store, healthKit: healthKit)
@@ -147,6 +150,44 @@ struct HomeView: View {
             .presentationDetents([.large])
             .presentationCornerRadius(28)
             .presentationDragIndicator(.visible)
+        }
+    }
+
+    @ViewBuilder
+    private var stageDisclaimerBanner: some View {
+        if let stage = store.latestScanReport?.hairFallStage, stage.intValue >= 3 {
+            VStack(alignment: .leading, spacing: 6) {
+                Button(action: {
+                    withAnimation(.snappy) {
+                        isDisclaimerExpanded.toggle()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: isDisclaimerExpanded ? "info.circle.fill" : "info.circle")
+                            .foregroundStyle(Color.hcBrown)
+                        Text("Specialist Consultation Recommended")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.hcBrown)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                        Spacer()
+                        Image(systemName: isDisclaimerExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(Color.hcBrown.opacity(0.7))
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                }
+                
+                if isDisclaimerExpanded {
+                    Text("HairCure is optimized for early-stage thinning (Stages 1 and 2). While you can continue to use our lifestyle tools to support your hair health, we recommend consulting a specialist for Stage \(stage.intValue), as your needs may extend beyond our app's reach.")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(3)
+                        .padding(.top, 2)
+                        .padding(.leading, 24)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 4)
         }
     }
 }
@@ -345,7 +386,7 @@ struct HomeHairHealthCardView: View {
                             .foregroundStyle(.white)
                             .frame(width: 26)
                         
-                        Text("View Hair Progress")
+                        Text("Hair Progress")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.white)
                         

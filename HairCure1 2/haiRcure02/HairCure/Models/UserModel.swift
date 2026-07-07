@@ -27,7 +27,7 @@ struct UserProfile: Identifiable {
     var userId: UUID
     var username: String
     var displayName: String
-    var dateOfBirth: Date
+    var dateOfBirth: Date?
     var gender: String
     var heightCm: Float
     var weightKg: Float
