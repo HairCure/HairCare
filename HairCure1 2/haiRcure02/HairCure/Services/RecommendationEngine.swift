@@ -182,14 +182,13 @@ struct RecommendationEngine {
     //  Stage 4+   →     refer_doctor   (all profiles)
     
     static func resolvePlanId(stage: HairFallStage, profile: LifestyleProfile) -> String {
-        if stage == .stage4 { return "refer_doctor" }
         
         let stageNum: Int
         switch stage {
         case .stage1: stageNum = 1
         case .stage2: stageNum = 2
-        case .stage3: stageNum = 3
-        default:      return "refer_doctor"
+        case .stage3, .stage4: stageNum = 3
+        default:      stageNum = 3
         }
         
         return "Stage \(stageNum)"

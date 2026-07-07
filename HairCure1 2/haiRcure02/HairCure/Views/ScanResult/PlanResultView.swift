@@ -4,19 +4,23 @@ import SwiftUI
 struct PlanResultsView: View {
     let onStart: () -> Void
     var onRetake: (() -> Void)? = nil
+    var overrideReport: ScanReport? = nil
+    var overridePlan: UserPlan? = nil
+    var isHistoryMode: Bool = false
 
     @Environment(AppDataStore.self) private var store
     @Environment(AuthViewModel.self) private var authVM
 
     @State private var cardPage       = 0      // 0 = hair analysis, 1 = lifestyle
+    @State private var isDisclaimerExpanded = false
     @State private var animateBars    = false
     @State private var showReferences = false
     @State private var showAuthSheet  = false
     @State private var showNorwoodSheet = false
     @State private var showDailyPlanSheet = false
 
-    private var report:    ScanReport?           { store.latestScanReport }
-    private var plan:      UserPlan?             { store.activePlan }
+    private var report:    ScanReport?           { overrideReport ?? store.latestScanReport }
+    private var plan:      UserPlan?             { overridePlan ?? store.activePlan }
     private var nutrition: UserNutritionProfile? { store.activeNutritionProfile }
 
     // Density → fixed thresholds
@@ -43,7 +47,13 @@ struct PlanResultsView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    navBar
+                    if !isHistoryMode {
+                        navBar
+                            .padding(.bottom, 20)
+                    }
+
+                    stageDisclaimerBanner
+                        .padding(.horizontal, 20)
                         .padding(.bottom, 20)
 
                     scanPhotoRow
@@ -62,7 +72,9 @@ struct PlanResultsView: View {
                 .padding(.top, 12)
             }
 
-            ctaButton
+            if !isHistoryMode {
+                ctaButton
+            }
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.85).delay(0.3)) {
@@ -607,6 +619,43 @@ struct PlanResultsView: View {
         WeeklyPlanWidgetView(plan: plan)
     }
 
+    @ViewBuilder
+    private var stageDisclaimerBanner: some View {
+        if let stage = report?.hairFallStage, stage.intValue >= 3 {
+            VStack(alignment: .leading, spacing: 6) {
+                Button(action: {
+                    withAnimation(.snappy) {
+                        isDisclaimerExpanded.toggle()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: isDisclaimerExpanded ? "info.circle.fill" : "info.circle")
+                            .foregroundStyle(Color.hcBrown)
+                        Text("Specialist Consultation Recommended")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.hcBrown)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                        Spacer()
+                        Image(systemName: isDisclaimerExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(Color.hcBrown.opacity(0.7))
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                }
+                
+                if isDisclaimerExpanded {
+                    Text("HairCure is optimized for early-stage thinning (Stages 1 and 2). While you can continue to use our lifestyle tools to support your hair health, we recommend consulting a specialist for Stage \(stage.intValue), as your needs may extend beyond our app's reach.")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(3)
+                        .padding(.top, 2)
+                        .padding(.leading, 24)
+                }
+            }
+            .padding(.bottom, 4)
+        }
+    }
+
     private var compositeRing: some View {
         let score = report?.lifestyleScore ?? 3.25
         let frac  = CGFloat(score / 10.0)
@@ -702,41 +751,7 @@ private struct NorwoodInfoSheet: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-
-            // ── Handle + header ──
-            VStack(spacing: 0) {
-                Capsule()
-                    .fill(Color(.systemGray4))
-                    .frame(width: 36, height: 4)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
-
-                HStack {
-                    Color.clear.frame(width: 24, height: 24)
-                    Spacer()
-                    VStack(spacing: 2) {
-                        Text("Norwood Scale")
-                            .font(.system(size: 18, weight: .bold))
-                        Text("Hair Loss Stages Explained")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(Color.hcBrown)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
-
-                Divider()
-            }
-            .background(Color(.systemBackground))
-
+        NavigationStack {
             // ── Stage list ──
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 10) {
@@ -796,10 +811,19 @@ private struct NorwoodInfoSheet: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.hcCream.ignoresSafeArea())
+            .navigationTitle("Norwood Scale")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(Color.hcBrown)
+                        .fontWeight(.semibold)
+                }
+            }
         }
         .presentationDetents([.large])
-        .presentationDragIndicator(.hidden)
+        .presentationDragIndicator(.visible)
     }
 }
 
@@ -812,54 +836,9 @@ struct DailyActionPlanSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color(.systemGroupedBackground).ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // ── Header ──
-                ZStack {
-                    Color(.systemBackground)
-                    VStack(spacing: 0) {
-                        Spacer().frame(height: 24)
-
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.hcBrown.opacity(0.10))
-                                    .frame(width: 36, height: 36)
-                                Image(systemName: "doc.text.fill")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(Color.hcBrown)
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Daily Action Plan")
-                                    .font(.system(size: 18, weight: .bold))
-                                Text("AI-powered daily roadmap for your hair")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            Button { dismiss() } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 24))
-                                    .symbolRenderingMode(.hierarchical)
-                                    .foregroundStyle(Color.hcBrown)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 16)
-
-                        Divider()
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: true)
-
-                // ── Scrollable content ──
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
 
                         // Daily Targets strip
                         if let np = nutrition {
@@ -896,8 +875,18 @@ struct DailyActionPlanSheet: View {
                     }
                     .padding(.top, 20)
                 }
+            .background(Color.hcCream.ignoresSafeArea())
+            .navigationTitle("Daily Action Plan")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(Color.hcBrown)
+                        .fontWeight(.semibold)
+                }
             }
         }
+        .presentationDragIndicator(.visible)
     }
 
     private func sheetTargetCell(value: String, unit: String, label: String) -> some View {

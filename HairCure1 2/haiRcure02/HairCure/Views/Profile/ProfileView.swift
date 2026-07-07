@@ -66,9 +66,7 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section {
-                ProfileRow(icon: "gearshape.fill", color: Color.hcWarmBrown, title: "App Preferences") {
-                    ProgressPlaceholderView(title: "App Preferences")
-                }
+
                 ProfileRow(icon: "questionmark.circle.fill", color: Color.hcBrown, title: "Help & Support") {
                     ProgressPlaceholderView(title: "Help & Support")
                 }

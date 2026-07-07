@@ -82,7 +82,7 @@ class AppDataStore {
             userId: userId,
             username: name.lowercased().replacingOccurrences(of: " ", with: ""),
             displayName: name,
-            dateOfBirth: Date(),
+            dateOfBirth: nil,
             gender: "",
             heightCm: 0,
             weightKg: 0,
@@ -307,7 +307,8 @@ class AppDataStore {
         let heightCm = profile?.heightCm ?? 0
         let weightKg = profile?.weightKg ?? 0
         let age      = profile.map {
-            Calendar.current.dateComponents([.year], from: $0.dateOfBirth, to: Date()).year ?? 0
+            guard let dob = $0.dateOfBirth else { return 0 }
+            return Calendar.current.dateComponents([.year], from: dob, to: Date()).year ?? 0
         } ?? 0
         
         // Mifflin–St Jeor (male): BMR = (10 × kg) + (6.25 × cm) − (5 × age) + 5
@@ -660,43 +661,7 @@ class AppDataStore {
         }
     }
 
-    func addDummyReport() {
-        let dummyScanId = UUID()
-        let oneMonthAgo = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-        
-        let dummyScan = ScalpScan(
-            id: dummyScanId,
-            userId: currentUserId,
-            scanDate: oneMonthAgo,
-            frontImageURL: "",
-            leftImageURL: "",
-            rightImageURL: "",
-            backImageURL: "",
-            topImageURL: "",
-            scanType: .monthly
-        )
-        scalpScans.append(dummyScan)
-        
-        let dummyReport = ScanReport(
-            id: UUID(),
-            createdAt: oneMonthAgo,
-            scalpScanId: dummyScanId,
-            hairDensityPercent: 55.0,
-            hairDensityLevel: .low,
-            hairFallStage: .stage3,
-            scalpCondition: .dandruff,
-            hairType: "straight",
-            analysisSource: .aiModel,
-            planId: "plan_recovery",
-            lifestyleScore: 6.5,
-            dietScore: 5.0,
-            stressScore: 7.0,
-            sleepScore: 6.0,
-            hairCareScore: 8.0,
-            recommendedPlan: "Focus on recovery and reducing dandruff."
-        )
-        scanReports.append(dummyReport)
-    }
+
 
     // MARK: - Reset on Logout
     /// Clears all user-specific in-memory data so a fresh login
@@ -852,7 +817,7 @@ class AppDataStore {
                 
                 // Save physical profile from assessment
                 if let profile = userProfiles.first(where: { $0.userId == newUserId }) {
-                    let age = Calendar.current.dateComponents([.year], from: profile.dateOfBirth, to: Date()).year ?? 0
+                    let age = Calendar.current.dateComponents([.year], from: profile.dateOfBirth ?? Date(), to: Date()).year ?? 0
                     if profile.heightCm > 0 || profile.weightKg > 0 {
                         await BackendService.shared.updateProfilePhysical(
                             userId: newUserId,
